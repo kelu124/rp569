@@ -1,6 +1,6 @@
 ---
 name: project-logs
-description: Use when finishing a task, making a commit, or taking a design decision in the rp569 repo — keeps .claude/todo.md, done.md, commits.md and decisions.md up to date.
+description: Use when finishing a task, making a commit, or taking a design decision in the rp569 repo — keeps .claude/todo.md, done.md, commits.md and specification.md up to date.
 ---
 
 # Project logs (rp569)
@@ -21,4 +21,5 @@ description: Use when finishing a task, making a commit, or taking a design deci
    `pending` with the real hash at the start of the next commit (do not amend).
 
 ## When making a design choice
-Add a `D-NNN` entry to `.claude/decisions.md` with the datasheet section used as source.
+Add a `D-NNN` entry at the top of §2 in `specification.md` with the datasheet section used as source.
+A new user requirement gets an `R-NN` row in §1 (status met / partial / open, and the decision that covers it).

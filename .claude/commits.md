@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — PCB v0.2: 50x70 mm two-sided board, buttons, CH569 boot jumper
+## pending — 2026-10-23 — Add specification.md (requirements + decisions)
+What: specification.md (R-01..R-17, D-001..D-013), removed .claude/decisions.md, updated CLAUDE.md, project-logs
+skill, README, todo/done. D-004 rewritten with the checked RP2350 → CH569 bootloader sequence; D-013 opened
+for a through-hole-leg USB3 Micro-B.
+Why: User asked for one specification file with decisions and requirements, a sturdier USB3 connector, and
+confirmation that the RP2350 can trigger the CH569 bootloader like the BOOT button.
+
+## 4859eb2 — 2026-10-23 — PCB v0.2: 50x70 mm two-sided board, buttons, CH569 boot jumper
 What: board.py (RP BTN1/2 on GPIO30/31, CH BTN1/2 on PB3/PB4, CH BOOT JP, RP UART → RP EXT, CH EXT 2x07);
 gen_pcb.py (50×70 mm, 3 mm chamfers, fixed top-side layout, two-sided nearest-spot placer, net-prefix fix
 in the placement targets); docs (layout, pinmap, README), D-011/D-012, renders v0.2.

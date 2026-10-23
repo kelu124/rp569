@@ -1,0 +1,126 @@
+# rp569 — specification
+
+Requirements (what the board must do) and design decisions (how, and why). Open questions and tasks are in
+`.claude/todo.md`. Pin-level detail: `docs/pinmap.md`, power: `docs/power.md`, layout: `docs/layout.md`.
+
+Status keys: **met** (in the schematic/PCB), **partial**, **open**.
+
+## 1. Requirements
+
+All requested by the user, 2026-10-23.
+
+| ID | Requirement | Status | How / decision |
+|---|---|---|---|
+| R-01 | KiCad design pairing an RP2350B (QFN-80, 48 GPIO) and a CH569W | met | `hardware/`, generated from `hardware/gen/board.py` (D-010) |
+| R-02 | CH569 on a USB 3.0 connector | met | USB3 Micro-B, AC caps on SSTX, ESD on all pairs (D-008) |
+| R-03 | SD card on the CH569's SD/eMMC pins | met | 4-bit SD on the eMMC controller (D-003) |
+| R-04 | RP2350B on USB 2.0 through a USB-C connector | met | USB-C, 5.1k CC pull-downs, 27 Ω series, ESD |
+| R-05 | The RP2350 can program the CH569, or at least enable its programming, for automated testing | met | Power switch + boot pin control (D-004) |
+| R-06 | Shared I2C bus between the two chips | met | RP GPIO26/27 ↔ CH569 PB22/PB23, 4.7k pull-ups |
+| R-07 | Shared UART between the two chips | met | RP UART1 GPIO24/25 ↔ CH569 UART1 PA7/PA8 |
+| R-08 | Parallel bus with clock: the RP2350 sends high-speed data, the CH569 exports it over USB 3 | met (8-bit) | CH569 HSPI 8-bit + handshake, 33 Ω series (D-002, D-003; 16-bit asked first, conflicts with the SD card) |
+| R-09 | Logic analyser: 8 RP2350 pins sampled and streamed over the parallel bus | met | GPIO0–7, 100 Ω series, LA IN header |
+| R-10 | One RGB LED per chip, placed close to its chip | met | Discrete RGB on PWM pins (D-005), placed beside each chip (D-011) |
+| R-11 | Breakout I2C bus on each chip, separate from the shared bus (CH569: bit-bang allowed) | met | RP I2C0 GPIO28/29; CH569 PB8/PB9 bit-banged; headers with pull-ups |
+| R-12 | CH569 powered from its own USB3 VBUS through an RP2350-controlled switch; ideal diodes so the two USB connectors cannot back-feed each other | met | D-007, D-009 |
+| R-13 | Board 50×70 mm, angled corners, parts on both sides, main chips on the same side as the USB connectors and the SD socket | met | D-011 |
+| R-14 | 2.54 mm 2x1 header for a physical jumper to program a blank CH569 | met | CH BOOT JP, PA5 → 1k → GND (D-004) |
+| R-15 | Two user buttons for the RP2350 and two for the CH569 | met | RP GPIO30/31, CH569 PB3/PB4, 10k pull-ups (D-012) |
+| R-16 | USB3 Micro-B with through-hole legs, for a firm mechanical hold | **open** | D-013: needs a part with a published PCB drawing |
+| R-17 | The RP2350 can put the CH569 in its bootloader the same way as the BOOT button | met | Checked on the netlist, sequence in D-004 |
+
+## 2. Design decisions
+
+Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
+
+## D-013 — USB3 Micro-B with through-hole shell legs (status: open)
+Requirement R-16: the connector must have through-hole mounting legs for a firm mechanical hold. The Connfly
+DS1104-01 (D-008) is all-SMD, and it is the only USB3 Micro-B footprint in the KiCad 10 library.
+Candidates listed by distributors as "Surface Mount, Right Angle; Through Hole" (signal pins SMD, shell legs THT):
+Amphenol GSB343K33HR, ATTEND 209E-BE01. Hirose ZX360D-B-10P(30) is listed as SMD only.
+Needed before switching: the manufacturer's recommended PCB layout (datasheet drawing), to build a project-local
+footprint in hardware/lib/. Manufacturer sites refused automated download (HTTP 403).
+
+## D-012 — Debug UART of the RP2350 moved onto the RP EXT header (status: proposed)
+Context: 50×70 mm leaves no edge room for a separate 3-pin RP UART header. GPIO30/31 became user buttons.
+Choice: RP EXT 1x10 = 3V3, DBG_TX (GPIO32), DBG_RX (GPIO33), ADC0–5, GND. CH EXT shrinks to 2x07 (PB3/PB4 → CH buttons).
+
+## D-011 — Board 50×70 mm, two-sided, chamfered corners (status: accepted, 2026-10-23)
+Requested by user: 50×70 mm, angled corners, parts on both sides, main chips on the same side as the
+USB connectors and the microSD. Choice: 3 mm 45° chamfers; RP2350/USB-C top half, CH569/USB3/microSD bottom
+half, all on F.Cu; small passives and the flash on B.Cu; USB ESD and SSTX caps forced to F.Cu.
+Also added on request: CH569 boot jumper (2-pin 2.54 mm, PA5 → GND via 1k), 2 user buttons per chip,
+RGB LEDs placed next to their chip.
+
+## D-010 — KiCad files generated from a Python netlist (status: accepted)
+Choice: hardware/gen/board.py is the single source; gen_sch/gen_pcb/gen_pro produce the KiCad files; build.sh runs ERC/DRC+parity.
+Rule: once routing starts, gen_pcb.py must no longer be run (it would wipe the routing). Use Update PCB from Schematic. See docs/layout.md.
+
+## D-009 — CH569 load switch = AP2171W instead of TPS2553 (status: proposed)
+Context: TPS2553 is not in the KiCad standard library; AP2171W is (SOT-23-5, 1 A current limit, active-high EN, FLG# open-drain).
+Choice: AP2171W. Check that 1 A covers the CH569 + SD card peak current.
+
+## D-008 — USB3 connector = USB3 Micro-B (Connfly DS1104-01) (status: superseded by D-013)
+Context: KiCad lib has no USB3 Type-B footprint. A USB-C SuperSpeed port would need an orientation mux.
+Choice: USB3 Micro-B receptacle (device), SSTX AC caps 100 nF, TPD2EUSB30 ESD on all 3 pairs.
+Alternative: USB3 Type-A plug like phantomdrive (stick form factor).
+
+## D-007 — Power paths: ideal-diode OR for 5V_SYS, switched 5V_CH from USB3 VBUS (status: proposed)
+Choice: VBUS_C and VBUS_3 ORed by two LM66100 ideal diodes → 5V_SYS (RP2350 side, no back-feed between connectors).
+CH569 powered only from VBUS_3 through a current-limited load switch (AP2171W, D-009), EN = RP2350 GPIO35 (pull-down), FAULT# → GPIO39.
+Optional DNP link 5V_SYS → switch input to run the CH569 without a USB3 cable.
+Requested by user 2026-10-23. Details: docs/power.md.
+
+## D-006 — CH569 power follows phantomdrive (status: proposed)
+Choice: dedicated 3V3 and 1V2 TLV62569 bucks for the CH569 (external 1.2 V on V12CORE/V12USB), fed from switched 5V_CH (D-007).
+Source: docs/ch569-hardware-notes.md.
+
+## D-005 — Discrete RGB LEDs on PWM pins (status: proposed)
+Choice: one discrete RGB LED per chip. RP2350 GPIO36/37/38 (PWM10A/10B/11A); CH569 PB0 (TMR1_), PB1 (PWM2), PB2 (PWM3).
+Alternatives: WS2812/SK6812 (1 pin, but 5 V supply/levels and a timing-critical protocol on the CH569).
+Rationale: works at 3.3 V on both chips, PWM in hardware on both.
+
+## D-004 — CH569 bootloader entry and reflashing driven by the RP2350 (status: accepted, checked 2026-10-23)
+Context: automated CH569 flashing driven by the RP2350. RST# (PB15) is disabled by default (RESET_EN = 0), so
+the CH569 only samples its boot pin PA5 at power-up. PA5 is also HSPI HD0.
+Choice: the RP2350 does in firmware what the BOOT button does by hand:
+1. GPIO8 (HSPI_D0_RP) drives low. It reaches PA5 through a 33 Ω array element (RN3). The BOOT button and the
+   boot jumper pull the same node low through 1 kΩ (R33), so the RP2350 pulls harder than the button.
+2. GPIO35 (CH569_PWR_EN) goes low: the AP2171W turns 5V_CH off, both CH569 bucks stop. GPIO47 (CH3V3_SENSE)
+   confirms 3V3_CH has gone down.
+3. GPIO35 goes high: the CH569 powers up with PA5 low and starts the USB bootloader (`4348:55E0`) on the
+   USB3 connector's USB2 lines. The host flashes with `wch-ch56x-isp` within ~10 s.
+4. GPIO8 is released and becomes HSPI D0 again.
+Conditions: VBUS_3 present (the USB3 cable is needed for flashing anyway, or fit the DNP 0 Ω from 5V_SYS).
+Driving GPIO8 low while the CH569 is unpowered is safe (no back-power through a low level).
+Conflict cases: jumper fitted or button held while GPIO8 drives high → 3.2 mA through 1 kΩ + 33 Ω, harmless,
+but the RP2350 wins and the CH569 boots its application. Firmware must leave GPIO8 low or Hi-Z at CH569 power-up
+when the user wants the jumper to take effect. A blank RP2350 leaves GPIO8 as an input with its default pull-down,
+which does not fight the jumper.
+RST# stays wired to GPIO34 (open-drain, 10k to 3V3_CH) for when RESET_EN is set in the CH569 config.
+Alternatives: 2-wire debug from the RP2350 (TCK/TIO share pins with HTACK/HTCLK, protocol not public).
+Source: CH569DS1 pin table (pin 15 PA5, pin 30 PB15) and config bits §2; project/hydrausb3/wch-ch56x-isp/README.md
+(boot pin PA5, alternative PA13, 10 s timeout); phantomdrive SW1 on PA5. Netlist trace: hardware/gen/board.py.
+
+## D-003 — Parallel bus width vs SD card pin conflict (status: accepted — option (a), 2026-10-23)
+Context: CH569DS1 pin table: HSPI HD4..HD7 = PA2,PA1,PA0,PB21 (= eMMC MD7..MD4),
+HD8..HD11 = PB20..PB17 (= MD3..MD0), HD13 = PB16 (= MCMD). A 4-bit SD card needs MD0..MD3 + MCMD + clock.
+Consequence: 16-bit HSPI and an SD card on the eMMC controller cannot coexist. 8-bit HSPI (HD0..HD7) + 4-bit SD can.
+Options: (a) 8-bit HSPI + 4-bit SD on eMMC controller (fits the 8-channel logic analyser naturally);
+(b) 16-bit HSPI + SD in SPI mode on CH569 SPI0/SPI1 (slow, ~few MB/s);
+(c) 16-bit HSPI, no SD card.
+Decision: (a) 8-bit HSPI on HD0..HD7 + 4-bit SD card on the eMMC controller (MD0..MD3, MCMD, clock).
+HD8..HD31 and MD4..MD7 are not used as such and stay free for GPIO (MD4..MD7 = HD4..HD7 are taken by HSPI).
+Source: datasheet/CH569DS1.pdf, pin description table (pins 15–29, QFN68). Verify in the PDF.
+
+## D-002 — RP2350 → CH569 data link uses CH569 HSPI in 8-bit mode (status: accepted, width changed by D-003)
+Context: Need high-throughput RP2350 → CH569 → USB3 path.
+Choice: RP2350 PIO emulates an HSPI transmitter (8 data HD0..HD7 + clock + handshake lines).
+Alternatives: SerDes (not reachable from RP2350), SPI (too slow).
+Open: exact HSPI handshake, max clock achievable with RP2350 PIO + board routing.
+
+## D-001 — Separate crystals per chip (status: proposed)
+Context: User wants a clock shared between RP2350B and CH569.
+Choice: Each chip keeps its own reference crystal (CH569 30 MHz, RP2350 12 MHz). The shared
+clock is the parallel-bus data clock, driven by RP2350 PIO toward CH569 HSPI.
+Rationale: CH569 USB3 PLL has tight jitter requirements; a GPIO-generated clock is a risk.

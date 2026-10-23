@@ -6,7 +6,7 @@
       mode (init sequence, 3.3 V signalling; no UHS 1.8 V switching).
 - [ ] CH569 I2C: datasheet only mentions I2C in the DVP/sensor context, no I2C peripheral found → bit-banged. Confirm.
 - [ ] Logic analyser: 8 RP2350B inputs sampled by PIO → parallel bus. Pick sample rate target, input protection/level (3.3 V, series R), header.
-- [x] ~~CH569 programming path~~ → D-004 proposed (power-cycle + PA5). Original options: — pick one (see decisions.md):
+- [x] ~~CH569 programming path~~ → D-004 proposed (power-cycle + PA5). Original options: — pick one (see specification.md):
       (a) RP2350 drives RESET# + boot strap, host flashes via USB ISP (`wchisp`);
       (b) UART ISP driven by RP2350 (only if CH569 bootloader supports UART);
       (c) RP2350 acts as 2-wire debug probe (RVSWD-like) — needs protocol research.
@@ -21,6 +21,8 @@
 - [ ] CH569 breakout I2C: pick 2 free GPIOs (bit-bang), not colliding with HSPI/eMMC/UART.
 
 ## Tasks
+
+- [ ] R-16 / D-013: USB3 Micro-B with through-hole shell legs. Get the PCB drawing (Amphenol GSB343K33HR or ATTEND 209E-BE01, or a part the user picks), build the footprint in `hardware/lib/`, swap it in `board.py`.
 
 - [ ] Power (D-007): confirm parts (LM66100, TPS2553, TLV62569) and stock; size the TPS2553 current limit from the CH569 current draw.
 - [ ] Check that the CH569 I/Os don't clamp the shared I2C / inter-chip lines while the CH569 is unpowered (power.md rules).
