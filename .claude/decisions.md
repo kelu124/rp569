@@ -5,6 +5,24 @@
 Context / Choice / Alternatives / Rationale / Source (datasheet section)
 -->
 
+## D-004 — CH569 reset/programming by power-cycle + boot pin (status: proposed)
+Context: Automated CH569 flashing driven by RP2350. RST# (PB15) is disabled by default (RESET_EN=0);
+boot pin is PA5 = HSPI HD0, already driven by RP2350 GPIO8.
+Choice: RP2350 GPIO35 gates the CH569 power rails (CH569_PWR_EN on the bucks' EN pins). To flash: hold GPIO8 low,
+power-cycle the CH569, the host flashes over the USB3 connector's USB2 lines with `wch-ch56x-isp`. RST# is still
+wired to GPIO34 (open-drain) for use when RESET_EN is set.
+Alternatives: 2-wire debug from RP2350 (TCK/TIO share pins with HTACK/HTCLK; protocol not public).
+Source: CH569DS1 Table 1-2 (pins 15, 30), §2 config bits; project/hydrausb3/wch-ch56x-isp/README.md; phantomdrive SW1 on PA5.
+
+## D-005 — Discrete RGB LEDs on PWM pins (status: proposed)
+Choice: one discrete RGB LED per chip. RP2350 GPIO36/37/38 (PWM10A/10B/11A); CH569 PB0 (TMR1_), PB1 (PWM2), PB2 (PWM3).
+Alternatives: WS2812/SK6812 (1 pin, but 5 V supply/levels and a timing-critical protocol on the CH569).
+Rationale: works at 3.3 V on both chips, PWM in hardware on both.
+
+## D-006 — CH569 power follows phantomdrive (status: proposed)
+Choice: dedicated 3V3 and 1V2 TLV62569 bucks for the CH569 (external 1.2 V on V12CORE/V12USB), EN controlled by D-004.
+Source: docs/ch569-hardware-notes.md.
+
 ## D-001 — Separate crystals per chip (status: proposed)
 Context: User wants a clock shared between RP2350B and CH569.
 Choice: Each chip keeps its own reference crystal (CH569 30 MHz, RP2350 12 MHz). The shared

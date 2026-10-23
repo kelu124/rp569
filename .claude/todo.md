@@ -2,12 +2,11 @@
 
 ## Open design questions (verify against datasheets)
 
-- [ ] Verify D-003 pin mapping (HD0..HD7, MD0..MD3, MCMD, MCK) in `datasheet/CH569DS1.pdf`, not only the .md.
 - [ ] CH569 eMMC controller with an SD card: confirm SD (not only eMMC) is supported in 4-bit
       mode (init sequence, 3.3 V signalling; no UHS 1.8 V switching).
 - [ ] CH569 I2C: datasheet only mentions I2C in the DVP/sensor context, no I2C peripheral found → bit-banged. Confirm.
 - [ ] Logic analyser: 8 RP2350B inputs sampled by PIO → parallel bus. Pick sample rate target, input protection/level (3.3 V, series R), header.
-- [ ] CH569 programming path for automation — pick one (see decisions.md):
+- [x] ~~CH569 programming path~~ → D-004 proposed (power-cycle + PA5). Original options: — pick one (see decisions.md):
       (a) RP2350 drives RESET# + boot strap, host flashes via USB ISP (`wchisp`);
       (b) UART ISP driven by RP2350 (only if CH569 bootloader supports UART);
       (c) RP2350 acts as 2-wire debug probe (RVSWD-like) — needs protocol research.
@@ -23,10 +22,12 @@
 
 ## Tasks
 
-- [ ] Study phantomdrive KiCad (`project/phantomdrive/ee/ovrdrive/`): CH569 power, crystal, USB3, SD wiring.
+- [ ] Board power: 5 V from USB-C (RP2350) and/or USB3 VBUS → ORing (ideal diodes) → RP2350 3V3 + CH569 bucks. Decide.
+- [ ] Review `docs/pinmap.md` v0.1 with the user, then freeze it.
+- [ ] Confirm the HSPI packet format (header/CRC, Table 10-x) so the PIO TX program can be written.
 - [ ] Read HydraUSB3 schematic + `HydraUSB3_V1_CH569_HSPI.ods` to answer the HSPI/eMMC pin-collision and power-rail questions above.
 - [ ] Collect datasheets/reference designs into `docs/` (CH569 EVT schematic, RP2350 hardware design guide).
-- [ ] Block diagram + pin map spreadsheet (`docs/pinmap.md`).
+- [ ] Block diagram (`docs/`).
 - [ ] Create KiCad project in `hardware/`.
 - [ ] Schematic: power, RP2350B core, CH569 core, USB3, USB-C, SD, inter-chip bus, debug headers.
 - [ ] Layout: stackup (4-layer for USB3 90 Ω diff pairs), placement, routing.

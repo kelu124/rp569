@@ -6,7 +6,11 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — Decide D-003: 8-bit HSPI + 4-bit SD
+## pending — 2026-10-23 — Pin map v0.1 and CH569 hardware notes
+What: docs/pinmap.md, docs/ch569-hardware-notes.md, decisions D-004..D-006, todo/done.
+Why: Verified pinout from the PDFs; captured phantomdrive's proven CH569 power/USB3/SD design.
+
+## 993a985 — 2026-10-23 — Decide D-003: 8-bit HSPI + 4-bit SD
 What: decisions D-002/D-003, CLAUDE.md, README, todo/done.
 Why: User chose option (a) to resolve the HSPI/SD pin conflict.
 

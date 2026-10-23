@@ -30,7 +30,7 @@ parallel bus to the CH569, then to the host over USB 3.
 |------|---------|
 | `hardware/` | KiCad project (to come) |
 | `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
-| `docs/` | Pin maps, block diagrams, design notes (to come) |
+| `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `ch569-hardware-notes.md` |
 | `project/` | Reference projects: [HydraUSB3](https://github.com/hydrausb3), [phantomdrive](https://github.com/o7-machinehum/phantomdrive) (see `project/README.md`) |
 | `CLAUDE.md`, `.claude/` | Project context, todo/done logs, commit log, design decisions |
 
