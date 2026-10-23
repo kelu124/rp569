@@ -14,8 +14,11 @@ Status: **early design**. Requirements and reference material are being gathered
 | User I/O | RGB LED | RGB LED |
 | Breakout | I2C header for extra devices | I2C header (bit-banged GPIO) |
 
+**Logic analyser**: 8 input pins on the RP2350B are sampled by PIO and streamed over the
+parallel bus to the CH569, then to the host over USB 3.
+
 **Links between the two chips**
-- 16-bit parallel bus with clock and handshake lines: RP2350B PIO sends, CH569 HSPI receives.
+- Parallel bus (16-bit planned; see the pin conflict in `.claude/decisions.md` D-003) with clock and handshake lines: RP2350B PIO sends, CH569 HSPI receives.
 - Shared I2C bus.
 - UART.
 - CH569 RESET# and boot-mode pins driven by the RP2350B, so the CH569 can be reflashed and
@@ -26,13 +29,14 @@ Status: **early design**. Requirements and reference material are being gathered
 | Path | Content |
 |------|---------|
 | `hardware/` | KiCad project (to come) |
-| `datasheet/` | Datasheets as PDF and Markdown (to come) |
+| `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
 | `docs/` | Pin maps, block diagrams, design notes (to come) |
-| `project/` | Reference projects, e.g. [HydraUSB3](https://github.com/hydrausb3) (see `project/README.md`) |
+| `project/` | Reference projects: [HydraUSB3](https://github.com/hydrausb3), [phantomdrive](https://github.com/o7-machinehum/phantomdrive) (see `project/README.md`) |
 | `CLAUDE.md`, `.claude/` | Project context, todo/done logs, commit log, design decisions |
 
 ## References
 
 - [HydraUSB3](https://github.com/hydrausb3): open-source CH569 dev kit, firmware and HSPI/USB3 drivers.
+- [phantomdrive](https://github.com/o7-machinehum/phantomdrive): open-source CH569W encrypted USB3 drive with SD card, KiCad sources.
 - [RP2350 datasheet](https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf) and
   [hardware design guide](https://datasheets.raspberrypi.com/rp2350/hardware-design-with-rp2350.pdf).

@@ -1,0 +1,12 @@
+build/
+.cache
+compile_commands.json
+ee/ovrdrive/ovrdrive-backups/
+logs/
+media/
+.history
+*.o
+*.lck
+kdf
+unencrypted.blob
+*.bin

@@ -6,7 +6,11 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — Project scaffolding, README, logs, HydraUSB3 reference snapshots
+## pending — 2026-10-23 — Datasheets, phantomdrive reference, logic analyser requirement, D-003
+What: datasheet/ (PDF+md), project/phantomdrive snapshot, README/CLAUDE.md requirements (logic analyser), decisions D-003, todo updates.
+Why: Gather source docs; record the HSPI/SD pin conflict found in CH569DS1.
+
+## 1bb4d65 — 2026-10-23 — Project scaffolding, README, logs, HydraUSB3 reference snapshots
 What: README.md (project overview), CLAUDE.md, .claude/ (todo, done, commits, decisions, project-logs skill), project/ with HydraUSB3 hw/fw/lib/bsp/isp snapshots.
 Why: Set up project context, logging workflow and CH569 reference material.
 
