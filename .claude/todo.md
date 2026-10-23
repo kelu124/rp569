@@ -22,7 +22,8 @@
 
 ## Tasks
 
-- [ ] Board power: 5 V from USB-C (RP2350) and/or USB3 VBUS → ORing (ideal diodes) → RP2350 3V3 + CH569 bucks. Decide.
+- [ ] Power (D-007): confirm parts (LM66100, TPS2553, TLV62569) and stock; size the TPS2553 current limit from the CH569 current draw.
+- [ ] Check that the CH569 I/Os don't clamp the shared I2C / inter-chip lines while the CH569 is unpowered (power.md rules).
 - [ ] Review `docs/pinmap.md` v0.1 with the user, then freeze it.
 - [ ] Confirm the HSPI packet format (header/CRC, Table 10-x) so the PIO TX program can be written.
 - [ ] Read HydraUSB3 schematic + `HydraUSB3_V1_CH569_HSPI.ods` to answer the HSPI/eMMC pin-collision and power-rail questions above.

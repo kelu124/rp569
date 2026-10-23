@@ -17,6 +17,10 @@ Status: **early design**. Requirements and reference material are being gathered
 **Logic analyser**: 8 input pins on the RP2350B are sampled by PIO and streamed over the
 parallel bus to the CH569, then to the host over USB 3.
 
+**Power**: the RP2350B runs from either USB connector, ORed by ideal diodes so neither back-feeds the
+other. The CH569 is powered from its own USB3 VBUS through a load switch that the RP2350B controls, so
+it can be power-cycled and forced into its bootloader during automated tests.
+
 **Links between the two chips**
 - 8-bit parallel bus with clock and handshake lines (8-bit because the CH569's 16-bit mode shares pins with the SD card; see `.claude/decisions.md` D-003): RP2350B PIO sends, CH569 HSPI receives.
 - Shared I2C bus.
@@ -30,7 +34,7 @@ parallel bus to the CH569, then to the host over USB 3.
 |------|---------|
 | `hardware/` | KiCad project (to come) |
 | `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
-| `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `ch569-hardware-notes.md` |
+| `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `ch569-hardware-notes.md` |
 | `project/` | Reference projects: [HydraUSB3](https://github.com/hydrausb3), [phantomdrive](https://github.com/o7-machinehum/phantomdrive) (see `project/README.md`) |
 | `CLAUDE.md`, `.claude/` | Project context, todo/done logs, commit log, design decisions |
 

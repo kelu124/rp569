@@ -19,8 +19,14 @@ Choice: one discrete RGB LED per chip. RP2350 GPIO36/37/38 (PWM10A/10B/11A); CH5
 Alternatives: WS2812/SK6812 (1 pin, but 5 V supply/levels and a timing-critical protocol on the CH569).
 Rationale: works at 3.3 V on both chips, PWM in hardware on both.
 
+## D-007 — Power paths: ideal-diode OR for 5V_SYS, switched 5V_CH from USB3 VBUS (status: proposed)
+Choice: VBUS_C and VBUS_3 ORed by two LM66100 ideal diodes → 5V_SYS (RP2350 side, no back-feed between connectors).
+CH569 powered only from VBUS_3 through a TPS2553 current-limited load switch, EN = RP2350 GPIO35 (pull-down), FAULT# → GPIO39.
+Optional DNP link 5V_SYS → switch input to run the CH569 without a USB3 cable.
+Requested by user 2026-10-23. Details: docs/power.md.
+
 ## D-006 — CH569 power follows phantomdrive (status: proposed)
-Choice: dedicated 3V3 and 1V2 TLV62569 bucks for the CH569 (external 1.2 V on V12CORE/V12USB), EN controlled by D-004.
+Choice: dedicated 3V3 and 1V2 TLV62569 bucks for the CH569 (external 1.2 V on V12CORE/V12USB), fed from switched 5V_CH (D-007).
 Source: docs/ch569-hardware-notes.md.
 
 ## D-001 — Separate crystals per chip (status: proposed)

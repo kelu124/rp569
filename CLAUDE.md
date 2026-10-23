@@ -14,6 +14,8 @@ Design, in KiCad, a board pairing a **Raspberry Pi RP2350B** (QFN-80, 48 GPIO) w
 - **User I/O**: one RGB LED on each chip (RP2350B and CH569).
 - **Breakout I2C buses** (separate from the shared inter-chip I2C): one on RP2350B for extra
   devices, one on CH569 GPIOs (bit-banged if no HW I2C). Headers with pull-ups.
+- **Power**: USB-C and USB3 VBUS ORed by ideal diodes (no back-feed) for the RP2350 side; the CH569 is fed
+  from its own USB3 VBUS through a load switch controlled by the RP2350 (see `docs/power.md`).
 - **Test automation**: RP2350B controls CH569 RESET# and boot-mode strap so CH569 can be
   (re)flashed and power-cycled without human intervention.
 

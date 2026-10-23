@@ -46,7 +46,10 @@ analyser inputs and drive the bus.
 | GPIO25 | UART1 RX | CH_TX_RP_RX | 12 PA8 | TXD1 | |
 | GPIO26 | I2C1 SDA | I2C_LINK_SDA | 45 PB22 | GPIO (bit-bang) | Shared inter-chip I2C, pull-ups 4.7k to 3V3 |
 | GPIO27 | I2C1 SCL | I2C_LINK_SCL | 47 PB23 | GPIO (bit-bang) | |
-| GPIO35 | GPIO out | CH569_PWR_EN | — | — | Enables the CH569 3V3/1V2 bucks → power-cycle = reset (D-004) |
+| GPIO35 | GPIO out | CH569_PWR_EN | — | — | Load-switch EN for 5V_CH (CH569 power from its USB3 VBUS), pull-down. See `docs/power.md` (D-004, D-007) |
+| GPIO39 | GPIO in | CH569_PWR_FAULT# | — | — | Load-switch fault (open-drain) |
+| GPIO46 | ADC6 | VBUS3_SENSE | — | — | USB3 VBUS present/level (divider) |
+| GPIO47 | ADC7 | CH569_3V3_SENSE | — | — | CH569 3V3 rail monitor (divider) |
 | GPIO34 | GPIO out (open-drain) | CH569_RST# | 30 PB15 | RST# | Only works if config bit RESET_EN = 1 (default 0). 10k pull-up |
 
 ## 4. RP2350B local I/O
@@ -60,8 +63,7 @@ analyser inputs and drive the bus.
 | GPIO36 | PWM10 A | RP_LED_R | Discrete RGB LED (D-005), active low via series R |
 | GPIO37 | PWM10 B | RP_LED_G | |
 | GPIO38 | PWM11 A | RP_LED_B | |
-| GPIO39 | GPIO | spare | |
-| GPIO40–47 | ADC0–7 / GPIO | EXT0–7 | Spare header (analog-capable) |
+| GPIO40–45 | ADC0–5 / GPIO | EXT0–5 | Spare header (analog-capable) |
 | GPIO30, GPIO31 | GPIO | spare | |
 | — | USB DP/DM | USB-C | Dedicated pins |
 | — | QSPI | Flash + BOOTSEL | Dedicated pins |

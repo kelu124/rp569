@@ -6,7 +6,11 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — Pin map v0.1 and CH569 hardware notes
+## pending — 2026-10-23 — Power architecture (D-007)
+What: docs/power.md, pinmap (power control/sense GPIOs), decisions D-006/D-007, README, CLAUDE.md, todo/done.
+Why: User asked for an RP2350-controlled CH569 supply from its USB3 VBUS and for ideal diodes against back-feed.
+
+## 4333bfd — 2026-10-23 — Pin map v0.1 and CH569 hardware notes
 What: docs/pinmap.md, docs/ch569-hardware-notes.md, decisions D-004..D-006, todo/done.
 Why: Verified pinout from the PDFs; captured phantomdrive's proven CH569 power/USB3/SD design.
 
