@@ -18,7 +18,7 @@ Status: **early design**. Requirements and reference material are being gathered
 parallel bus to the CH569, then to the host over USB 3.
 
 **Links between the two chips**
-- Parallel bus (16-bit planned; see the pin conflict in `.claude/decisions.md` D-003) with clock and handshake lines: RP2350B PIO sends, CH569 HSPI receives.
+- 8-bit parallel bus with clock and handshake lines (8-bit because the CH569's 16-bit mode shares pins with the SD card; see `.claude/decisions.md` D-003): RP2350B PIO sends, CH569 HSPI receives.
 - Shared I2C bus.
 - UART.
 - CH569 RESET# and boot-mode pins driven by the RP2350B, so the CH569 can be reflashed and

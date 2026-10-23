@@ -7,8 +7,8 @@ Design, in KiCad, a board pairing a **Raspberry Pi RP2350B** (QFN-80, 48 GPIO) w
 
 - **CH569** → USB 3.0 connector (USB-B SS or USB-C SS, TBD) + SD card on its eMMC/SDIO pins.
 - **RP2350B** → USB 2.0 on a USB-C connector (device, firmware/debug/test-control).
-- **Inter-chip links**: shared I2C, one UART, and a 16-bit parallel bus + clock (+ control
-  strobes) — RP2350B (PIO) produces high-speed data, CH569 receives it (HSPI) and exports it over USB 3.
+- **Inter-chip links**: shared I2C, one UART, and an **8-bit** parallel bus + clock (+ handshake
+  lines; 8-bit because 16-bit HSPI collides with the SD pins, see D-003) — RP2350B (PIO) produces high-speed data, CH569 receives it (HSPI) and exports it over USB 3.
 - **Logic analyser**: 8 RP2350B GPIOs are sampled (logic levels) by PIO and streamed over the
   parallel bus to the CH569 → USB 3.
 - **User I/O**: one RGB LED on each chip (RP2350B and CH569).

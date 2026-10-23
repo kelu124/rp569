@@ -2,7 +2,7 @@
 
 ## Open design questions (verify against datasheets)
 
-- [ ] **Decide D-003**: HSPI 16-bit collides with eMMC/SD pins (HD8..11, HD13). Choose 8-bit HSPI + SD, or 16-bit + SPI-mode SD, or no SD.
+- [ ] Verify D-003 pin mapping (HD0..HD7, MD0..MD3, MCMD, MCK) in `datasheet/CH569DS1.pdf`, not only the .md.
 - [ ] CH569 eMMC controller with an SD card: confirm SD (not only eMMC) is supported in 4-bit
       mode (init sequence, 3.3 V signalling; no UHS 1.8 V switching).
 - [ ] CH569 I2C: datasheet only mentions I2C in the DVP/sensor context, no I2C peripheral found → bit-banged. Confirm.
@@ -12,11 +12,11 @@
       (b) UART ISP driven by RP2350 (only if CH569 bootloader supports UART);
       (c) RP2350 acts as 2-wire debug probe (RVSWD-like) — needs protocol research.
 - [ ] HSPI framing: HSPI is a packetised protocol (header, valid/req/ack lines, CRC options).
-      Confirm the exact handshake so RP2350 PIO can emulate the TX side; pick bus width (16-bit) and clock.
+      Confirm the exact handshake so RP2350 PIO can emulate the TX side; bus width is 8-bit (D-003); pick clock.
 - [ ] Clocks: CH569 30 MHz crystal (own, for USB3 PLL), RP2350 12 MHz crystal (own).
       The shared "clock" is the HSPI data clock driven by RP2350 — not a system clock.
 - [ ] CH569 power rails (3.3 V + core rail?) and USB3 connector choice (USB-C SS w/ mux vs USB-B 3.0 / USB-C single orientation).
-- [ ] RP2350B GPIO budget: 16 data + clk + ~3 ctrl + UART(2) + shared I2C(2) + breakout I2C(2) + RESET/BOOT(2)
+- [ ] RP2350B GPIO budget: 8 data + clk + ~3 ctrl + UART(2) + shared I2C(2) + breakout I2C(2) + RESET/BOOT(2)
       + logic analyser inputs(8) + RGB LED (1 if WS2812-type, 3 if discrete) + USB, SWD, QSPI flash.
 - [ ] RGB LED type per chip: addressable (WS2812/SK6812, 1 pin, 5 V-ish timing) vs discrete RGB (3 PWM pins). CH569 side: check free GPIO/PWM.
 - [ ] CH569 breakout I2C: pick 2 free GPIOs (bit-bang), not colliding with HSPI/eMMC/UART.

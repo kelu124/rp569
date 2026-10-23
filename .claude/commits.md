@@ -6,7 +6,11 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — Datasheets, phantomdrive reference, logic analyser requirement, D-003
+## pending — 2026-10-23 — Decide D-003: 8-bit HSPI + 4-bit SD
+What: decisions D-002/D-003, CLAUDE.md, README, todo/done.
+Why: User chose option (a) to resolve the HSPI/SD pin conflict.
+
+## 1af2c7d — 2026-10-23 — Datasheets, phantomdrive reference, logic analyser requirement, D-003
 What: datasheet/ (PDF+md), project/phantomdrive snapshot, README/CLAUDE.md requirements (logic analyser), decisions D-003, todo updates.
 Why: Gather source docs; record the HSPI/SD pin conflict found in CH569DS1.
 
