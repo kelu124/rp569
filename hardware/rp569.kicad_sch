@@ -28400,7 +28400,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_USB:USB3_Micro-B_Connfly_DS1104-01"
+		(property "Footprint" "rp569:USB3_Micro-B_Amphenol_GSB343K33HR"
 			(at 544.83 383.54 0)
 			(effects
 				(font

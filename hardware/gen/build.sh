@@ -4,6 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 python3 mk_lib.py
+python3 mk_fp.py
 python3 gen_sch.py
 /usr/bin/python3 gen_pcb.py 2>&1 | grep -v 'assert "m_choices' || true   # pcbnew lives in the system Python
 python3 gen_pro.py

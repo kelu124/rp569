@@ -257,7 +257,7 @@ add('J', 'Connector_Generic:Conn_02x07_Odd_Even', 'CH EXT',
 
 # --------------------------------------------------------------------------- USB3 + SD
 B = 'USB3 / SD'
-add('J', 'Connector:USB3_B_Micro', 'USB3 Micro-B (CH569)', 'Connector_USB:USB3_Micro-B_Connfly_DS1104-01',
+add('J', 'Connector:USB3_B_Micro', 'USB3 Micro-B (CH569)', 'rp569:USB3_Micro-B_Amphenol_GSB343K33HR',   # THT shell legs (D-013)
     {'1': 'VBUS_3', '2': 'USB3_DM', '3': 'USB3_DP', '5': 'GND', '6': 'USB3_SSTX_N', '7': 'USB3_SSTX_P',
      '8': 'GND', '9': 'USB3_SSRX_N', '10': 'USB3_SSRX_P', 'SH': 'GND'}, B)
 C('100nF', 'CH_SSTX_P', B, b='USB3_SSTX_P')

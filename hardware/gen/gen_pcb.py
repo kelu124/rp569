@@ -37,7 +37,7 @@ def by_value(v):
 # top edge), CH569 in the bottom half (USB3 + microSD on the bottom edge), HSPI bus in between.
 fixed = {
     first(lambda p: 'USB_C' in p['lib_id'])['ref']: (25, 4.3, 180),
-    first(lambda p: 'USB3_B_Micro' in p['lib_id'])['ref']: (16, H - 4.0, 0),
+    first(lambda p: 'USB3_B_Micro' in p['lib_id'])['ref']: (16, H - 1.45, 0),   # slots 1.45 mm from the edge
     first(lambda p: 'Micro_SD' in p['lib_id'])['ref']: (33.5, H - 9.0, 0),
     by_value('RP2350B'): (25, 21, 0),
     by_value('CH569W'): (25, 45, 0),
@@ -91,7 +91,8 @@ def zone_of(p):
 
 def load_fp(fpid):
     lib, name = fpid.split(':')
-    fp = pcbnew.FootprintLoad(FPLIB + lib + '.pretty', name)
+    path = os.path.join(HW, 'lib', 'rp569.pretty') if lib == 'rp569' else FPLIB + lib + '.pretty'
+    fp = pcbnew.FootprintLoad(path, name)
     if fp is None:
         raise SystemExit(f'footprint not found: {fpid}')
     return fp

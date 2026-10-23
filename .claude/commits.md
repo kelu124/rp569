@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — Add specification.md (requirements + decisions)
+## pending — 2026-10-23 — USB3 Micro-B with through-hole shell legs (Amphenol GSB343K33HR)
+What: gen/mk_fp.py + lib/rp569.pretty footprint, fp-lib-table, gen_pcb loads project footprints, board.py,
+build.sh, specification (R-16 met, D-013), datasheet/GSB343K33HR (added by the user), renders.
+Why: User wants a firm mechanical connection for the USB3 connector.
+
+## a8a11e0 — 2026-10-23 — Add specification.md (requirements + decisions)
 What: specification.md (R-01..R-17, D-001..D-013), removed .claude/decisions.md, updated CLAUDE.md, project-logs
 skill, README, todo/done. D-004 rewritten with the checked RP2350 → CH569 bootloader sequence; D-013 opened
 for a through-hole-leg USB3 Micro-B.

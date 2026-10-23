@@ -22,7 +22,6 @@
 
 ## Tasks
 
-- [ ] R-16 / D-013: USB3 Micro-B with through-hole shell legs. Get the PCB drawing (Amphenol GSB343K33HR or ATTEND 209E-BE01, or a part the user picks), build the footprint in `hardware/lib/`, swap it in `board.py`.
 
 - [ ] Power (D-007): confirm parts (LM66100, TPS2553, TLV62569) and stock; size the TPS2553 current limit from the CH569 current draw.
 - [ ] Check that the CH569 I/Os don't clamp the shared I2C / inter-chip lines while the CH569 is unpowered (power.md rules).
