@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-10-23 — JLCPCB BOM + CPL with LCSC numbers (`gen/gen_bom.py`, `docs/bom.md`, D-014): RGB LED → LTST-C19HE1WT (pinout checked, G/B 100 Ω), 2.2 µH → FTC303020D2R2MBCA; 3 consigned parts.
 - 2026-10-23 — USB3 Micro-B swapped to Amphenol GSB343K33HR (THT shell legs, R-16/D-013): footprint generated from the drawing by `gen/mk_fp.py`, `hardware/fp-lib-table`.
 - 2026-10-23 — `specification.md`: requirements R-01..R-17 + all design decisions (replaces `.claude/decisions.md`). Checked on the netlist that the RP2350 can force the CH569 bootloader like the BOOT button (D-004 rewritten).
 - 2026-10-23 — PCB v0.2: 50×70 mm, chamfered corners, two-sided placement; CH569 boot jumper; 2 user buttons per chip; LEDs next to their chip; RP UART merged into RP EXT, CH EXT 2x07 (D-011, D-012). DRC: 0 electrical errors, parity 0.

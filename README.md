@@ -40,7 +40,7 @@ it can be power-cycled and forced into its bootloader during automated tests.
 |------|---------|
 | `hardware/` | KiCad project, generated from `hardware/gen/board.py` (run `hardware/gen/build.sh`) |
 | `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
-| `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `ch569-hardware-notes.md` |
+| `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `layout.md`, `bom.md` (JLCPCB BOM), `ch569-hardware-notes.md` |
 | `project/` | Reference projects: [HydraUSB3](https://github.com/hydrausb3), [phantomdrive](https://github.com/o7-machinehum/phantomdrive) (see `project/README.md`) |
 | `specification.md` | Requirements (R-xx) and design decisions (D-xxx) |
 | `CLAUDE.md`, `.claude/` | Project context, todo/done logs, commit log |

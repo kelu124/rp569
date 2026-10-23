@@ -34,5 +34,8 @@
 - [ ] Pick fab + stackup; recompute 90 Ω diff-pair width/gap in `gen/gen_pro.py`.
 - [ ] Hand-review v0.2 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
 - [ ] Routing: USB3/USB2 pairs → power → HSPI (length-matched) → rest (maybe Freerouting).
-- [ ] Check RGB LED footprint pinout vs. the real part; silkscreen cleanup.
+- [ ] Silkscreen cleanup.
+- [ ] Decide on the 3 consigned parts (CH569W, LM66100 ×2, GSB343K33HR): consign, or swap LM66100 for TPS2121/Schottky (docs/bom.md).
+- [ ] Check JLCPCB rotations in the placement preview; recheck stock before ordering.
+- [ ] Confirm the 3.3 µH alternative against the RP2350 HW design guide (AOTA-B201610S3R3 has 119 in stock).
 - [ ] Check AP2171W 1 A limit vs. CH569 + SD peak current (D-009).

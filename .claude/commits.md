@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — USB3 Micro-B with through-hole shell legs (Amphenol GSB343K33HR)
+## pending — 2026-10-23 — JLCPCB BOM and placement files with LCSC part numbers
+What: board.py LCSC table + LED/resistor/inductor changes, gen_sch/gen_pcb LCSC+MPN fields, gen/gen_bom.py,
+hardware/jlcpcb/ (BOM, CPL), docs/bom.md, specification (R-18, D-014, D-005), todo/done.
+Why: User plans to have the board made and assembled by JLCPCB.
+
+## ad16ba7 — 2026-10-23 — USB3 Micro-B with through-hole shell legs (Amphenol GSB343K33HR)
 What: gen/mk_fp.py + lib/rp569.pretty footprint, fp-lib-table, gen_pcb loads project footprints, board.py,
 build.sh, specification (R-16 met, D-013), datasheet/GSB343K33HR (added by the user), renders.
 Why: User wants a firm mechanical connection for the USB3 connector.

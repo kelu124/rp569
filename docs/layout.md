@@ -52,7 +52,7 @@ the CH569 half at the bottom, and the HSPI series arrays sit between the two chi
    - TLV62569 loops: CIN, SW node and inductor compact.
    - SuperSpeed AC caps and ESD close to the USB3 connector.
    - Crystals right next to their chips.
-3. Check the LED footprint pinout (`LED_Cree-PLCC4_2x2mm_CW`) against the RGB LED actually bought (pin 1 = anode).
+3. LED pinout: done (LiteOn LTST-C19HE1WT, checked against its datasheet, see `docs/bom.md`).
 4. Silkscreen cleanup.
 
 ## Routing order (suggested)

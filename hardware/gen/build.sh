@@ -11,5 +11,6 @@ python3 gen_pro.py
 mkdir -p ../reports
 kicad-cli sch erc -o ../reports/erc.rpt ../rp569.kicad_sch | grep -v '^Saved' || true
 python3 gen_pro.py   # kicad-cli may rewrite the project file; re-apply net classes
+python3 gen_bom.py
 kicad-cli pcb drc --schematic-parity -o ../reports/drc.rpt ../rp569.kicad_pcb | grep Found || true
 grep -E '^\[' ../reports/drc.rpt | sed 's/:.*//' | sort | uniq -c

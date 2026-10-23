@@ -4789,7 +4789,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:LED_ARGB"
+		(symbol "Device:LED_RGBA"
 			(pin_names
 				(offset 0)
 				(hide yes)
@@ -4809,7 +4809,7 @@
 					)
 				)
 			)
-			(property "Value" "LED_ARGB"
+			(property "Value" "LED_RGBA"
 				(at 0 -8.89 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -4841,7 +4841,7 @@
 					)
 				)
 			)
-			(property "Description" "RGB LED, anode/red/green/blue"
+			(property "Description" "RGB LED, red/green/blue/anode"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -4874,7 +4874,7 @@
 					)
 				)
 			)
-			(symbol "LED_ARGB_0_0"
+			(symbol "LED_RGBA_0_0"
 				(text "R"
 					(at -1.905 3.81 0)
 					(effects
@@ -4900,7 +4900,7 @@
 					)
 				)
 			)
-			(symbol "LED_ARGB_0_1"
+			(symbol "LED_RGBA_0_1"
 				(polyline
 					(pts
 						(xy -1.27 6.35)
@@ -5282,25 +5282,7 @@
 					)
 				)
 			)
-			(symbol "LED_ARGB_1_1"
-				(pin passive line
-					(at 5.08 0 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
+			(symbol "LED_RGBA_1_1"
 				(pin passive line
 					(at -5.08 5.08 0)
 					(length 2.54)
@@ -5311,7 +5293,7 @@
 							)
 						)
 					)
-					(number "2"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -5329,7 +5311,7 @@
 							)
 						)
 					)
-					(number "3"
+					(number "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -5341,6 +5323,24 @@
 					(at -5.08 -5.08 0)
 					(length 2.54)
 					(name "BK"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 0 180)
+					(length 2.54)
+					(name "A"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -9426,6 +9426,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C165948"
+			(at 35.56 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TYPE-C-31-M-12"
+			(at 35.56 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "A1"
 			(uuid "bcd41eaf-7866-524b-9149-b721707f32b5")
 		)
@@ -9726,6 +9744,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25905"
+			(at 73.66 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF5101TCE"
+			(at 73.66 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "c9a79ffd-1e55-51da-bd2b-35c45370afec")
 		)
@@ -9826,6 +9862,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25905"
+			(at 81.28 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF5101TCE"
+			(at 81.28 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "c52217af-2eaf-5aee-b301-8133d9e6bfa5")
 		)
@@ -9918,6 +9972,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 113.03 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C97502"
+			(at 113.03 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TPD2EUSB30DRTR"
 			(at 113.03 43.18 0)
 			(effects
 				(font
@@ -10050,6 +10122,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C23733"
+			(at 143.51 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05A475MP5NRNC"
+			(at 143.51 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "9037006a-c8a6-5ace-9d46-035a66374b9c")
 		)
@@ -10142,6 +10232,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 171.45 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" ""
+			(at 171.45 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "LM66100DCKR"
 			(at 171.45 52.07 0)
 			(effects
 				(font
@@ -10312,6 +10420,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" ""
+			(at 217.17 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "LM66100DCKR"
+			(at 217.17 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "b986a668-b794-5529-9122-61630c64f4b8")
 		)
@@ -10474,6 +10600,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C15850"
+			(at 243.84 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A106KAYNNNE"
+			(at 243.84 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "241dcd59-bd6b-5a43-a055-422059422c30")
 		)
@@ -10566,6 +10710,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 27.94 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C17168"
+			(at 27.94 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF0000TCE"
 			(at 27.94 119.38 0)
 			(effects
 				(font
@@ -10674,6 +10836,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C17168"
+			(at 36.83 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF0000TCE"
+			(at 36.83 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "b1e976f8-6555-5b78-9958-da57b94c953a")
 		)
@@ -10766,6 +10946,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 73.66 106.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C110466"
+			(at 73.66 106.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "AP2171WG-7"
 			(at 73.66 106.68 0)
 			(effects
 				(font
@@ -10946,6 +11144,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C52923"
+			(at 115.57 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05A105KA5NQNC"
+			(at 115.57 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "52f28cad-7c1b-548a-b4f0-225dde6b810f")
 		)
@@ -11038,6 +11254,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 124.46 118.11 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C15850"
+			(at 124.46 118.11 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A106KAYNNNE"
 			(at 124.46 118.11 0)
 			(effects
 				(font
@@ -11146,6 +11380,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25741"
+			(at 132.08 125.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
+			(at 132.08 125.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "f7291e39-3687-5647-b36e-5d8b1cadcf3a")
 		)
@@ -11246,6 +11498,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25744"
+			(at 140.97 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 140.97 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "94e534fe-682d-576a-9df4-f0c48af94257")
 		)
@@ -11338,6 +11608,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 167.64 106.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C141836"
+			(at 167.64 106.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TLV62569DBVR"
 			(at 167.64 106.68 0)
 			(effects
 				(font
@@ -11518,6 +11806,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C7423318"
+			(at 196.85 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "FTC303020D2R2MBCA"
+			(at 196.85 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "fad833c1-f85f-527d-99dc-3d6855f9910e")
 		)
@@ -11610,6 +11916,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 205.74 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C27009"
+			(at 205.74 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4533TCE"
 			(at 205.74 116.84 0)
 			(effects
 				(font
@@ -11718,6 +12042,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25741"
+			(at 213.36 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
+			(at 213.36 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "0a159284-9fa0-5594-ad04-672f628df8b3")
 		)
@@ -11810,6 +12152,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 222.25 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C15850"
+			(at 222.25 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A106KAYNNNE"
 			(at 222.25 119.38 0)
 			(effects
 				(font
@@ -11918,6 +12278,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C45783"
+			(at 231.14 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A226MAQNNNE"
+			(at 231.14 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "9d9dbb43-745f-5edc-8cf9-a81e68305711")
 		)
@@ -12018,6 +12396,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C45783"
+			(at 238.76 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A226MAQNNNE"
+			(at 238.76 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "245be317-b71b-5cc9-8b1a-32e19db31f6d")
 		)
@@ -12110,6 +12506,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 45.72 161.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C141836"
+			(at 45.72 161.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TLV62569DBVR"
 			(at 45.72 161.29 0)
 			(effects
 				(font
@@ -12290,6 +12704,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C7423318"
+			(at 76.2 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "FTC303020D2R2MBCA"
+			(at 76.2 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "aa2af527-8d1d-5b1a-8f6b-ad2ab5fc9a25")
 		)
@@ -12382,6 +12814,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 85.09 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C27009"
+			(at 85.09 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4533TCE"
 			(at 85.09 173.99 0)
 			(effects
 				(font
@@ -12490,6 +12940,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25741"
+			(at 93.98 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
+			(at 93.98 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "7971ba9e-7d85-56b0-a4fa-e5b12f7a089c")
 		)
@@ -12582,6 +13050,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 102.87 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C15850"
+			(at 102.87 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A106KAYNNNE"
 			(at 102.87 172.72 0)
 			(effects
 				(font
@@ -12690,6 +13176,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C45783"
+			(at 110.49 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A226MAQNNNE"
+			(at 110.49 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "997f5902-c993-5e7b-a33f-178b6b6530bc")
 		)
@@ -12790,6 +13294,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C45783"
+			(at 119.38 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A226MAQNNNE"
+			(at 119.38 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "49633628-15d7-5380-bea3-defe43cfb65e")
 		)
@@ -12882,6 +13404,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 146.05 161.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C141836"
+			(at 146.05 161.29 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TLV62569DBVR"
 			(at 146.05 161.29 0)
 			(effects
 				(font
@@ -13062,6 +13602,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C7423318"
+			(at 176.53 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "FTC303020D2R2MBCA"
+			(at 176.53 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "3d50dfd2-e489-5602-874b-875cd15dae14")
 		)
@@ -13154,6 +13712,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 184.15 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25741"
+			(at 184.15 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
 			(at 184.15 173.99 0)
 			(effects
 				(font
@@ -13262,6 +13838,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25741"
+			(at 193.04 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
+			(at 193.04 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "2613f3d9-a141-57ac-939c-e460024673c3")
 		)
@@ -13354,6 +13948,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 201.93 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C15850"
+			(at 201.93 172.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A106KAYNNNE"
 			(at 201.93 172.72 0)
 			(effects
 				(font
@@ -13462,6 +14074,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C45783"
+			(at 210.82 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A226MAQNNNE"
+			(at 210.82 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "f493062e-a79f-5d17-9d1b-8f91dc35bc66")
 		)
@@ -13554,6 +14184,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 218.44 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C45783"
+			(at 218.44 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A226MAQNNNE"
 			(at 218.44 173.99 0)
 			(effects
 				(font
@@ -14208,6 +14856,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25741"
+			(at 62.23 222.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
+			(at 62.23 222.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "92590b6b-a3d9-500f-9448-380472fba8c3")
 		)
@@ -14300,6 +14966,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 71.12 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25792"
+			(at 71.12 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4702TCE"
 			(at 71.12 227.33 0)
 			(effects
 				(font
@@ -14408,6 +15092,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25741"
+			(at 80.01 222.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
+			(at 80.01 222.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "6d701d35-c2c4-535e-ae48-bea6c200762d")
 		)
@@ -14500,6 +15202,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 87.63 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25741"
+			(at 87.63 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
 			(at 87.63 227.33 0)
 			(effects
 				(font
@@ -14611,6 +15331,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 326.39 113.03 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C42415655"
+			(at 326.39 113.03 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "RP2350B"
 			(at 326.39 113.03 0)
 			(effects
 				(font
@@ -16426,6 +17164,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 383.54 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 383.54 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "e94897de-cd34-5c3f-a199-f329b2a830a5")
 		)
@@ -16518,6 +17274,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 391.16 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 391.16 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 391.16 55.88 0)
 			(effects
 				(font
@@ -16626,6 +17400,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 400.05 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 400.05 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "72531be9-5b1e-56a3-8a54-9c3da989a45d")
 		)
@@ -16718,6 +17510,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 408.94 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 408.94 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 408.94 55.88 0)
 			(effects
 				(font
@@ -16826,6 +17636,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 416.56 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 416.56 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "30695c66-a96b-5ef3-b51e-0f23783a17c1")
 		)
@@ -16918,6 +17746,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 425.45 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 425.45 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 425.45 55.88 0)
 			(effects
 				(font
@@ -17026,6 +17872,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 434.34 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 434.34 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "71053643-7953-5c62-809d-e4a868204d7c")
 		)
@@ -17118,6 +17982,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 443.23 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 443.23 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 443.23 55.88 0)
 			(effects
 				(font
@@ -17226,6 +18108,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 450.85 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 450.85 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "8732c25b-1b35-5c99-bdd0-99288ee5168b")
 		)
@@ -17318,6 +18218,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 459.74 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 459.74 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 459.74 55.88 0)
 			(effects
 				(font
@@ -17426,6 +18344,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 468.63 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 468.63 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "828e1544-8272-5fc4-94e8-62e6424648ea")
 		)
@@ -17518,6 +18454,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 477.52 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 477.52 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 477.52 54.61 0)
 			(effects
 				(font
@@ -17626,6 +18580,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 485.14 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 485.14 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "88f7f930-6018-54db-ae0d-37d7db3650dd")
 		)
@@ -17718,6 +18690,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 494.03 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 494.03 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 494.03 54.61 0)
 			(effects
 				(font
@@ -17826,6 +18816,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C42411119"
+			(at 502.92 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "AOTA-B201610S3R3-101-T"
+			(at 502.92 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "45eb0149-7fc6-5dee-b1c2-121009a2d2fa")
 		)
@@ -17918,6 +18926,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 283.21 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C23733"
+			(at 283.21 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05A475MP5NRNC"
 			(at 283.21 207.01 0)
 			(effects
 				(font
@@ -18026,6 +19052,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C23733"
+			(at 292.1 205.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05A475MP5NRNC"
+			(at 292.1 205.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "fa70769e-864a-5548-abb1-f20411dd831a")
 		)
@@ -18118,6 +19162,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 300.99 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25105"
+			(at 300.99 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF330JTCE"
 			(at 300.99 207.01 0)
 			(effects
 				(font
@@ -18226,6 +19288,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C23733"
+			(at 309.88 213.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05A475MP5NRNC"
+			(at 309.88 213.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "7dbe8a66-889d-5e03-a7b3-e12cb944cfce")
 		)
@@ -18326,6 +19406,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C15850"
+			(at 317.5 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL21A106KAYNNNE"
+			(at 317.5 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "459a3f46-e4cd-5531-a68d-16c128ef4c85")
 		)
@@ -18418,6 +19516,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 341.63 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C20625731"
+			(at 341.63 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "ABM8-272-T3"
 			(at 341.63 194.31 0)
 			(effects
 				(font
@@ -18553,6 +19669,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C11702"
+			(at 368.3 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1001TCE"
+			(at 368.3 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "09834c8d-5edb-5edb-8740-489a858b640a")
 		)
@@ -18645,6 +19779,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 377.19 209.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1548"
+			(at 377.19 209.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402CG150J500NT"
 			(at 377.19 209.55 0)
 			(effects
 				(font
@@ -18753,6 +19905,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1548"
+			(at 384.81 213.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402CG150J500NT"
+			(at 384.81 213.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "fbed1a3d-4eea-5fdc-8c7e-8d91c43e8972")
 		)
@@ -18845,6 +20015,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 393.7 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C138021"
+			(at 393.7 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "RC0402FR-0727RL"
 			(at 393.7 210.82 0)
 			(effects
 				(font
@@ -18953,6 +20141,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C138021"
+			(at 402.59 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "RC0402FR-0727RL"
+			(at 402.59 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "aa2f72f3-80ae-531a-8ed2-9c6fd5e5f0ed")
 		)
@@ -19045,6 +20251,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 435.61 215.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C97521"
+			(at 435.61 215.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "W25Q128JVSIQ"
 			(at 435.61 215.9 0)
 			(effects
 				(font
@@ -19297,6 +20521,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 444.5 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 444.5 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "b7915657-ff23-525a-a9e0-1725f6530bbc")
 		)
@@ -19389,6 +20631,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 452.12 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C11702"
+			(at 452.12 210.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1001TCE"
 			(at 452.12 210.82 0)
 			(effects
 				(font
@@ -19497,6 +20757,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C221895"
+			(at 481.33 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PTS810SJG250SMTRLFS"
+			(at 481.33 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "5cebcabf-f26e-59c9-86fd-ee30e0037d6c")
 		)
@@ -19589,6 +20867,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 502.92 205.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 502.92 205.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
 			(at 502.92 205.74 0)
 			(effects
 				(font
@@ -19697,6 +20993,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C221895"
+			(at 297.18 251.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PTS810SJG250SMTRLFS"
+			(at 297.18 251.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "74916e94-c0c0-5d42-b1be-7765558ea9b2")
 		)
@@ -19797,6 +21111,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C49257"
+			(at 332.74 254.0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "2.54-1*3P"
+			(at 332.74 254.0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "a90e0304-540d-5bd7-9f9f-d95ae68caae6")
 		)
@@ -19879,7 +21211,7 @@
 		(uuid "39b2612f-7914-5af8-9498-cb5416d5f6c6")
 	)
 	(symbol
-		(lib_id "Device:LED_ARGB")
+		(lib_id "Device:LED_RGBA")
 		(at 356.87 256.54 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -19903,7 +21235,7 @@
 				)
 			)
 		)
-		(property "Footprint" "LED_SMD:LED_Cree-PLCC4_2x2mm_CW"
+		(property "Footprint" "LED_SMD:LED_LiteOn_LTST-C19HE1WT"
 			(at 356.87 256.54 0)
 			(effects
 				(font
@@ -19913,6 +21245,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 356.87 256.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C458749"
+			(at 356.87 256.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "LTST-C19HE1WT"
 			(at 356.87 256.54 0)
 			(effects
 				(font
@@ -19944,27 +21294,6 @@
 	)
 	(wire
 		(pts
-			(xy 361.95 256.54)
-			(xy 364.49 256.54)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "aa750ef1-5e51-5044-a7be-d0d6f567f414")
-	)
-	(label "+3V3"
-		(at 364.49 256.54 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "4e647453-a03b-5b46-9780-e1935e825b77")
-	)
-	(wire
-		(pts
 			(xy 351.79 251.46)
 			(xy 349.25 251.46)
 		)
@@ -19972,7 +21301,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ecd70351-6a93-5454-9ece-dc470474b01a")
+		(uuid "aa750ef1-5e51-5044-a7be-d0d6f567f414")
 	)
 	(label "RP_LED_RK"
 		(at 349.25 251.46 180)
@@ -19982,7 +21311,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "0a694f72-138b-5632-a337-bafd0338b2d8")
+		(uuid "4e647453-a03b-5b46-9780-e1935e825b77")
 	)
 	(wire
 		(pts
@@ -19993,7 +21322,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9d5f9c27-8e42-53b0-97c5-7132d03d8b32")
+		(uuid "ecd70351-6a93-5454-9ece-dc470474b01a")
 	)
 	(label "RP_LED_GK"
 		(at 349.25 256.54 180)
@@ -20003,7 +21332,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "3b91998a-8ae2-54e5-886c-478dc369856b")
+		(uuid "0a694f72-138b-5632-a337-bafd0338b2d8")
 	)
 	(wire
 		(pts
@@ -20014,7 +21343,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9183e41d-fa7a-521a-b32d-91af305ed4b9")
+		(uuid "9d5f9c27-8e42-53b0-97c5-7132d03d8b32")
 	)
 	(label "RP_LED_BK"
 		(at 349.25 261.62 180)
@@ -20023,6 +21352,27 @@
 				(size 1.27 1.27)
 			)
 			(justify right bottom)
+		)
+		(uuid "3b91998a-8ae2-54e5-886c-478dc369856b")
+	)
+	(wire
+		(pts
+			(xy 361.95 256.54)
+			(xy 364.49 256.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9183e41d-fa7a-521a-b32d-91af305ed4b9")
+	)
+	(label "+3V3"
+		(at 364.49 256.54 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
 		)
 		(uuid "42658fc5-1aa0-5cce-a574-32b5829c26b6")
 	)
@@ -20061,6 +21411,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 378.46 269.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25104"
+			(at 378.46 269.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF3300TCE"
 			(at 378.46 269.24 0)
 			(effects
 				(font
@@ -20143,7 +21511,7 @@
 				)
 			)
 		)
-		(property "Value" "330R"
+		(property "Value" "100R"
 			(at 387.35 290.83 0)
 			(effects
 				(font
@@ -20161,6 +21529,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 387.35 269.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25076"
+			(at 387.35 269.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1000TCE"
 			(at 387.35 269.24 0)
 			(effects
 				(font
@@ -20243,7 +21629,7 @@
 				)
 			)
 		)
-		(property "Value" "330R"
+		(property "Value" "100R"
 			(at 396.24 290.83 0)
 			(effects
 				(font
@@ -20261,6 +21647,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 396.24 269.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25076"
+			(at 396.24 269.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1000TCE"
 			(at 396.24 269.24 0)
 			(effects
 				(font
@@ -20361,6 +21765,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 425.45 254.0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C492403"
+			(at 425.45 254.0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PZ254V-11-04P"
 			(at 425.45 254.0 0)
 			(effects
 				(font
@@ -20517,6 +21939,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 427.99 271.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4701TCE"
+			(at 427.99 271.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "9475e9f8-f237-5cdf-b84c-58db5f89805d")
 		)
@@ -20617,6 +22057,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 436.88 271.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4701TCE"
+			(at 436.88 271.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "2c395fd4-1645-5109-8200-138eb3366570")
 		)
@@ -20709,6 +22167,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 464.82 261.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C492409"
+			(at 464.82 261.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PZ254V-11-10P"
 			(at 464.82 261.62 0)
 			(effects
 				(font
@@ -21009,6 +22485,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C221895"
+			(at 486.41 251.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PTS810SJG250SMTRLFS"
+			(at 486.41 251.46 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "934a9d72-9136-5401-b46d-141fa2a05110")
 		)
@@ -21101,6 +22595,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 508.0 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 508.0 267.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
 			(at 508.0 267.97 0)
 			(effects
 				(font
@@ -21209,6 +22721,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C221895"
+			(at 300.99 302.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PTS810SJG250SMTRLFS"
+			(at 300.99 302.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "56f699ba-3acf-5121-a244-1ad9254254b0")
 		)
@@ -21301,6 +22831,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 322.58 318.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 322.58 318.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
 			(at 322.58 318.77 0)
 			(effects
 				(font
@@ -21412,6 +22960,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 552.45 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C492409"
+			(at 552.45 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PZ254V-11-10P"
 			(at 552.45 53.34 0)
 			(effects
 				(font
@@ -21712,6 +23278,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C48442"
+			(at 560.07 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "4D02WGJ0101TCE"
+			(at 560.07 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "ed5cf6dc-525a-5a0c-9781-557f7ca76592")
 		)
@@ -21948,6 +23532,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 576.58 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C48442"
+			(at 576.58 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "4D02WGJ0101TCE"
 			(at 576.58 58.42 0)
 			(effects
 				(font
@@ -22211,6 +23813,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25501"
+			(at 33.02 389.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "4D02WGJ0330TCE"
+			(at 33.02 389.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "919553db-0056-55ef-9cae-99778a7a9402")
 		)
@@ -22447,6 +24067,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 49.53 389.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25501"
+			(at 49.53 389.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "4D02WGJ0330TCE"
 			(at 49.53 389.89 0)
 			(effects
 				(font
@@ -22699,6 +24337,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25501"
+			(at 66.04 392.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "4D02WGJ0330TCE"
+			(at 66.04 392.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "11f2a468-80b5-5759-9000-05f358ec3f95")
 		)
@@ -22935,6 +24591,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 82.55 392.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25501"
+			(at 82.55 392.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "4D02WGJ0330TCE"
 			(at 82.55 392.43 0)
 			(effects
 				(font
@@ -23187,6 +24861,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 92.71 394.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4701TCE"
+			(at 92.71 394.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "8b3b9299-e8a1-55f6-8581-bcfa9d99b5f8")
 		)
@@ -23287,6 +24979,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 101.6 394.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4701TCE"
+			(at 101.6 394.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "2e6763d3-e2a5-5d77-a75e-b2d903272003")
 		)
@@ -23379,6 +25089,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 110.49 393.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 110.49 393.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
 			(at 110.49 393.7 0)
 			(effects
 				(font
@@ -23490,6 +25218,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 300.99 393.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" ""
+			(at 300.99 393.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CH569W"
 			(at 300.99 393.7 0)
 			(effects
 				(font
@@ -25172,6 +26918,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 386.08 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 386.08 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "cc0b6286-4782-5a6a-a9c4-aaf1381648f0")
 		)
@@ -25264,6 +27028,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 393.7 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 393.7 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 393.7 388.62 0)
 			(effects
 				(font
@@ -25372,6 +27154,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 402.59 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 402.59 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "d462e7e1-6f5b-52e8-9263-49a5da20bb78")
 		)
@@ -25464,6 +27264,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 411.48 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 411.48 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 411.48 388.62 0)
 			(effects
 				(font
@@ -25572,6 +27390,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 420.37 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 420.37 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "8ac221f0-e6c8-5ce0-aed1-1aec33c5526f")
 		)
@@ -25664,6 +27500,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 427.99 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 427.99 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 427.99 388.62 0)
 			(effects
 				(font
@@ -25772,6 +27626,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 436.88 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 436.88 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "960b9bb6-c3f2-50c9-85f7-1ee90a9baf60")
 		)
@@ -25864,6 +27736,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 445.77 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 445.77 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
 			(at 445.77 388.62 0)
 			(effects
 				(font
@@ -25972,6 +27862,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 453.39 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 453.39 388.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "c61d6ce7-ef3d-5203-bfa9-5f54dbb239d7")
 		)
@@ -26064,6 +27972,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 476.25 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C70592"
+			(at 476.25 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "X322530MOB4SI"
 			(at 476.25 373.38 0)
 			(effects
 				(font
@@ -26199,6 +28125,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1548"
+			(at 499.11 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402CG150J500NT"
+			(at 499.11 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "4a500237-ee9b-53cd-8b69-44a9a9ad802d")
 		)
@@ -26291,6 +28235,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 506.73 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C1548"
+			(at 506.73 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402CG150J500NT"
 			(at 506.73 387.35 0)
 			(effects
 				(font
@@ -26399,6 +28361,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C11702"
+			(at 283.21 502.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1001TCE"
+			(at 283.21 502.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "99b2cb57-ce39-578a-a204-515b48a9bc8e")
 		)
@@ -26491,6 +28471,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 312.42 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C221895"
+			(at 312.42 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PTS810SJG250SMTRLFS"
 			(at 312.42 487.68 0)
 			(effects
 				(font
@@ -26599,6 +28597,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C492401"
+			(at 355.6 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PZ254V-11-02P"
+			(at 355.6 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "890431a2-eefe-5463-8c5f-62adb64667d9")
 		)
@@ -26691,6 +28707,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 375.92 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C221895"
+			(at 375.92 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PTS810SJG250SMTRLFS"
 			(at 375.92 487.68 0)
 			(effects
 				(font
@@ -26799,6 +28833,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25744"
+			(at 397.51 502.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 397.51 502.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "a65b5f2e-ff07-5dad-81e8-320bfd5f6982")
 		)
@@ -26891,6 +28943,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 422.91 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C221895"
+			(at 422.91 487.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PTS810SJG250SMTRLFS"
 			(at 422.91 487.68 0)
 			(effects
 				(font
@@ -26999,6 +29069,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25744"
+			(at 444.5 502.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1002TCE"
+			(at 444.5 502.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "7d46e7dc-00f4-578e-9af3-f187f060e07e")
 		)
@@ -27057,7 +29145,7 @@
 		(uuid "6b05ee66-936d-59b9-87d8-50f0cc0c86e1")
 	)
 	(symbol
-		(lib_id "Device:LED_ARGB")
+		(lib_id "Device:LED_RGBA")
 		(at 472.44 492.76 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -27081,7 +29169,7 @@
 				)
 			)
 		)
-		(property "Footprint" "LED_SMD:LED_Cree-PLCC4_2x2mm_CW"
+		(property "Footprint" "LED_SMD:LED_LiteOn_LTST-C19HE1WT"
 			(at 472.44 492.76 0)
 			(effects
 				(font
@@ -27091,6 +29179,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 472.44 492.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C458749"
+			(at 472.44 492.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "LTST-C19HE1WT"
 			(at 472.44 492.76 0)
 			(effects
 				(font
@@ -27122,27 +29228,6 @@
 	)
 	(wire
 		(pts
-			(xy 477.52 492.76)
-			(xy 480.06 492.76)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4726a67f-f018-5abf-8ad5-6438dba733db")
-	)
-	(label "3V3_CH"
-		(at 480.06 492.76 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "5ba6f871-3cfa-5f99-9bc6-8211161fadd8")
-	)
-	(wire
-		(pts
 			(xy 467.36 487.68)
 			(xy 464.82 487.68)
 		)
@@ -27150,7 +29235,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b6390d75-d392-5f07-b800-044e6f713433")
+		(uuid "4726a67f-f018-5abf-8ad5-6438dba733db")
 	)
 	(label "CH_LED_RK"
 		(at 464.82 487.68 180)
@@ -27160,7 +29245,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "15274473-00d5-5f48-902b-ffc38403321d")
+		(uuid "5ba6f871-3cfa-5f99-9bc6-8211161fadd8")
 	)
 	(wire
 		(pts
@@ -27171,7 +29256,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "32550821-bc96-561a-b094-f93005bf088c")
+		(uuid "b6390d75-d392-5f07-b800-044e6f713433")
 	)
 	(label "CH_LED_GK"
 		(at 464.82 492.76 180)
@@ -27181,7 +29266,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "ad7c149f-a6aa-52de-9596-abe6aa9b955d")
+		(uuid "15274473-00d5-5f48-902b-ffc38403321d")
 	)
 	(wire
 		(pts
@@ -27192,7 +29277,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0c299b82-cad0-5418-ad78-c13de1dbd52c")
+		(uuid "32550821-bc96-561a-b094-f93005bf088c")
 	)
 	(label "CH_LED_BK"
 		(at 464.82 497.84 180)
@@ -27201,6 +29286,27 @@
 				(size 1.27 1.27)
 			)
 			(justify right bottom)
+		)
+		(uuid "ad7c149f-a6aa-52de-9596-abe6aa9b955d")
+	)
+	(wire
+		(pts
+			(xy 477.52 492.76)
+			(xy 480.06 492.76)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0c299b82-cad0-5418-ad78-c13de1dbd52c")
+	)
+	(label "3V3_CH"
+		(at 480.06 492.76 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
 		)
 		(uuid "81136583-5c3c-5c39-8f89-de373dae3110")
 	)
@@ -27239,6 +29345,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 497.84 504.19 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25104"
+			(at 497.84 504.19 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF3300TCE"
 			(at 497.84 504.19 0)
 			(effects
 				(font
@@ -27321,7 +29445,7 @@
 				)
 			)
 		)
-		(property "Value" "330R"
+		(property "Value" "100R"
 			(at 505.46 525.78 0)
 			(effects
 				(font
@@ -27339,6 +29463,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 505.46 504.19 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25076"
+			(at 505.46 504.19 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1000TCE"
 			(at 505.46 504.19 0)
 			(effects
 				(font
@@ -27421,7 +29563,7 @@
 				)
 			)
 		)
-		(property "Value" "330R"
+		(property "Value" "100R"
 			(at 283.21 576.58 0)
 			(effects
 				(font
@@ -27439,6 +29581,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 283.21 554.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25076"
+			(at 283.21 554.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1000TCE"
 			(at 283.21 554.99 0)
 			(effects
 				(font
@@ -27539,6 +29699,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 312.42 539.75 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C492403"
+			(at 312.42 539.75 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PZ254V-11-04P"
 			(at 312.42 539.75 0)
 			(effects
 				(font
@@ -27695,6 +29873,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 316.23 557.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4701TCE"
+			(at 316.23 557.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "f8f946d4-edae-592d-900b-ddbb947b5070")
 		)
@@ -27795,6 +29991,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 325.12 557.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4701TCE"
+			(at 325.12 557.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "60d1ccca-6177-59c4-a086-10faeb63eef8")
 		)
@@ -27887,6 +30101,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 353.06 539.75 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C49257"
+			(at 353.06 539.75 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "2.54-1*3P"
 			(at 353.06 539.75 0)
 			(effects
 				(font
@@ -28011,6 +30243,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 373.38 544.83 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C492424"
+			(at 373.38 544.83 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "PZ254V-12-14P"
 			(at 373.38 544.83 0)
 			(effects
 				(font
@@ -28418,6 +30668,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" ""
+			(at 544.83 383.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "GSB343K33HR"
+			(at 544.83 383.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "0b49e9b9-8c04-522e-804d-ec34cdaa1022")
 		)
@@ -28717,6 +30985,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 581.66 391.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 581.66 391.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "bd4fcd8e-d852-50a1-a34a-7b12a752cd81")
 		)
@@ -28817,6 +31103,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 590.55 391.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 590.55 391.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "e9686459-0e60-524f-ac35-f84fc839baf4")
 		)
@@ -28909,6 +31213,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 621.03 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C97502"
+			(at 621.03 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TPD2EUSB30DRTR"
 			(at 621.03 373.38 0)
 			(effects
 				(font
@@ -29041,6 +31363,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C97502"
+			(at 679.45 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TPD2EUSB30DRTR"
+			(at 679.45 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "aef11b13-8af2-5456-8fd5-5285f4baac52")
 		)
@@ -29157,6 +31497,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 566.42 426.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C97502"
+			(at 566.42 426.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "TPD2EUSB30DRTR"
 			(at 566.42 426.72 0)
 			(effects
 				(font
@@ -29289,6 +31647,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C23733"
+			(at 600.71 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05A475MP5NRNC"
+			(at 600.71 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "bb788ac1-3602-50a8-82ef-da77dc0c1b4f")
 		)
@@ -29381,6 +31757,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 643.89 436.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C114218"
+			(at 643.89 436.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "DM3AT-SF-PEJM5"
 			(at 643.89 436.88 0)
 			(effects
 				(font
@@ -29705,6 +32099,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25792"
+			(at 680.72 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4702TCE"
+			(at 680.72 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "3c87852d-bbc8-59c1-b1dc-1a2a5361ac23")
 		)
@@ -29797,6 +32209,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 689.61 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25792"
+			(at 689.61 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4702TCE"
 			(at 689.61 440.69 0)
 			(effects
 				(font
@@ -29905,6 +32335,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25792"
+			(at 697.23 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4702TCE"
+			(at 697.23 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "650b531f-d37a-527c-82b2-623ce0a42b78")
 		)
@@ -29997,6 +32445,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 706.12 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25792"
+			(at 706.12 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4702TCE"
 			(at 706.12 440.69 0)
 			(effects
 				(font
@@ -30105,6 +32571,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25792"
+			(at 715.01 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF4702TCE"
+			(at 715.01 440.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "95c3841d-7234-536e-bc45-12c868fc68ae")
 		)
@@ -30197,6 +32681,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 723.9 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25741"
+			(at 723.9 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "0402WGF1003TCE"
 			(at 723.9 441.96 0)
 			(effects
 				(font
@@ -30305,6 +32807,24 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C1525"
+			(at 731.52 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 731.52 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "6a116470-8e8d-579f-a28c-e4d1c69a5a2f")
 		)
@@ -30397,6 +32917,24 @@
 			)
 		)
 		(property "Datasheet" ""
+			(at 740.41 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C23733"
+			(at 740.41 441.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MPN" "CL05A475MP5NRNC"
 			(at 740.41 441.96 0)
 			(effects
 				(font

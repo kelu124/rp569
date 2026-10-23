@@ -58,8 +58,8 @@ fixed = {
     by_value('CH BTN1'): (10.5, 54.5, 0),
     by_value('CH BTN2'): (16.7, 54.5, 0),
     by_value('CH569 BOOT'): (13.5, 59, 0),
-    first(lambda p: p['lib_id'] == 'Device:LED_ARGB' and p['block'] == 'RP2350B')['ref']: (34, 13, 0),
-    first(lambda p: p['lib_id'] == 'Device:LED_ARGB' and p['block'] == 'CH569W')['ref']: (37.5, 41, 0),
+    first(lambda p: p['lib_id'] == 'Device:LED_RGBA' and p['block'] == 'RP2350B')['ref']: (34, 13, 0),
+    first(lambda p: p['lib_id'] == 'Device:LED_RGBA' and p['block'] == 'CH569W')['ref']: (37.5, 41, 0),
 }
 holes = [p['ref'] for p in board.parts if p['lib_id'] == 'Mechanical:MountingHole']
 for ref, xy in zip(holes, [(4, 4), (W - 4, 4), (4, H - 4), (W - 4, H - 4)]):
@@ -126,6 +126,10 @@ def main():
         fp.SetFPIDAsString(p['fp'])
         if p['dnp']:
             fp.SetDNP(True)
+        for key, field in (('lcsc', 'LCSC'), ('mpn', 'MPN')):    # same fields as the schematic symbols
+            if key in p:
+                fp.SetField(field, p[key])
+                fp.GetField(field).SetVisible(False)
         names = {num: name for num, name, *_ in pins(get_symbol(libfile(p['lib_id']), p['lib_id'].split(':')[1]))}
         for pad in fp.Pads():
             num = pad.GetNumber()

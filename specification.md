@@ -28,10 +28,17 @@ All requested by the user, 2026-10-23.
 | R-15 | Two user buttons for the RP2350 and two for the CH569 | met | RP GPIO30/31, CH569 PB3/PB4, 10k pull-ups (D-012) |
 | R-16 | USB3 Micro-B with through-hole legs, for a firm mechanical hold | met | Amphenol GSB343K33HR, project footprint (D-013) |
 | R-17 | The RP2350 can put the CH569 in its bootloader the same way as the BOOT button | met | Checked on the netlist, sequence in D-004 |
+| R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | partial | D-014; `docs/bom.md`; 3 parts must be consigned |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
+
+## D-014 — JLCPCB assembly, LCSC part numbers in board.py (status: accepted, 2026-10-23)
+Requirement R-18. Choice: every part gets an LCSC number from the JLCPCB catalogue (jlcparts snapshot 2026-10-23),
+preferring Basic parts and large stock. `gen_bom.py` writes JLCPCB BOM + CPL files to `hardware/jlcpcb/`.
+Substitutions made for availability: RGB LED → LiteOn LTST-C19HE1WT (G/B resistors 100 Ω, D-005); 2.2 µH →
+FTC303020D2R2MBCA. Not at JLCPCB, consigned: CH569W, LM66100DCKR ×2, GSB343K33HR. Details: docs/bom.md.
 
 ## D-013 — USB3 Micro-B = Amphenol GSB343K33HR, through-hole shell legs (status: accepted, 2026-10-23)
 Requirement R-16: through-hole mounting legs for a firm mechanical hold. The Connfly DS1104-01 (D-008) is all-SMD
@@ -78,6 +85,7 @@ Source: docs/ch569-hardware-notes.md.
 
 ## D-005 — Discrete RGB LEDs on PWM pins (status: proposed)
 Choice: one discrete RGB LED per chip. RP2350 GPIO36/37/38 (PWM10A/10B/11A); CH569 PB0 (TMR1_), PB1 (PWM2), PB2 (PWM3).
+Part (D-014): LiteOn LTST-C19HE1WT, common anode to the chip's 3.3 V rail, GPIO sinks; 330 Ω red, 100 Ω green/blue.
 Alternatives: WS2812/SK6812 (1 pin, but 5 V supply/levels and a timing-critical protocol on the CH569).
 Rationale: works at 3.3 V on both chips, PWM in hardware on both.
 

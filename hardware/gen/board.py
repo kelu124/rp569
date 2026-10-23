@@ -17,7 +17,7 @@ FP_RN = 'Resistor_SMD:R_Array_Convex_4x0402'
 FP_L_BUCK = 'Inductor_SMD:L_Changjiang_FTC303015D'
 FP_L_RP = 'Inductor_SMD:L_Cenker_CKCS201610'
 FP_XTAL = 'Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm'
-FP_LED = 'LED_SMD:LED_Cree-PLCC4_2x2mm_CW'
+FP_LED = 'LED_SMD:LED_LiteOn_LTST-C19HE1WT'   # pad 4 = common anode, 1/2/3 = R/G/B cathodes
 FP_SW = 'Button_Switch_SMD:SW_SPST_PTS810'
 FP_HOLE = 'MountingHole:MountingHole_3.2mm_M3'
 
@@ -179,9 +179,9 @@ R('10k', 'RUN', '+3V3', B)
 add('SW', 'Switch:SW_Push', 'RUN', FP_SW, {'1': 'RUN', '2': 'GND'}, B)
 add('J', 'Connector_Generic:Conn_01x03', 'SWD', hdr(3), {'1': 'SWCLK', '2': 'GND', '3': 'SWDIO'}, B)
 # RGB LED (common anode, GPIO sinks)
-add('D', 'Device:LED_ARGB', 'RGB', FP_LED, {'1': '+3V3', '2': 'RP_LED_RK', '3': 'RP_LED_GK', '4': 'RP_LED_BK'}, B)
-for c in 'RGB':
-    R('330R', f'RP_LED_{c}', f'RP_LED_{c}K', B)
+add('D', 'Device:LED_RGBA', 'RGB', FP_LED, {'4': '+3V3', '1': 'RP_LED_RK', '2': 'RP_LED_GK', '3': 'RP_LED_BK'}, B)
+for c in 'RGB':   # G/B Vf up to 3.9 V on a 3.3 V rail: smaller resistors
+    R('330R' if c == 'R' else '100R', f'RP_LED_{c}', f'RP_LED_{c}K', B)
 # headers
 add('J', 'Connector_Generic:Conn_01x04', 'RP I2C', hdr(4), {'1': '+3V3', '2': 'RP_I2C_SDA', '3': 'RP_I2C_SCL', '4': 'GND'}, B)
 R('4.7k', 'RP_I2C_SDA', '+3V3', B)
@@ -242,9 +242,9 @@ add('J', 'Connector_Generic:Conn_01x02', 'CH BOOT JP', hdr(2), {'1': 'CH_BOOT_SW
 for i in (1, 2):
     add('SW', 'Switch:SW_Push', f'CH BTN{i}', FP_SW, {'1': f'CH_BTN{i}', '2': 'GND'}, B)
     R('10k', f'CH_BTN{i}', '3V3_CH', B)
-add('D', 'Device:LED_ARGB', 'RGB', FP_LED, {'1': '3V3_CH', '2': 'CH_LED_RK', '3': 'CH_LED_GK', '4': 'CH_LED_BK'}, B)
-for c in 'RGB':
-    R('330R', f'CH_LED_{c}', f'CH_LED_{c}K', B)
+add('D', 'Device:LED_RGBA', 'RGB', FP_LED, {'4': '3V3_CH', '1': 'CH_LED_RK', '2': 'CH_LED_GK', '3': 'CH_LED_BK'}, B)
+for c in 'RGB':   # G/B Vf up to 3.9 V on a 3.3 V rail: smaller resistors
+    R('330R' if c == 'R' else '100R', f'CH_LED_{c}', f'CH_LED_{c}K', B)
 add('J', 'Connector_Generic:Conn_01x04', 'CH I2C', hdr(4), {'1': '3V3_CH', '2': 'CH_I2C_SDA', '3': 'CH_I2C_SCL', '4': 'GND'}, B)
 R('4.7k', 'CH_I2C_SDA', '3V3_CH', B)
 R('4.7k', 'CH_I2C_SCL', '3V3_CH', B)
@@ -278,3 +278,48 @@ C('4.7uF', '3V3_CH', B)
 # --------------------------------------------------------------------------- mechanical
 for _ in range(4):
     add('H', 'Mechanical:MountingHole', 'M3', FP_HOLE, {}, 'Mechanical')
+
+# --------------------------------------------------------------------------- JLCPCB / LCSC part numbers
+# Checked against the jlcparts snapshot of the JLCPCB catalogue, 2026-10-23 (stock, basic/extended): see
+# docs/bom.md. '' = not stocked by JLCPCB -> consigned part (bought elsewhere, sent to JLCPCB) or hand-soldered.
+LCSC_BY_VALUE = {
+    # passives (0402 unless noted); Basic parts where JLCPCB has one
+    ('Device:C', '100nF'): ('C1525', 'CL05B104KO5NNNC'), ('Device:C', '1uF'): ('C52923', 'CL05A105KA5NQNC'),
+    ('Device:C', '4.7uF'): ('C23733', 'CL05A475MP5NRNC'), ('Device:C', '15pF'): ('C1548', '0402CG150J500NT'),
+    ('Device:C', '10uF'): ('C15850', 'CL21A106KAYNNNE'), ('Device:C', '22uF'): ('C45783', 'CL21A226MAQNNNE'),
+    ('Device:R', '0R'): ('C17168', '0402WGF0000TCE'), ('Device:R', '27R'): ('C138021', 'RC0402FR-0727RL'),
+    ('Device:R', '33R'): ('C25105', '0402WGF330JTCE'), ('Device:R', '100R'): ('C25076', '0402WGF1000TCE'),
+    ('Device:R', '330R'): ('C25104', '0402WGF3300TCE'), ('Device:R', '1k'): ('C11702', '0402WGF1001TCE'),
+    ('Device:R', '4.7k'): ('C25900', '0402WGF4701TCE'), ('Device:R', '5.1k'): ('C25905', '0402WGF5101TCE'),
+    ('Device:R', '10k'): ('C25744', '0402WGF1002TCE'), ('Device:R', '47k'): ('C25792', '0402WGF4702TCE'),
+    ('Device:R', '100k'): ('C25741', '0402WGF1003TCE'), ('Device:R', '453k'): ('C27009', '0402WGF4533TCE'),
+    ('Device:R_Pack04', '33R'): ('C25501', '4D02WGJ0330TCE'), ('Device:R_Pack04', '100R'): ('C48442', '4D02WGJ0101TCE'),
+    ('Device:L', '2.2uH'): ('C7423318', 'FTC303020D2R2MBCA'),     # FTC303015D2R2MBCA: only 9 in stock; same 3x3 family, 2.0 mm high
+    ('Device:L', '3.3uH'): ('C42411119', 'AOTA-B201610S3R3-101-T'),   # the part named in the RP2350 HW design guide
+    ('Device:Crystal_GND24', '12MHz'): ('C20625731', 'ABM8-272-T3'),  # RP2350 HW design guide part, CL 10 pF
+    ('Device:Crystal_GND24', '30MHz'): ('C70592', 'X322530MOB4SI'),   # CL 12 pF
+    ('Device:LED_RGBA', 'RGB'): ('C458749', 'LTST-C19HE1WT'),
+    ('Switch:SW_Push', None): ('C221895', 'PTS810SJG250SMTRLFS'),
+    # ICs and connectors
+    ('MCU_RaspberryPi:RP2350B', 'RP2350B'): ('C42415655', 'RP2350B'),
+    ('Memory_Flash:W25Q128JVS', 'W25Q128JVS'): ('C97521', 'W25Q128JVSIQ'),
+    ('Power_Management:AP2171W', 'AP2171W'): ('C110466', 'AP2171WG-7'),
+    ('Regulator_Switching:TLV62569DBV', 'TLV62569'): ('C141836', 'TLV62569DBVR'),
+    ('Power_Protection:TPD2EUSB30', 'TPD2EUSB30'): ('C97502', 'TPD2EUSB30DRTR'),
+    ('Connector:USB_C_Receptacle_USB2.0_16P', None): ('C165948', 'TYPE-C-31-M-12'),
+    ('Connector:Micro_SD_Card_Det_Hirose_DM3AT', None): ('C114218', 'DM3AT-SF-PEJM5'),
+    ('rp569:CH569W', 'CH569W'): ('', 'CH569W'),                         # not at JLCPCB: consign
+    ('Power_Management:LM66100DCK', 'LM66100'): ('', 'LM66100DCKR'),    # not at JLCPCB: consign
+    ('Connector:USB3_B_Micro', None): ('', 'GSB343K33HR'),              # not at JLCPCB: consign
+    # 2.54 mm headers (THT): assembled by JLCPCB only if THT assembly is ordered
+    ('Connector_Generic:Conn_01x02', None): ('C492401', 'PZ254V-11-02P'),
+    ('Connector_Generic:Conn_01x03', None): ('C49257', '2.54-1*3P'),
+    ('Connector_Generic:Conn_01x04', None): ('C492403', 'PZ254V-11-04P'),
+    ('Connector_Generic:Conn_01x10', None): ('C492409', 'PZ254V-11-10P'),
+    ('Connector_Generic:Conn_02x07_Odd_Even', None): ('C492424', 'PZ254V-12-14P'),
+}
+for _p in parts:
+    if _p['ref'][0] in '#H':
+        continue
+    _k = (_p['lib_id'], _p['value'])
+    _p['lcsc'], _p['mpn'] = LCSC_BY_VALUE.get(_k) or LCSC_BY_VALUE[(_p['lib_id'], None)]

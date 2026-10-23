@@ -121,6 +121,9 @@ def main():
                 ['property', q('Footprint'), q(p['fp']), ['at', str(ox), str(oy), '0'], effects(hide=True)],
                 ['property', q('Datasheet'), '""', ['at', str(ox), str(oy), '0'], effects(hide=True)],
             ]
+            for key, field in (('lcsc', 'LCSC'), ('mpn', 'MPN')):     # JLCPCB part number fields
+                if key in p:
+                    props.append(['property', q(field), q(p[key]), ['at', str(ox), str(oy), '0'], effects(hide=True)])
             sym = ['symbol', ['lib_id', q(p['lib_id'])], ['at', str(ox), str(oy), '0'], ['unit', '1'],
                    ['exclude_from_sim', 'no'], ['in_bom', 'no' if p['ref'][0] in '#H' else 'yes'],
                    ['on_board', 'no' if p['ref'].startswith('#') else 'yes'],
