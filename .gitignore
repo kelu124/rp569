@@ -1,0 +1,5 @@
+hardware/*.kicad_prl
+hardware/*-backups/
+hardware/fp-info-cache
+hardware/#auto_saved_files#
+__pycache__/

@@ -1,0 +1,16 @@
+ERC report (2026-10-23T20:17:56, Encoding UTF8)
+Report includes: Errors, Warnings
+
+***** Sheet /
+[pin_to_pin]: Pins of type Power output and Power output are connected
+    ; error
+    @(179.07 mm, 49.53 mm): Symbol U2 Pin 6 [VOUT, Power output, Line]
+    @(224.79 mm, 49.53 mm): Symbol U3 Pin 6 [VOUT, Power output, Line]
+
+ ** ERC messages: 1  Errors 1  Warnings 0
+
+ ** Ignored checks:
+    - Global label only appears once in the schematic
+    - Four connection points are joined together
+    - SPICE model issue
+    - Assigned footprint doesn't match footprint filters

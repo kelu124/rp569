@@ -19,6 +19,19 @@ Choice: one discrete RGB LED per chip. RP2350 GPIO36/37/38 (PWM10A/10B/11A); CH5
 Alternatives: WS2812/SK6812 (1 pin, but 5 V supply/levels and a timing-critical protocol on the CH569).
 Rationale: works at 3.3 V on both chips, PWM in hardware on both.
 
+## D-010 — KiCad files generated from a Python netlist (status: accepted)
+Choice: hardware/gen/board.py is the single source; gen_sch/gen_pcb/gen_pro produce the KiCad files; build.sh runs ERC/DRC+parity.
+Rule: once routing starts, gen_pcb.py must no longer be run (it would wipe the routing). Use Update PCB from Schematic. See docs/layout.md.
+
+## D-009 — CH569 load switch = AP2171W instead of TPS2553 (status: proposed)
+Context: TPS2553 is not in the KiCad standard library; AP2171W is (SOT-23-5, 1 A current limit, active-high EN, FLG# open-drain).
+Choice: AP2171W. Check that 1 A covers the CH569 + SD card peak current.
+
+## D-008 — USB3 connector = USB3 Micro-B (Connfly DS1104-01) (status: proposed)
+Context: KiCad lib has no USB3 Type-B footprint. A USB-C SuperSpeed port would need an orientation mux.
+Choice: USB3 Micro-B receptacle (device), SSTX AC caps 100 nF, TPD2EUSB30 ESD on all 3 pairs.
+Alternative: USB3 Type-A plug like phantomdrive (stick form factor).
+
 ## D-007 — Power paths: ideal-diode OR for 5V_SYS, switched 5V_CH from USB3 VBUS (status: proposed)
 Choice: VBUS_C and VBUS_3 ORed by two LM66100 ideal diodes → 5V_SYS (RP2350 side, no back-feed between connectors).
 CH569 powered only from VBUS_3 through a TPS2553 current-limited load switch, EN = RP2350 GPIO35 (pull-down), FAULT# → GPIO39.

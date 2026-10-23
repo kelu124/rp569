@@ -3,13 +3,16 @@
 An open hardware board (KiCad) that pairs a **Raspberry Pi RP2350B** with a **WCH CH569W**.
 The RP2350B generates high-speed data and the CH569 streams it to a host over **USB 3.0**.
 
-Status: **early design**. Requirements and reference material are being gathered. No schematic yet.
+Status: **v0.1**. The schematic is complete (ERC clean apart from one expected error) and the PCB is placed (4-layer, 100×70 mm) but **not routed yet**.
+See [`docs/layout.md`](docs/layout.md) and the [schematic PDF](hardware/rp569-schematic.pdf).
+
+![PCB render](docs/img/pcb-render-v0.1.png)
 
 ## Features (planned)
 
 | Block | RP2350B | CH569W |
 |-------|---------|--------|
-| USB | USB 2.0 on USB-C (firmware, debug, test control) | USB 3.0 SuperSpeed connector |
+| USB | USB 2.0 on USB-C (firmware, debug, test control) | USB 3.0 SuperSpeed, Micro-B connector |
 | Storage | QSPI flash | SD card on the eMMC/SD controller |
 | User I/O | RGB LED | RGB LED |
 | Breakout | I2C header for extra devices | I2C header (bit-banged GPIO) |
@@ -32,7 +35,7 @@ it can be power-cycled and forced into its bootloader during automated tests.
 
 | Path | Content |
 |------|---------|
-| `hardware/` | KiCad project (to come) |
+| `hardware/` | KiCad project, generated from `hardware/gen/board.py` (run `hardware/gen/build.sh`) |
 | `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
 | `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `ch569-hardware-notes.md` |
 | `project/` | Reference projects: [HydraUSB3](https://github.com/hydrausb3), [phantomdrive](https://github.com/o7-machinehum/phantomdrive) (see `project/README.md`) |

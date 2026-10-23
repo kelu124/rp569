@@ -6,7 +6,11 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — Power architecture (D-007)
+## pending — 2026-10-23 — KiCad v0.1: generated schematic + placed PCB
+What: hardware/gen/ (board.py netlist, mk_lib, gen_sch, gen_pcb, gen_pro, build.sh), hardware/ KiCad project + lib + schematic PDF, reports, docs/layout.md, render image, decisions D-008..D-010.
+Why: User asked to try schematics and layout in KiCad.
+
+## e4f914b — 2026-10-23 — Power architecture (D-007)
 What: docs/power.md, pinmap (power control/sense GPIOs), decisions D-006/D-007, README, CLAUDE.md, todo/done.
 Why: User asked for an RP2350-controlled CH569 supply from its USB3 VBUS and for ideal diodes against back-feed.
 

@@ -29,6 +29,9 @@
 - [ ] Read HydraUSB3 schematic + `HydraUSB3_V1_CH569_HSPI.ods` to answer the HSPI/eMMC pin-collision and power-rail questions above.
 - [ ] Collect datasheets/reference designs into `docs/` (CH569 EVT schematic, RP2350 hardware design guide).
 - [ ] Block diagram (`docs/`).
-- [ ] Create KiCad project in `hardware/`.
-- [ ] Schematic: power, RP2350B core, CH569 core, USB3, USB-C, SD, inter-chip bus, debug headers.
-- [ ] Layout: stackup (4-layer for USB3 90 Ω diff pairs), placement, routing.
+- [ ] Review schematic v0.1 (`hardware/rp569-schematic.pdf`) with the user.
+- [ ] Pick fab + stackup; recompute 90 Ω diff-pair width/gap in `gen/gen_pro.py`.
+- [ ] Hand-review placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
+- [ ] Routing: USB3/USB2 pairs → power → HSPI (length-matched) → rest (maybe Freerouting).
+- [ ] Check RGB LED footprint pinout vs. the real part; silkscreen cleanup.
+- [ ] Check AP2171W 1 A limit vs. CH569 + SD peak current (D-009).
