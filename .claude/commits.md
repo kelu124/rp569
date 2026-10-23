@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — KiCad v0.1: generated schematic + placed PCB
+## pending — 2026-10-23 — PCB v0.2: 50x70 mm two-sided board, buttons, CH569 boot jumper
+What: board.py (RP BTN1/2 on GPIO30/31, CH BTN1/2 on PB3/PB4, CH BOOT JP, RP UART → RP EXT, CH EXT 2x07);
+gen_pcb.py (50×70 mm, 3 mm chamfers, fixed top-side layout, two-sided nearest-spot placer, net-prefix fix
+in the placement targets); docs (layout, pinmap, README), D-011/D-012, renders v0.2.
+Why: User asked for a smaller board with angled corners, parts on both sides, a boot jumper, user buttons
+and LEDs next to their chips.
+
+## 94ec323 — 2026-10-23 — KiCad v0.1: generated schematic + placed PCB
 What: hardware/gen/ (board.py netlist, mk_lib, gen_sch, gen_pcb, gen_pro, build.sh), hardware/ KiCad project + lib + schematic PDF, reports, docs/layout.md, render image, decisions D-008..D-010.
 Why: User asked to try schematics and layout in KiCad.
 

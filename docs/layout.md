@@ -1,8 +1,10 @@
 # Layout status
 
-Status: **v0.1, 2026-10-23. Schematic complete, PCB placed, NOT routed.**
+Status: **v0.2, 2026-10-23. Schematic complete, PCB placed (50×70 mm, two-sided), NOT routed.**
 
-![PCB render](img/pcb-render-v0.1.png)
+| Top | Bottom |
+|---|---|
+| ![top](img/pcb-render-v0.2-top.png) | ![bottom](img/pcb-render-v0.2-bottom.png) |
 
 ## How the KiCad files are produced
 
@@ -12,7 +14,7 @@ Everything under `hardware/` is generated from `hardware/gen/board.py` (parts, f
 |---|---|
 | `gen/mk_lib.py` | `lib/rp569.kicad_sym`: CH569W symbol from phantomdrive (MIT), pin types corrected |
 | `gen/gen_sch.py` | `rp569.kicad_sch`: one sheet, symbols grouped by block, a net label on every pin |
-| `gen/gen_pcb.py` | `rp569.kicad_pcb`: 4-layer 100×70 mm, footprints + nets, edge connectors, automatic placement, GND planes on In1/In2 |
+| `gen/gen_pcb.py` | `rp569.kicad_pcb`: 4-layer 50×70 mm with 3 mm chamfered corners, footprints + nets, fixed connectors/chips/buttons/LEDs, two-sided automatic placement, GND planes on In1/In2 |
 | `gen/gen_pro.py` | net classes in `rp569.kicad_pro` (USB3_90R, USB2_90R, HSPI, Power) |
 | `gen/build.sh` | runs all of the above, then ERC and DRC with schematic parity → `hardware/reports/` |
 
@@ -20,21 +22,25 @@ Everything under `hardware/` is generated from `hardware/gen/board.py` (parts, f
 wipe the routing. From then on, change `board.py` → `gen_sch.py` → in pcbnew *Tools → Update PCB from
 Schematic*. Footprints are already linked to their symbols, and schematic parity is 0 issues.
 
-## Check results (v0.1)
+## Check results (v0.2)
 
 - ERC: 1 error, expected (two LM66100 outputs on 5V_SYS = ideal-diode OR).
-- DRC: 0 electrical violations; ~280 silkscreen overlaps (cosmetic, to clean up); 394 unrouted connections.
+- DRC: 0 electrical violations; ~200 silkscreen overlaps (cosmetic, to clean up); 415 unrouted connections.
 - Schematic ↔ PCB parity: 0 issues.
 
-## Placement summary
+## Placement summary (D-011)
 
-- Left edge: USB-C (RP2350), the 3V3 buck, and the ideal diode for VBUS_C.
-- Center-left: RP2350B with decoupling caps placed beside their pins, plus flash, 12 MHz crystal, BOOTSEL/RUN.
-- Center: 33 Ω series arrays for the HSPI bus.
-- Center-right: CH569W with decoupling, 30 MHz crystal, BOOT button, RGB LED.
-- Right edge: USB3 Micro-B, USB3 ESD, the CH569 power path (ideal diode, AP2171W switch, 3V3/1V2 bucks).
-- Bottom-right: microSD. Top edge: LA, RP EXT, SWD, RP I2C, RP UART headers. Bottom edge: CH I2C,
-  CH UART, CH EXT headers.
+Board 50×70 mm, portrait, 3 mm 45° chamfers, M3 holes 4 mm from each corner. The RP2350 half is at the top,
+the CH569 half at the bottom, and the HSPI series arrays sit between the two chips.
+
+- **Top side** (all fixed by `gen_pcb.py`): USB-C on the top edge, RP2350B at (25, 21), CH569W at (25, 45),
+  USB3 Micro-B and microSD on the bottom edge. Each RGB LED is next to its chip (D1 by the RP2350, D2 by the
+  CH569). Buttons: BOOTSEL/RUN top-left, RP BTN1/2 top-right, CH BTN1/2 + CH569 BOOT bottom-left.
+  Regulators, inductors, crystals, USB ESD and the SSTX AC caps are also on top (USB parts are forced to top).
+- **Bottom side**: most passives (decoupling caps under the IC pads, pull-ups, HSPI 33 Ω arrays) and the
+  QSPI flash. The area under each chip's exposed pad is kept free for thermal vias.
+- **Headers** (THT): top edge SWD + RP I2C; left edge LA IN (1x10) + CH EXT (2x07); right edge RP EXT
+  (1x10, includes the RP debug UART) + CH I2C + CH UART + CH BOOT JP (2-pin jumper).
 
 ## To do before routing
 

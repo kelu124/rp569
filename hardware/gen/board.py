@@ -140,7 +140,7 @@ for i in range(8):
 for i, n in enumerate(HSPI):
     gpio[8 + i] = n + '_RP'
 gpio.update({24: 'UART_RP2CH', 25: 'UART_CH2RP', 26: 'I2C_LINK_SDA', 27: 'I2C_LINK_SCL',
-             28: 'RP_I2C_SDA', 29: 'RP_I2C_SCL', 30: 'RP_GPIO30', 31: 'RP_GPIO31',
+             28: 'RP_I2C_SDA', 29: 'RP_I2C_SCL', 30: 'RP_BTN1', 31: 'RP_BTN2',
              32: 'RP_DBG_TX', 33: 'RP_DBG_RX', 34: 'CH569_RST_N', 35: 'CH569_PWR_EN',
              36: 'RP_LED_R', 37: 'RP_LED_G', 38: 'RP_LED_B', 39: 'CH569_PWR_FAULT_N',
              46: 'VBUS3_SENSE', 47: 'CH3V3_SENSE'})
@@ -186,10 +186,14 @@ for c in 'RGB':
 add('J', 'Connector_Generic:Conn_01x04', 'RP I2C', hdr(4), {'1': '+3V3', '2': 'RP_I2C_SDA', '3': 'RP_I2C_SCL', '4': 'GND'}, B)
 R('4.7k', 'RP_I2C_SDA', '+3V3', B)
 R('4.7k', 'RP_I2C_SCL', '+3V3', B)
-add('J', 'Connector_Generic:Conn_01x03', 'RP UART', hdr(3), {'1': 'RP_DBG_TX', '2': 'RP_DBG_RX', '3': 'GND'}, B)
+# debug UART shares the EXT header (no room for a separate one on 50x70 mm)
 add('J', 'Connector_Generic:Conn_01x10', 'RP EXT', hdr(10),
-    {'1': '+3V3', '2': 'RP_GPIO30', '3': 'RP_GPIO31', '4': 'RP_ADC0', '5': 'RP_ADC1', '6': 'RP_ADC2',
+    {'1': '+3V3', '2': 'RP_DBG_TX', '3': 'RP_DBG_RX', '4': 'RP_ADC0', '5': 'RP_ADC1', '6': 'RP_ADC2',
      '7': 'RP_ADC3', '8': 'RP_ADC4', '9': 'RP_ADC5', '10': 'GND'}, B)
+# user buttons (active low, external pull-ups)
+for i in (1, 2):
+    add('SW', 'Switch:SW_Push', f'RP BTN{i}', FP_SW, {'1': f'RP_BTN{i}', '2': 'GND'}, B)
+    R('10k', f'RP_BTN{i}', '+3V3', B)
 
 # --------------------------------------------------------------------------- logic analyser
 B = 'Logic analyser'
@@ -215,7 +219,7 @@ ch = {
     '15': 'HSPI_D0', '16': '3V3_CH', '17': 'HSPI_D1', '18': 'HSPI_TRDY', '19': 'HSPI_D3', '20': 'HSPI_D4',
     '21': 'HSPI_D5', '22': 'HSPI_D6', '23': 'HSPI_D7', '24': 'SD_D3', '25': 'SD_D2', '26': 'SD_D1',
     '27': 'SD_D0', '28': 'CH_PA17', '29': 'SD_CMD', '30': 'CH569_RST_N', '31': 'SD_CLK',
-    '32': 'CH_LED_R', '33': 'CH_LED_G', '34': 'CH_LED_B', '35': 'CH_PA20', '36': 'CH_PB3', '37': 'CH_PB4',
+    '32': 'CH_LED_R', '33': 'CH_LED_G', '34': 'CH_LED_B', '35': 'CH_PA20', '36': 'CH_BTN1', '37': 'CH_BTN2',
     '38': 'CH_DBG_RX', '39': 'CH_DBG_TX', '40': 'CH_PA16', '41': 'CH_PB7', '42': '3V3_CH',
     '43': 'CH_I2C_SDA', '44': 'CH_I2C_SCL', '45': 'I2C_LINK_SDA', '46': 'CH_PB10', '47': 'I2C_LINK_SCL',
     '48': 'CH_PB11', '49': 'CH_PB24', '50': 'CH_PB12', '51': 'CH_PB13', '52': 'HSPI_TVLD', '53': 'HSPI_D2',
@@ -232,6 +236,12 @@ C('15pF', 'XI_CH', B)
 C('15pF', 'XO_CH', B)
 R('1k', 'HSPI_D0', 'CH_BOOT_SW', B)
 add('SW', 'Switch:SW_Push', 'CH569 BOOT', FP_SW, {'1': 'CH_BOOT_SW', '2': 'GND'}, B)
+# jumper fitted = PA5 held low at every power-up -> USB bootloader (blank-chip / recovery flashing)
+add('J', 'Connector_Generic:Conn_01x02', 'CH BOOT JP', hdr(2), {'1': 'CH_BOOT_SW', '2': 'GND'}, B)
+# user buttons (active low, pull-ups on the CH569 rail)
+for i in (1, 2):
+    add('SW', 'Switch:SW_Push', f'CH BTN{i}', FP_SW, {'1': f'CH_BTN{i}', '2': 'GND'}, B)
+    R('10k', f'CH_BTN{i}', '3V3_CH', B)
 add('D', 'Device:LED_ARGB', 'RGB', FP_LED, {'1': '3V3_CH', '2': 'CH_LED_RK', '3': 'CH_LED_GK', '4': 'CH_LED_BK'}, B)
 for c in 'RGB':
     R('330R', f'CH_LED_{c}', f'CH_LED_{c}K', B)
@@ -239,11 +249,11 @@ add('J', 'Connector_Generic:Conn_01x04', 'CH I2C', hdr(4), {'1': '3V3_CH', '2': 
 R('4.7k', 'CH_I2C_SDA', '3V3_CH', B)
 R('4.7k', 'CH_I2C_SCL', '3V3_CH', B)
 add('J', 'Connector_Generic:Conn_01x03', 'CH UART', hdr(3), {'1': 'CH_DBG_TX', '2': 'CH_DBG_RX', '3': 'GND'}, B)
-ext = ['CH_PA12', 'CH_PA13', 'CH_PA14', 'CH_PA16', 'CH_PA17', 'CH_PA20', 'CH_PB3', 'CH_PB4', 'CH_PB7',
+ext = ['CH_PA12', 'CH_PA13', 'CH_PA14', 'CH_PA16', 'CH_PA17', 'CH_PA20', 'CH_PB7',
        'CH_PB10', 'CH_PB11', 'CH_PB12', 'CH_PB13', 'CH_PB24']
-add('J', 'Connector_Generic:Conn_02x08_Odd_Even', 'CH EXT',
-    'Connector_PinHeader_2.54mm:PinHeader_2x08_P2.54mm_Vertical',
-    {**{str(i + 1): n for i, n in enumerate(ext)}, '15': '3V3_CH', '16': 'GND'}, B)
+add('J', 'Connector_Generic:Conn_02x07_Odd_Even', 'CH EXT',
+    'Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Vertical',
+    {**{str(i + 1): n for i, n in enumerate(ext)}, '13': '3V3_CH', '14': 'GND'}, B)
 
 # --------------------------------------------------------------------------- USB3 + SD
 B = 'USB3 / SD'

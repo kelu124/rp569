@@ -31,7 +31,7 @@
 - [ ] Block diagram (`docs/`).
 - [ ] Review schematic v0.1 (`hardware/rp569-schematic.pdf`) with the user.
 - [ ] Pick fab + stackup; recompute 90 Ω diff-pair width/gap in `gen/gen_pro.py`.
-- [ ] Hand-review placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
+- [ ] Hand-review v0.2 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
 - [ ] Routing: USB3/USB2 pairs → power → HSPI (length-matched) → rest (maybe Freerouting).
 - [ ] Check RGB LED footprint pinout vs. the real part; silkscreen cleanup.
 - [ ] Check AP2171W 1 A limit vs. CH569 + SD peak current (D-009).

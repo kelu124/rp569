@@ -5,6 +5,17 @@
 Context / Choice / Alternatives / Rationale / Source (datasheet section)
 -->
 
+## D-012 — Debug UART of the RP2350 moved onto the RP EXT header (status: proposed)
+Context: 50×70 mm leaves no edge room for a separate 3-pin RP UART header. GPIO30/31 became user buttons.
+Choice: RP EXT 1x10 = 3V3, DBG_TX (GPIO32), DBG_RX (GPIO33), ADC0–5, GND. CH EXT shrinks to 2x07 (PB3/PB4 → CH buttons).
+
+## D-011 — Board 50×70 mm, two-sided, chamfered corners (status: accepted, 2026-10-23)
+Requested by user: 50×70 mm, angled corners, parts on both sides, main chips on the same side as the
+USB connectors and the microSD. Choice: 3 mm 45° chamfers; RP2350/USB-C top half, CH569/USB3/microSD bottom
+half, all on F.Cu; small passives and the flash on B.Cu; USB ESD and SSTX caps forced to F.Cu.
+Also added on request: CH569 boot jumper (2-pin 2.54 mm, PA5 → GND via 1k), 2 user buttons per chip,
+RGB LEDs placed next to their chip.
+
 ## D-004 — CH569 reset/programming by power-cycle + boot pin (status: proposed)
 Context: Automated CH569 flashing driven by RP2350. RST# (PB15) is disabled by default (RESET_EN=0);
 boot pin is PA5 = HSPI HD0, already driven by RP2350 GPIO8.

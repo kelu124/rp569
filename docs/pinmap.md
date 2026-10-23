@@ -58,13 +58,13 @@ analyser inputs and drive the bus.
 |---|---|---|---|
 | GPIO28 | I2C0 SDA | RP_I2C_SDA | Breakout header (3V3, SDA, SCL, GND), 4.7k pull-ups |
 | GPIO29 | I2C0 SCL | RP_I2C_SCL | |
-| GPIO32 | UART0 TX | RP_DBG_TX | Debug UART header (3V3, TX, RX, GND) |
+| GPIO32 | UART0 TX | RP_DBG_TX | Debug UART, on the RP EXT header (pins 2/3) |
 | GPIO33 | UART0 RX | RP_DBG_RX | |
 | GPIO36 | PWM10 A | RP_LED_R | Discrete RGB LED (D-005), active low via series R |
 | GPIO37 | PWM10 B | RP_LED_G | |
 | GPIO38 | PWM11 A | RP_LED_B | |
-| GPIO40–45 | ADC0–5 / GPIO | EXT0–5 | Spare header (analog-capable) |
-| GPIO30, GPIO31 | GPIO | spare | |
+| GPIO40–45 | ADC0–5 / GPIO | EXT0–5 | RP EXT header 1x10: 3V3, DBG_TX, DBG_RX, ADC0–5, GND |
+| GPIO30, GPIO31 | GPIO | RP_BTN1, RP_BTN2 | User buttons to GND, 10k pull-ups to +3V3 |
 | — | USB DP/DM | USB-C | Dedicated pins |
 | — | QSPI | Flash + BOOTSEL | Dedicated pins |
 | — | SWCLK/SWDIO | SWD header | Dedicated pins |
@@ -85,9 +85,11 @@ analyser inputs and drive the bus.
 | 43 PB8 | GPIO (bit-bang) | CH_I2C_SDA | Breakout header, 4.7k pull-ups |
 | 44 PB9 | GPIO (bit-bang) | CH_I2C_SCL | |
 | 39 PB6 / 38 PB5 | TXD0 / RXD0 | CH_DBG_TX/RX | CH569 debug UART header |
+| 36 PB3 / 37 PB4 | GPIO | CH_BTN1, CH_BTN2 | User buttons to GND, 10k pull-ups to 3V3_CH |
+| 15 PA5 | HD0 / boot | CH_BOOT_SW (via 1k) | BOOT button + 2-pin jumper `CH BOOT JP` to GND: fitted = bootloader at every power-up |
 | 67, 68 | XO/XI | — | 30 MHz crystal, 15 pF |
 | 65, 66 | GXM/GXP | — | SerDes, not connected |
-| PA12–PA14, PA16, PA17, PA20, PB3, PB4, PB7, PB10–PB13, PB24 | — | CH_EXTx | Spare header |
+| PA12–PA14, PA16, PA17, PA20, PB7, PB10–PB13, PB24 | — | CH_EXTx | Spare header 2x07 (12 GPIO + 3V3_CH + GND) |
 
 ## 6. Constraints to respect in firmware / schematic
 

@@ -3,10 +3,12 @@
 An open hardware board (KiCad) that pairs a **Raspberry Pi RP2350B** with a **WCH CH569W**.
 The RP2350B generates high-speed data and the CH569 streams it to a host over **USB 3.0**.
 
-Status: **v0.1**. The schematic is complete (ERC clean apart from one expected error) and the PCB is placed (4-layer, 100×70 mm) but **not routed yet**.
+Status: **v0.2**. The schematic is complete (ERC clean apart from one expected error) and the PCB is placed (4-layer, 50×70 mm, chamfered corners, parts on both sides) but **not routed yet**.
 See [`docs/layout.md`](docs/layout.md) and the [schematic PDF](hardware/rp569-schematic.pdf).
 
-![PCB render](docs/img/pcb-render-v0.1.png)
+| Top | Bottom |
+|---|---|
+| ![top](docs/img/pcb-render-v0.2-top.png) | ![bottom](docs/img/pcb-render-v0.2-bottom.png) |
 
 ## Features (planned)
 
@@ -14,7 +16,8 @@ See [`docs/layout.md`](docs/layout.md) and the [schematic PDF](hardware/rp569-sc
 |-------|---------|--------|
 | USB | USB 2.0 on USB-C (firmware, debug, test control) | USB 3.0 SuperSpeed, Micro-B connector |
 | Storage | QSPI flash | SD card on the eMMC/SD controller |
-| User I/O | RGB LED | RGB LED |
+| User I/O | RGB LED, 2 user buttons | RGB LED, 2 user buttons |
+| Boot | BOOTSEL + RUN buttons | BOOT button + jumper (force the USB bootloader on a blank chip) |
 | Breakout | I2C header for extra devices | I2C header (bit-banged GPIO) |
 
 **Logic analyser**: 8 input pins on the RP2350B are sampled by PIO and streamed over the

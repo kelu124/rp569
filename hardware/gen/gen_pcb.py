@@ -15,7 +15,8 @@ from kisym import get_symbol, pins  # noqa: E402
 
 HW = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FPLIB = '/usr/share/kicad/footprints/'
-W, H = 100.0, 70.0          # board size, mm
+W, H = 50.0, 70.0           # board size, mm
+CHAMFER = 3.0               # 45-degree corner chamfer, mm
 mm = pcbnew.FromMM
 
 
@@ -28,35 +29,55 @@ def first(pred):
     return next(p for p in board.parts if pred(p))
 
 
+def by_value(v):
+    return first(lambda p: p['value'] == v)['ref']
+
+
+# Top side: both chips, USB connectors, microSD, LEDs, buttons. RP2350 in the top half (USB-C on the
+# top edge), CH569 in the bottom half (USB3 + microSD on the bottom edge), HSPI bus in between.
 fixed = {
-    first(lambda p: 'USB_C' in p['lib_id'])['ref']: (4.5, 35, 270),
-    first(lambda p: 'USB3_B_Micro' in p['lib_id'])['ref']: (W - 4.0, 35, 90),
-    first(lambda p: 'Micro_SD' in p['lib_id'])['ref']: (W - 20, H - 10, 0),
-    first(lambda p: p['value'] == 'RP2350B')['ref']: (32, 35, 0),
-    first(lambda p: p['value'] == 'CH569W')['ref']: (68, 32, 0),
-    first(lambda p: p['value'] == 'LA IN')['ref']: (9, 4, 90),
-    first(lambda p: p['value'] == 'RP EXT')['ref']: (36, 4, 90),
-    first(lambda p: p['value'] == 'CH EXT')['ref']: (41, H - 6, 90),
-    first(lambda p: p['value'] == 'SWD')['ref']: (62.5, 4, 90),
-    first(lambda p: p['value'] == 'RP I2C')['ref']: (71.5, 4, 90),
-    first(lambda p: p['value'] == 'RP UART')['ref']: (84.5, 4, 90),
-    first(lambda p: p['value'] == 'CH I2C')['ref']: (17, H - 4, 90),
-    first(lambda p: p['value'] == 'CH UART')['ref']: (29.5, H - 4, 90),
+    first(lambda p: 'USB_C' in p['lib_id'])['ref']: (25, 4.3, 180),
+    first(lambda p: 'USB3_B_Micro' in p['lib_id'])['ref']: (16, H - 4.0, 0),
+    first(lambda p: 'Micro_SD' in p['lib_id'])['ref']: (33.5, H - 9.0, 0),
+    by_value('RP2350B'): (25, 21, 0),
+    by_value('CH569W'): (25, 45, 0),
+    # headers (THT, both sides): along the edges
+    by_value('SWD'): (10, 2.2, 90),
+    by_value('RP I2C'): (33, 2.2, 90),
+    by_value('LA IN'): (2.2, 10.5, 0),
+    by_value('RP EXT'): (W - 2.2, 9.5, 0),
+    by_value('CH EXT'): (2.2, 38, 0),
+    by_value('CH I2C'): (W - 2.2, 37, 0),
+    by_value('CH UART'): (W - 2.2, 48.3, 0),
+    by_value('CH BOOT JP'): (W - 2.2, 57.2, 0),
+    # buttons and RGB LEDs, each next to its chip
+    by_value('BOOTSEL'): (10.5, 8, 0),
+    by_value('RUN'): (10.5, 12.5, 0),
+    by_value('RP BTN1'): (39.5, 8, 0),
+    by_value('RP BTN2'): (39.5, 12.5, 0),
+    by_value('CH BTN1'): (10.5, 54.5, 0),
+    by_value('CH BTN2'): (16.7, 54.5, 0),
+    by_value('CH569 BOOT'): (13.5, 59, 0),
+    first(lambda p: p['lib_id'] == 'Device:LED_ARGB' and p['block'] == 'RP2350B')['ref']: (34, 13, 0),
+    first(lambda p: p['lib_id'] == 'Device:LED_ARGB' and p['block'] == 'CH569W')['ref']: (37.5, 41, 0),
 }
 holes = [p['ref'] for p in board.parts if p['lib_id'] == 'Mechanical:MountingHole']
-for ref, xy in zip(holes, [(3.5, 3.5), (W - 3.5, 3.5), (3.5, H - 3.5), (W - 3.5, H - 3.5)]):
+for ref, xy in zip(holes, [(4, 4), (W - 4, 4), (4, H - 4), (W - 4, H - 4)]):
     fixed[ref] = (*xy, 0)
 
-# Placement zones (x0, y0, x1, y1) for the remaining parts
+# Fallback zones (x0, y0, x1, y1) for parts with no placed neighbour
 ZONES = {
-    'pwr_rp': (9, 44, 24, 62),
-    'pwr_ch': (78, 42, 96, 56),
-    'RP2350B': (14, 10, 46, 60),
-    'Logic analyser': (4, 8, 14, 20),
-    'Inter-chip': (44, 22, 56, 46),
-    'CH569W': (58, 10, 90, 46),
-    'USB3 / SD': (78, 12, 92, 30),
+    'pwr_rp': (6, 26, 20, 36),
+    'pwr_ch': (30, 50, 45, 60),
+    'RP2350B': (8, 14, 42, 30),
+    'Logic analyser': (5, 12, 12, 30),
+    'Inter-chip': (12, 30, 38, 38),
+    'CH569W': (8, 38, 42, 52),
+    'USB3 / SD': (20, 52, 42, 62),
 }
+# parts that must stay on the top side, next to the connectors (no via on the high-speed pairs)
+TOP_ONLY_NETS = {'USB3_SSTX_P', 'USB3_SSTX_N', 'USB3_SSRX_P', 'USB3_SSRX_N', 'CH_SSTX_P', 'CH_SSTX_N',
+                 'USB3_DP', 'USB3_DM', 'USBC_DP', 'USBC_DM'}
 
 
 def zone_of(p):
@@ -123,18 +144,34 @@ def main():
         fp = fps[ref][0]
         fp.SetOrientationDegrees(rot)
         fp.SetPosition(P(x, y))
+        if ref in holes:
+            fp.Reference().SetVisible(False)
 
-    # Nearest-free-spot placement: each part goes as close as possible to the pads it connects to.
+    # Nearest-free-spot placement on two sides: each part goes as close as possible to the pads it connects
+    # to. Small passives prefer the bottom side (decoupling right under the IC pads), other parts the top.
     POWER = {'GND', '+3V3', '1V1', '3V3_CH', '1V2_CH', '5V_SYS', '5V_CH'}
     margin = 1.0
-    occupied = [fps[r][0].GetBoundingBox(False) for r in fixed]
+    occupied = {'F': [], 'B': []}
+
+    def is_tht(fp):
+        return any(pad.GetAttribute() in (pcbnew.PAD_ATTRIB_PTH, pcbnew.PAD_ATTRIB_NPTH) for pad in fp.Pads())
+
+    for r in fixed:
+        fp = fps[r][0]
+        occupied['F'].append(fp.GetBoundingBox(False))
+        if is_tht(fp):
+            occupied['B'].append(fp.GetBoundingBox(False))
+        elif fps[r][1]['value'] in ('RP2350B', 'CH569W'):    # keep the bottom free under the EP (thermal vias)
+            ep = max(fp.Pads(), key=lambda pad: pad.GetBoundingBox().GetArea()).GetBoundingBox()
+            ep.Inflate(mm(0.5))
+            occupied['B'].append(ep)
     placed = set(fixed)
     pad_pos = {}
 
     def refresh(ref):
         fp = fps[ref][0]
         for pad in fp.Pads():
-            n = pad.GetNetname()
+            n = pad.GetNetname().lstrip('/')      # board nets carry the schematic's '/' prefix
             if n:
                 pad_pos.setdefault(n, []).append((ref, pad.GetPosition(), pad.GetNumber()))
 
@@ -156,7 +193,8 @@ def main():
                 if ic['ref'].startswith('U') and ic['block'] == p['block'] and (ref, num) not in claimed:
                     claimed.add((ref, num))
                     return pos
-        pts = [pos for n in (sig or nets) for (_, pos, _) in pad_pos.get(n, []) if n != 'GND']
+        pts = [pos for n in (sig or nets) for (_, pos, _) in pad_pos.get(n, [])
+               if n != 'GND']
         if pts:
             return pcbnew.VECTOR2I(sum(q.x for q in pts) // len(pts), sum(q.y for q in pts) // len(pts))
         x0, y0, x1, y1 = ZONES.get(zone_of(p), (10, 10, W - 10, H - 10))
@@ -164,18 +202,12 @@ def main():
 
     offsets = sorted(((dx * 0.5, dy * 0.5) for dx in range(-70, 71) for dy in range(-70, 71)),
                      key=lambda t: t[0] ** 2 + t[1] ** 2)
-    # order: big parts first, then parts touching already-placed nets
-    rest = [r for r in fps if r not in placed]
-    rest.sort(key=lambda r: -fps[r][0].GetBoundingBox(False).GetArea())
-    for ref in rest:
-        fp, p = fps[ref]
-        t = target(fp, p)
-        tx, ty = pcbnew.ToMM(t.x), pcbnew.ToMM(t.y)
+
+    def find_spot(fp, side, tx, ty):
         fp.SetPosition(P(0, 0))
         bb = fp.GetBoundingBox(False)
         bx, by = pcbnew.ToMM(bb.GetX()), pcbnew.ToMM(bb.GetY())
         bw, bh = pcbnew.ToMM(bb.GetWidth()), pcbnew.ToMM(bb.GetHeight())
-        ok = False
         for dx, dy in offsets:
             x, y = tx + dx, ty + dy
             if x + bx < margin or y + by < margin or x + bx + bw > W - margin or y + by + bh > H - margin:
@@ -183,19 +215,46 @@ def main():
             fp.SetPosition(P(x, y))
             nb = fp.GetBoundingBox(False)
             nb.Inflate(mm(0.25))
-            if any(nb.Intersects(o) for o in occupied):
+            if any(nb.Intersects(o) for o in occupied[side]):
                 continue
-            occupied.append(nb)
-            ok = True
-            break
-        if not ok:
+            return (dx * dx + dy * dy) ** 0.5, x, y, nb
+        return None
+
+    PASSIVE = {'Device:R', 'Device:C', 'Device:R_Pack04'}
+    # order: big parts first
+    rest = [r for r in fps if r not in placed]
+    rest.sort(key=lambda r: -fps[r][0].GetBoundingBox(False).GetArea())
+    for ref in rest:
+        fp, p = fps[ref]
+        t = target(fp, p)
+        tx, ty = pcbnew.ToMM(t.x), pcbnew.ToMM(t.y)
+        top_only = bool(set(p['pins'].values()) & TOP_ONLY_NETS)
+        bias = {'F': 2.0, 'B': 0.0} if p['lib_id'] in PASSIVE else {'F': 0.0, 'B': 4.0}
+        cand = {'F': find_spot(fp, 'F', tx, ty)}
+        if not top_only:
+            fp.SetPosition(P(0, 0))
+            fp.SetLayerAndFlip(pcbnew.B_Cu)
+            cand['B'] = find_spot(fp, 'B', tx, ty)
+        cand = {k: v for k, v in cand.items() if v}
+        if not cand:
             print(f'WARNING: no room for {ref}')
+            continue
+        side = min(cand, key=lambda k: cand[k][0] + bias[k])
+        _, x, y, nb = cand[side]
+        if side == 'F' and fp.IsFlipped():
+            fp.SetPosition(P(0, 0))
+            fp.SetLayerAndFlip(pcbnew.F_Cu)
+        fp.SetPosition(P(x, y))
+        occupied[side].append(nb)
+        if is_tht(fp):
+            occupied['B' if side == 'F' else 'F'].append(nb)
         placed.add(ref)
         refresh(ref)
 
     # outline
-    seg = [(0, 0, W, 0), (W, 0, W, H), (W, H, 0, H), (0, H, 0, 0)]
-    for x0, y0, x1, y1 in seg:
+    c = CHAMFER
+    corners = [(c, 0), (W - c, 0), (W, c), (W, H - c), (W - c, H), (c, H), (0, H - c), (0, c)]
+    for (x0, y0), (x1, y1) in zip(corners, corners[1:] + corners[:1]):
         s = pcbnew.PCB_SHAPE(brd)
         s.SetShape(pcbnew.SHAPE_T_SEGMENT)
         s.SetStart(P(x0, y0))
@@ -213,8 +272,8 @@ def main():
         z.SetMinThickness(mm(0.2))
         ol = z.Outline()
         ol.NewOutline()
-        for x, y in ((0.5, 0.5), (W - 0.5, 0.5), (W - 0.5, H - 0.5), (0.5, H - 0.5)):
-            ol.Append(mm(x), mm(y))
+        for x, y in corners:      # board outline pulled in by 0.5 mm
+            ol.Append(mm(x + (0.5 if x < W / 2 else -0.5)), mm(y + (0.5 if y < H / 2 else -0.5)))
         brd.Add(z)
     pcbnew.ZONE_FILLER(brd).Fill(brd.Zones())
 
