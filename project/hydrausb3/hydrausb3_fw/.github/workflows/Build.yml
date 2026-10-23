@@ -1,0 +1,67 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  RISCV_GCC_PATH: /opt/gcc_riscv/xpack-riscv-none-elf-gcc-12.2.0-1/bin
+
+jobs:
+  build-and-upload:
+    strategy:
+      matrix:
+        PROJECT_NAME: [HydraUSB3_Blink_ULED, HydraUSB3_DualBoard_HSPI, HydraUSB3_DualBoard_SerDes, HydraUSB3_USB]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Checkout submodules
+        run: |
+            git submodule update --init --recursive
+            git fetch --prune --unshallow
+
+      - name: Get build timestamp
+        id: id_date
+        shell: bash
+        run: echo "timestamp=$(date +%Y-%m-%d-%H-%M-%S)" >> $GITHUB_OUTPUT
+
+      - name: Get app version + timestamp
+        id: id_version
+        run: echo "app_version=$(git describe --tags HEAD)-${{steps.id_date.outputs.timestamp}}" >> $GITHUB_OUTPUT
+
+      - name: Cache GCC archive
+        uses: actions/cache@v3
+        with:
+          path: /opt/gcc_riscv
+          key: gcc-riscv-${{ runner.os }}-${{ hashFiles('xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz') }}
+          restore-keys: gcc-riscv-${{ runner.os }}-
+
+      - name: Use GCC archive cache
+        run: |
+          ls /opt/gcc_riscv/xpack-riscv-none-elf-gcc-12.2.0-1/bin/riscv-none-elf-gcc || true
+
+      - name: Restore GCC archive cache
+        if: steps.use-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /opt/gcc_riscv
+          wget https://github.com/hydrausb3/riscv-none-elf-gcc-xpack/releases/download/12.2.0-1/xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz
+          tar xvfz xpack-riscv-none-elf-gcc-12.2.0-1-linux-x64.tar.gz -C /opt/gcc_riscv/
+
+      - name: Verify GCC installation
+        run: |
+          export PATH="$PATH:${{ env.RISCV_GCC_PATH }}"
+          riscv-none-elf-gcc --version
+
+      - name: Build ${{ matrix.PROJECT_NAME }}
+        run: |
+          export PATH="$PATH:${{ env.RISCV_GCC_PATH }}"
+          cd ${{ matrix.PROJECT_NAME }}
+          make
+
+      - name: Upload artifact ${{ matrix.PROJECT_NAME }}-${{steps.id_version.outputs.app_version}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.PROJECT_NAME }}-${{steps.id_version.outputs.app_version}}
+          path: ${{ matrix.PROJECT_NAME }}

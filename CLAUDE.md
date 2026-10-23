@@ -1,0 +1,42 @@
+# rp569 — RP2350B × CH569 board (KiCad)
+
+## Objective
+
+Design, in KiCad, a board pairing a **Raspberry Pi RP2350B** (QFN-80, 48 GPIO) with a
+**WCH CH569W** (RISC-V, USB 3.0 SuperSpeed, HSPI, eMMC/SD controller):
+
+- **CH569** → USB 3.0 connector (USB-B SS or USB-C SS, TBD) + SD card on its eMMC/SDIO pins.
+- **RP2350B** → USB 2.0 on a USB-C connector (device, firmware/debug/test-control).
+- **Inter-chip links**: shared I2C, one UART, and a 16-bit parallel bus + clock (+ control
+  strobes) — RP2350B (PIO) produces high-speed data, CH569 receives it (HSPI) and exports it over USB 3.
+- **User I/O**: one RGB LED on each chip (RP2350B and CH569).
+- **Breakout I2C buses** (separate from the shared inter-chip I2C): one on RP2350B for extra
+  devices, one on CH569 GPIOs (bit-banged if no HW I2C). Headers with pull-ups.
+- **Test automation**: RP2350B controls CH569 RESET# and boot-mode strap so CH569 can be
+  (re)flashed and power-cycled without human intervention.
+
+## Repo layout
+
+| Path | Content |
+|------|---------|
+| `CLAUDE.md` | This file — project context and working rules |
+| `.claude/todo.md` | Open tasks + open design questions |
+| `.claude/done.md` | Completed tasks, newest first, dated |
+| `.claude/commits.md` | One entry per commit: hash, date, what & why |
+| `.claude/decisions.md` | Design decisions (ADR-lite): choice, alternatives, rationale |
+| `.claude/skills/` | Project skills (e.g. `project-logs`) |
+| `hardware/` | KiCad project (to be created) |
+| `project/` | Reference projects (e.g. phantomdrive) — read-only, indexed in `project/README.md` |
+| `datasheet/` | Datasheets: PDF + Markdown conversion (`markitdown`), indexed in `datasheet/README.md` |
+| `docs/` | Datasheets notes, pin maps, block diagrams (to be created) |
+
+## Working rules
+
+- After finishing a task: move it from `.claude/todo.md` to `.claude/done.md` (with date).
+- Every commit: append an entry to `.claude/commits.md` (see `project-logs` skill).
+  Write the entry as `pending` in the commit itself, then fill in the real hash in the next commit.
+- Any non-obvious hardware choice (part, pin assignment, topology) goes in `.claude/decisions.md`.
+- Pin assignments must be checked against the datasheets (CH569DS1, RP2350 datasheet) —
+  never from memory. Note the datasheet section/table used.
+- KiCad version: KiCad 8+ (TBD — confirm installed version). Keep custom symbols/footprints
+  in a project-local library under `hardware/lib/`.

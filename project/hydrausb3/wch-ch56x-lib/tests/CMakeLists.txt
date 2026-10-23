@@ -1,0 +1,12 @@
+
+add_subdirectory(test_firmware_hspi)
+add_subdirectory(test_firmware_loopback)
+add_subdirectory(test_firmware_serdes)
+add_subdirectory(test_firmware_unittests)
+add_subdirectory(test_firmware_usb_loopback)
+add_subdirectory(test_firmware_usb_speedtest)
+add_subdirectory(test_firmware_usb_loopback_separate_usb_stacks)
+add_subdirectory(test_firmware_usb_loopback_delayed)
+add_subdirectory(test_firmware_usb_stress_test)
+add_subdirectory(test_firmware_usb_stress_test_delayed)
+add_subdirectory(test_firmware_fifo)
