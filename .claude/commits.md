@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — README and docs show the current renders
+## pending — 2026-10-24 — First firmware for the RP2350B and the CH569
+What: firmware/rp2350 (Pico SDK 2.2, boards/rp569.h, USB CDC CLI: set R|G|B 0|1, dfu, ch on|off|cycle|boot|reset|
+status|send, adc, btn; build.sh), firmware/ch569 (fork of CH569_Composite: UART1 RP2350 link bridged to USB3 CDC
+with echo, UART0 debug, no SD ownership line, RGB status LED, PRINT macro fix; build.sh), firmware/tools/link_test.py,
+READMEs, D-024 (+ D-004 pin numbers updated to post-D-018), skill `firmware`, docs/README/CLAUDE.md links, logs.
+Why: user asked to start the firmware with a CLI on the RP2350 and a USB serial + UART echo on the CH569.
+
+## 0df2e46 — 2026-10-24 — README and docs show the current renders
 What: README.md, docs/layout.md and the Hackaday drafts point at docs/images/rp569-v1.0-{top,bottom}.png (written by
 gen_renders.py); stale docs/img/pcb-render-v1.0-* removed.
 Why: user noticed the README images were not updated (they pointed at the old pre-D-023 renders in docs/img/).

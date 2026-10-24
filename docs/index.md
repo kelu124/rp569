@@ -9,7 +9,8 @@ or samples data with its PIO blocks; the CH569 receives it over an 8-bit paralle
 host over **USB 3.0 SuperSpeed**.
 
 **Status: v1.0** — schematic complete, PCB fully routed (4 layers, 50 × 70 mm, 0 unconnected, 0 DRC errors),
-JLCPCB production files generated. Not fabricated yet; no firmware yet.
+JLCPCB production files generated. Not fabricated yet. First firmware for both chips (builds, untested on hardware):
+[firmware/](https://github.com/kelu124/rp569/tree/main/firmware).
 [Source on GitHub](https://github.com/kelu124/rp569).
 
 | Top | Bottom |
@@ -45,6 +46,7 @@ JLCPCB production files generated. Not fabricated yet; no firmware yet.
 | [Images](images/) | 3D renders, layer plots, assembly views |
 | [CH569 hardware notes](ch569-hardware-notes.md) | Notes from the CH569 datasheet and reference designs |
 | [Hackaday drafts](hadposts/) | Project-log drafts |
+| [Firmware](https://github.com/kelu124/rp569/tree/main/firmware) | RP2350B command line and CH569 USB3 firmware: build, flash, bring-up |
 
 Requirements and design decisions (R-xx, D-xxx) are in
 [specification.md](https://github.com/kelu124/rp569/blob/main/specification.md) at the repository root.

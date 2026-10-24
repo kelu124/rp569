@@ -46,3 +46,11 @@
 - [ ] Check JLCPCB rotations in the placement preview; recheck stock before ordering.
 - [ ] Confirm the 3.3 µH alternative against the RP2350 HW design guide (AOTA-B201610S3R3 has 119 in stock).
 - [ ] Check AP2171W 1 A limit vs. CH569 + SD peak current (D-009).
+
+## Firmware (D-024; `firmware/`, skill `firmware`)
+
+- [ ] Install a CH569 flasher (`wch-ch56x-isp` from HydraUSB3 or `wchisp`) before bring-up.
+- [ ] Bring-up on the first boards: RP2350 CLI (LED, `dfu`, `ch status`), `ch boot` + flash the CH569, `link_test.py`.
+- [ ] CH569: confirm the RP2350-link echo and the CDC bridge on a USB3 port; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).
+- [ ] RP2350: PIO HSPI transmitter (GPIO8–23) and CH569 HSPI receiver → USB3 bulk stream; then the logic analyser (GPIO0–7).
+- [ ] RP2350: I2C link and breakout I2C commands; PWM dimming for the LEDs (GPIO34/35/38 are PWM9A/9B/11A).

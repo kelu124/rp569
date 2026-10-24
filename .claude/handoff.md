@@ -15,6 +15,9 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 - Images: `python3 hardware/gen/gen_renders.py` → `docs/images/` (re-run after board changes).
 - Docs site: `docs/` is the GitHub Pages root (`index.md`, `_config.yml`); enable it in the repo settings
   (Pages → main → /docs) if not done. URL https://kelu124.github.io/rp569/.
+- **Firmware** (D-024, skill `firmware`): `firmware/rp2350/build.sh` (USB CLI: `set R 1`, `dfu`, `ch boot|cycle|send`)
+  and `firmware/ch569/build.sh` (USB3 serial bridged to the RP2350 link, echo, SD drive). Both build; untested on
+  hardware; no CH569 flasher installed yet. Open firmware tasks in `.claude/todo.md` § Firmware.
 - `hardware/rp569.kicad_pcb` is the **generated, unrouted** board (`build.sh`); it is not the one to fabricate.
 - How v1.0 was made: generator (`board.py` → `build.sh`) → KiCadRoutingTools chain (`hardware/gen/route_krt.sh`,
   16 links left) → hand finishing in pcbnew by the user, checked with `.claude/skills/kicad-board/drc_check.py`.
@@ -37,6 +40,8 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 | KiCad 10.0.6 | `kicad-cli`, `/usr/bin/python3` has `pcbnew` | local help: `/usr/share/doc/kicad/help/en/pcbnew.html` |
 | KiCadRoutingTools v0.23.7 | `~/tools/KiCadRoutingTools` (`.venv`, prebuilt Rust router) | always `--escalation off --fab-tier standard --no-fix-drc-settings`, `--layers F.Cu In2.Cu B.Cu`; no `--clearance` on the decap step |
 | Freerouting 2.1.0 patched | `~/.local/share/freerouting/freerouting-2.1.0-mp.jar` (Java 21) | option only; `hardware/gen/patch_freerouting_mp.py` rebuilds it |
+| Pico SDK 2.2.0 | `~/.pico-sdk/sdk/2.2.0` (+ arm-none-eabi-gcc 10.3, picotool 2.3) | env `PICO_SDK_PATH` is 2.1; build.sh pins 2.2 |
+| riscv-none-elf-gcc 15.2 | `~/.local/xPacks/@xpack-dev-tools/riscv-none-elf-gcc/` | CH569 build; base project `~/projets/CH569_Composite` |
 | jlcparts lookup | `.claude/skills/jlcpcb-parts/jlc.py` | LCSC API is blocked; cache `~/.cache/jlcparts` |
 
 ## Working agreements with the user

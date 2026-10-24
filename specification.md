@@ -34,6 +34,23 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-024 — First firmware for both chips (status: accepted, 2026-10-24; not run on hardware yet)
+Requested by user: `firmware/rp2350` and `firmware/ch569`, each with its build script.
+- **RP2350B**: Pico SDK 2.2 (`~/.pico-sdk/sdk/2.2.0`), custom board header `firmware/rp2350/boards/rp569.h`
+  (RP2350B, 16 MB flash, UART0 debug on GPIO32/33). USB CDC command line (stdio_usb, mirrored on UART0):
+  `set R|G|B 0|1`, `dfu` (`reset_usb_boot`), `ch on|off|cycle|boot|reset|status|send`, `adc`, `btn`. CH569 control
+  follows D-004 with the post-D-018 pins (PWR_EN GPIO29, FLG# GPIO30, RST# GPIO28, boot strap GPIO8). At normal
+  power-up GPIO8 only gets the weak pull-up so the CH BOOT jumper/button still win; link lines are inputs without
+  pull-up while the CH569 is off.
+- **CH569W**: fork of the user's CH569_Composite (USB3 composite: CDC bridge + debug CDC + SD MSC), adapted:
+  bridge on UART1 PA7/PA8 (the RP2350 link) with an echo of every received byte, debug on UART0 PB5/PB6
+  (`RB_PIN_UART0` cleared, PA5 = boot), no SD ownership line, status on the RGB LED PB0–PB2, SDK `PRINT` waits on
+  the selected debug UART.
+Alternatives: a CDC-only CH569 stack from scratch (more work, no SD); HydraUSB3 / wch-ch56x-lib (USB2+USB3 CDC, a
+later option if the USB2 fallback needs a serial port). Source: CH569DS1 pin table (pins 12/13 PA8/PA7 TXD1/RXD1,
+38/39 PB5/PB6 RXD0/TXD0, PA5/PA6 RXD0_/TXD0_), CH56xSFR.h `R8_PIN_ALTERNATE`; RP2350 datasheet GPIO functions
+(UART1 F2 on GPIO24/25, UART0 F2 on GPIO32/33, ADC on GPIO40–47).
+
 ## D-023 — Rounded corners, silkscreen labels (status: accepted, 2026-10-24)
 Requested by user. Board corners: the 3 mm 45° chamfers of D-011 become 3 mm-radius arcs through the same tangent
 points (`gen/gen_pcb.py` for new boards, `gen/round_corners.py` applied to the routed board). The arc lies outside
@@ -191,11 +208,11 @@ Rationale: works at 3.3 V on both chips, PWM in hardware on both.
 Context: automated CH569 flashing driven by the RP2350. RST# (PB15) is disabled by default (RESET_EN = 0), so
 the CH569 only samples its boot pin PA5 at power-up. PA5 is also HSPI HD0.
 Choice: the RP2350 does in firmware what the BOOT button does by hand:
-1. GPIO8 (HSPI_D0_RP) drives low. It reaches PA5 through a 33 Ω array element (RN3). The BOOT button and the
-   boot jumper pull the same node low through 1 kΩ (R33), so the RP2350 pulls harder than the button.
-2. GPIO35 (CH569_PWR_EN) goes low: the AP2171W turns 5V_CH off, both CH569 bucks stop. GPIO47 (CH3V3_SENSE)
+1. GPIO8 (HSPI_D0) drives low. It reaches PA5 directly (the 33 Ω array was dropped by D-018). The BOOT button
+   and the boot jumper pull the same node low through 1 kΩ, so the RP2350 pulls harder than the button.
+2. GPIO29 (CH569_PWR_EN, GPIO35 before D-018) goes low: the AP2171W turns 5V_CH off, both CH569 bucks stop. GPIO47 (CH3V3_SENSE)
    confirms 3V3_CH has gone down.
-3. GPIO35 goes high: the CH569 powers up with PA5 low and starts the USB bootloader (`4348:55E0`) on the
+3. GPIO29 goes high: the CH569 powers up with PA5 low and starts the USB bootloader (`4348:55E0`) on the
    USB3 connector's USB2 lines. The host flashes with `wch-ch56x-isp` within ~10 s.
 4. GPIO8 is released and becomes HSPI D0 again.
 Conditions: VBUS_3 present (the USB3 cable is needed for flashing anyway, or fit the DNP 0 Ω from 5V_SYS).
@@ -204,7 +221,7 @@ Conflict cases: jumper fitted or button held while GPIO8 drives high → 3.2 mA 
 but the RP2350 wins and the CH569 boots its application. Firmware must leave GPIO8 low or Hi-Z at CH569 power-up
 when the user wants the jumper to take effect. A blank RP2350 leaves GPIO8 as an input with its default pull-down,
 which does not fight the jumper.
-RST# stays wired to GPIO34 (open-drain, 10k to 3V3_CH) for when RESET_EN is set in the CH569 config.
+RST# stays wired to GPIO28 (GPIO34 before D-018; open-drain, 10k to 3V3_CH) for when RESET_EN is set in the CH569 config.
 Alternatives: 2-wire debug from the RP2350 (TCK/TIO share pins with HTACK/HTCLK, protocol not public).
 Source: CH569DS1 pin table (pin 15 PA5, pin 30 PB15) and config bits §2; project/hydrausb3/wch-ch56x-isp/README.md
 (boot pin PA5, alternative PA13, 10 s timeout); phantomdrive SW1 on PA5. Netlist trace: hardware/gen/board.py.
