@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Session handoff: helper scripts, handoff note, Hackaday drafts
+## pending — 2026-10-24 — Board renders in docs/images
+What: hardware/gen/gen_renders.py (3D top/bottom/angled renders, per-layer and assembly SVG + PNG plots),
+docs/images/ (v1.0 images + index), hadposts index, logs.
+Why: user asked for renders in docs/images (for docs and the Hackaday posts).
+
+## 087b5ce — 2026-10-24 — Session handoff: helper scripts, handoff note, Hackaday drafts
 What: .claude/handoff.md (state, next steps, tools, agreements; linked from CLAUDE.md), kicad-board skill helper
 scripts (drc_check.py, board_metrics.py, remove_dangling.py) + hand-editing loop, docs/hadposts/ (2 Hackaday log
 drafts + index), README layout row, logs.
