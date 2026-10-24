@@ -2,7 +2,7 @@
 title: "Autorouting a dense 4-layer board: from 421 open links to zero"
 status: draft
 target: hackaday.io project log
-images: ../img/pcb-render-v1.0-top.png (and ideally a before/after ratsnest screenshot)
+images: ../images/rp569-v1.0-top.png (and ideally a before/after ratsnest screenshot)
 ---
 
 # Autorouting a dense 4-layer board: from 421 open links to zero

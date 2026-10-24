@@ -22,7 +22,7 @@ Amphenol GSB343K33HR USB3 connector ([`docs/bom.md`](docs/bom.md)).
 
 | Top | Bottom |
 |---|---|
-| ![top](docs/img/pcb-render-v1.0-top.png) | ![bottom](docs/img/pcb-render-v1.0-bottom.png) |
+| ![top](docs/images/rp569-v1.0-top.png) | ![bottom](docs/images/rp569-v1.0-bottom.png) |
 
 ## Features
 

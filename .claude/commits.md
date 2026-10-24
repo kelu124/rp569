@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Session wrap-up: handoff, skill gotchas
+## pending — 2026-10-24 — README and docs show the current renders
+What: README.md, docs/layout.md and the Hackaday drafts point at docs/images/rp569-v1.0-{top,bottom}.png (written by
+gen_renders.py); stale docs/img/pcb-render-v1.0-* removed.
+Why: user noticed the README images were not updated (they pointed at the old pre-D-023 renders in docs/img/).
+
+## c1c4b42 — 2026-10-24 — Session wrap-up: handoff, skill gotchas
 What: .claude/handoff.md (state after D-023, post-processing scripts, silkscreen next steps), kicad-board skill
 gotchas (pcbnew Python quirks), commit log hash.
 Why: user is closing the session and asked to save memory and skills.

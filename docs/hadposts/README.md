@@ -2,7 +2,7 @@
 
 Drafts for hackaday.io project logs about rp569. Facts come from `specification.md`, `docs/` and the repo history;
 check numbers and the repository URL before publishing. Images: `docs/images/` (3D renders, layer plots as PNG for
-upload) and `docs/img/`.
+upload); `docs/img/` holds older renders (v0.2) and figures.
 
 | File | Topic | Status |
 |---|---|---|

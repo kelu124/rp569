@@ -7,7 +7,7 @@ coupled pairs, silkscreen; see `.claude/todo.md`.
 
 | Top | Bottom |
 |---|---|
-| ![top](img/pcb-render-v1.0-top.png) | ![bottom](img/pcb-render-v1.0-bottom.png) |
+| ![top](images/rp569-v1.0-top.png) | ![bottom](images/rp569-v1.0-bottom.png) |
 
 (v1.0, `kicad-cli pcb render` of `hardware/rp569-routed.kicad_pcb`)
 

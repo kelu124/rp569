@@ -2,7 +2,7 @@
 title: "rp569: an RP2350B that talks USB 3.0 through a CH569"
 status: draft
 target: hackaday.io project log (or project description)
-images: ../img/pcb-render-v1.0-top.png, ../img/pcb-render-v1.0-bottom.png
+images: ../images/rp569-v1.0-top.png, ../images/rp569-v1.0-bottom.png
 ---
 
 # rp569: an RP2350B that talks USB 3.0 through a CH569
@@ -15,7 +15,7 @@ controller and a high-speed parallel interface (HSPI), but no PIO.
 rp569 puts the two on one 50 × 70 mm board: the RP2350B produces data, pushes it over a parallel bus to the CH569,
 and the CH569 streams it to the host over USB 3.
 
-![top](../img/pcb-render-v1.0-top.png)
+![top](../images/rp569-v1.0-top.png)
 
 ## What is on the board
 
