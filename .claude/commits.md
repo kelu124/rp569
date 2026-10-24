@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — v1.0 production files: routed board next to the schematic, JLCPCB gerbers/BOM/CPL
+## pending — 2026-10-24 — Session handoff: helper scripts, handoff note, Hackaday drafts
+What: .claude/handoff.md (state, next steps, tools, agreements; linked from CLAUDE.md), kicad-board skill helper
+scripts (drc_check.py, board_metrics.py, remove_dangling.py) + hand-editing loop, docs/hadposts/ (2 Hackaday log
+drafts + index), README layout row, logs.
+Why: user saves the session to resume later and asked for scripts/learnings kept, plus Hackaday drafts.
+
+## ea0e4c9 — 2026-10-24 — v1.0 production files: routed board next to the schematic, JLCPCB gerbers/BOM/CPL
 What: hardware/autoroute/rp569-krt.* → hardware/rp569-routed.kicad_pcb/.kicad_pro; gen/gen_fab.py (DRC gate,
 gerbers, drill, zip, BOM/CPL); gen_bom.py takes the CPL from the routed board; hardware/jlcpcb/ (rp569-gerbers.zip,
 gerbers/, BOM, CPL), reports/drc-routed.json; v1.0 renders; specification D-022 + R-18; README, CLAUDE.md,

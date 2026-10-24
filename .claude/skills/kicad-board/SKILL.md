@@ -30,6 +30,23 @@ Targets after `build.sh`: ERC 0, DRC 0 electrical, parity 0. Silk overlaps are c
 re-route (`route_krt.sh`, then hand finishing) or apply the change in pcbnew on `rp569-routed.kicad_pcb` with
 *Update PCB from Schematic*. `build.sh` also re-runs `gen_bom.py`, which takes the CPL from the routed board.
 
+## Helper scripts (this folder)
+
+| Script | Python | Use |
+|---|---|---|
+| `drc_check.py [board] [--pro P] [--json out]` | any | DRC against the **real** project rules (copies the board next to `hardware/rp569.kicad_pro`), lists unconnected links with coordinates and non-cosmetic violations. Default board: `hardware/rp569-routed.kicad_pcb` |
+| `board_metrics.py [board]` | `/usr/bin/python3` | HSPI lengths vs RCLK, USB pair skew/vias, In1 GND fill islands, tracks on In1, USB length not over In1 and why |
+| `remove_dangling.py in out [--keep NET..]` | `/usr/bin/python3` | Safe replacement for pcbnew's Cleanup: removes DRC-dangling items by uuid, repeats, refuses to write if unconnected goes up |
+
+## Hand-editing loop with the user (v1.0 was finished this way)
+
+The user edits `hardware/rp569-routed.kicad_pcb` in pcbnew and asks "check my edits": run `drc_check.py`, report
+progress (N → M unconnected), what is done, and the next links with coordinates and a layer suggestion. Watch for:
+tracks put on In1 by mistake (In1/In2 are adjacent in the layer list; the user accepted In1 tracks for v1.0,
+D-021, so check `board_metrics.py` keeps In1 one island and USB gaps are only via antipads), and new unconnected
+items after a Cleanup (stale zone fills). Never write the board while KiCad has it open (`~*.lck` next to it).
+After edits: `python3 hardware/gen/gen_fab.py` to refresh the JLCPCB files.
+
 ## Gotchas found so far
 
 - Board net names carry the schematic's `/` prefix (`/GND`); strip it when matching against `board.py` nets.

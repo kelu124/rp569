@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-10-24 — Handoff for a later session (`.claude/handoff.md`), check scripts saved in the kicad-board skill, two Hackaday log drafts in `docs/hadposts/`.
 - 2026-10-24 — JLCPCB production files for v1.0 (`gen/gen_fab.py` → `hardware/jlcpcb/rp569-gerbers.zip`, BOM, CPL), routed board renamed `hardware/rp569-routed.kicad_pcb`, v1.0 renders, docs updated (D-022).
 - 2026-10-24 — v1.0: board hand-finished by the user (KRT result + manual links, In1 tracks accepted, D-021): 0 unconnected, 0 DRC errors.
 - 2026-10-24 — D-020: TPS2121 moved next to the USB-C, sense dividers at their rail, pull-ups at their chip; KRT 16 of 405 links left, 0 electrical violations.

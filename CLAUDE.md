@@ -24,6 +24,7 @@ Design, in KiCad, a board pairing a **Raspberry Pi RP2350B** (QFN-80, 48 GPIO) w
 | Path | Content |
 |------|---------|
 | `CLAUDE.md` | This file — project context and working rules |
+| `.claude/handoff.md` | **Start here when resuming**: current state, next steps, tools, working agreements |
 | `.claude/todo.md` | Open tasks + open design questions |
 | `.claude/done.md` | Completed tasks, newest first, dated |
 | `.claude/commits.md` | One entry per commit: hash, date, what & why |

@@ -22,6 +22,8 @@
 
 ## Tasks
 
+- [ ] Review and publish the Hackaday drafts (`docs/hadposts/`), add a before/after ratsnest screenshot.
+
 
 - [ ] Power (D-007): confirm parts (LM66100, TPS2553, TLV62569) and stock; size the TPS2553 current limit from the CH569 current draw.
 - [ ] Check that the CH569 I/Os don't clamp the shared I2C / inter-chip lines while the CH569 is unpowered (power.md rules).
