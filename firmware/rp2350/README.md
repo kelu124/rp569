@@ -3,20 +3,35 @@
 USB serial command line (also mirrored on the debug UART0, RP EXT header pins 2 TX / 3 RX, 115200 8N1).
 
 ```
+rp569> version
+rp569 RP2350B firmware 0.1.0 git 0727cb0 built Oct 24 2026 uid E6614103E7A1B22C
 rp569> help
-  set <R|G|B> <0|1>    RGB LED colour on/off (also 'set rgb 101')
-  led                  LED state
-  btn                  user buttons
-  adc                  VBUS3 and 3V3_CH voltages
-  dfu                  reboot the RP2350 into its USB bootloader (BOOTSEL / UF2)
-  reboot               reboot the RP2350
-  ch on|off|cycle      CH569 power (cycle = off, then normal boot)
-  ch boot              power-cycle the CH569 into its USB bootloader (wch-ch56x-isp, ~10 s)
-  ch reset             pulse RST# (only with RESET_EN set in the CH569)
-  ch status            power, fault flag, rails
-  ch send <text>       send a line to the CH569 over the link UART (it echoes it back)
-  version              firmware version
+commands:
+  help                     this list
+  version                  firmware version, git hash and chip unique ID
+  set <R|G|B> <0|1>        RGB LED colour on/off (also 'set rgb 101')
+  led                      LED state
+  btn                      user buttons
+  adc                      VBUS3 and 3V3_CH voltages
+  dfu                      reboot the RP2350 into its USB bootloader (BOOTSEL / UF2)
+  reboot                   reboot the RP2350
+  ch on                    CH569 power on (normal boot)
+  ch off                   CH569 power off
+  ch cycle                 CH569 power off, then normal boot
+  ch boot                  power-cycle the CH569 into its USB bootloader (~10 s)
+  ch reset                 pulse RST# (only with RESET_EN set in the CH569)
+  ch status                CH569 power, fault flag, rails
+  ch send <text>           send a line to the CH569 over the link UART (it echoes it back)
 ```
+
+The commands are one table in `src/main.c` (`COMMANDS-BEGIN` / `COMMANDS-END`); `help` is generated from it. Every
+entry needs a method in `python/rp569/rp2350.py` (pre-commit check, `tools/check_commands.py`).
+
+**USB identity**: `2e8a:0009`, manufacturer "rp569", product "rp569 RP2350B", serial number = the chip unique ID
+(the `uid` of `version`). The python library finds the port with these.
+
+**Version**: `version.yaml` (major/minor by the user, patch bumped by the pre-commit hook), read by CMake into
+`build/generated/fw_version.h` with the `git describe` hash.
 
 Lines from the CH569 (link UART1, GPIO24 TX / GPIO25 RX, 115200) are printed as `CH> ...`.
 

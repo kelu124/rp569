@@ -18,6 +18,11 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 - **Firmware** (D-024, skill `firmware`): `firmware/rp2350/build.sh` (USB CLI: `set R 1`, `dfu`, `ch boot|cycle|send`)
   and `firmware/ch569/build.sh` (USB3 serial bridged to the RP2350 link, echo, SD drive). Both build; untested on
   hardware; no CH569 flasher installed yet. Open firmware tasks in `.claude/todo.md` § Firmware.
+- **Python library** `python/rp569` (D-025): finds the ports by VID/PID/product/UID/interface, one `@command` method
+  per firmware command; tests `cd python && python3 -m unittest discover -s tests`.
+- **Pre-commit hook** (`.githooks/`, enabled here; `tools/install_hooks.sh` in a new clone): refuses a commit whose
+  firmware command tables and python library disagree, bumps the patch version of each touched component.
+  Major/minor: user only.
 - `hardware/rp569.kicad_pcb` is the **generated, unrouted** board (`build.sh`); it is not the one to fabricate.
 - How v1.0 was made: generator (`board.py` → `build.sh`) → KiCadRoutingTools chain (`hardware/gen/route_krt.sh`,
   16 links left) → hand finishing in pcbnew by the user, checked with `.claude/skills/kicad-board/drc_check.py`.

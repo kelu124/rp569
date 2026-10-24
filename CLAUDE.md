@@ -34,6 +34,8 @@ Design, in KiCad, a board pairing a **Raspberry Pi RP2350B** (QFN-80, 48 GPIO) w
 | `project/` | Reference projects (e.g. phantomdrive) — read-only, indexed in `project/README.md` |
 | `datasheet/` | Datasheets: PDF + Markdown conversion (`markitdown`), indexed in `datasheet/README.md` |
 | `firmware/` | `rp2350/` (Pico SDK 2.2, USB CLI) and `ch569/` (USB3 composite, RP2350 link echo), each with `build.sh`; see `firmware/README.md` and skill `firmware` |
+| `python/` | Host library `rp569` (pyserial): port discovery by VID/PID/product/UID/interface, one `@command` method per firmware command; `python/README.md` |
+| `tools/`, `.githooks/` | Pre-commit hook: command sync check + patch version bump (`tools/install_hooks.sh` once per clone) |
 | `docs/` | GitHub Pages site (root `docs/`, `index.md` + `_config.yml`, Cayman theme): architecture, pin map, power, layout, BOM, production, images, Hackaday drafts. Links leaving `docs/` must be absolute GitHub URLs |
 
 ## Hardware workflow
@@ -53,6 +55,9 @@ Design, in KiCad, a board pairing a **Raspberry Pi RP2350B** (QFN-80, 48 GPIO) w
 ## Working rules
 
 - After finishing a task: move it from `.claude/todo.md` to `.claude/done.md` (with date).
+- Versions (D-025): `firmware/*/version.yaml`, `python/rp569/_version.py`, major.minor.patch. The pre-commit hook bumps
+  the patch of every touched component; **never change major/minor** (the user does). A firmware command change
+  needs the matching `@command` method in `python/rp569/` or the commit is refused.
 - Every commit: append an entry to `.claude/commits.md` (see `project-logs` skill).
   Write the entry as `pending` in the commit itself, then fill in the real hash in the next commit.
 - Any non-obvious hardware choice (part, pin assignment, topology) goes in `specification.md` (§2), and any new requirement in §1.

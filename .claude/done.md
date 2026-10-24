@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-10-24 — Python host library `python/rp569` (port roles by VID/PID/product/UID/interface, one method per command), `version` + chip UID on both firmwares, version.yaml, pre-commit hook (command sync + patch bump), CH569 console, Hackaday drafts 03/04 (D-025).
 - 2026-10-24 — First firmware (D-024): `firmware/rp2350` USB CLI (LED, `dfu`, CH569 power/boot/reset/link) and `firmware/ch569` (CH569_Composite fork: USB3 serial bridged to the RP2350 link with echo, SD drive); both build; skill `firmware`.
 - 2026-10-24 — README/docs image links moved to the regenerated `docs/images/` renders; stale `docs/img/pcb-render-v1.0-*` removed.
 - 2026-10-24 — Rounded board corners (`gen/round_corners.py`, gen_pcb arcs), SW1 `RPDFU` / SW5 `BOOT` silkscreen labels, gerbers and renders regenerated (D-023).

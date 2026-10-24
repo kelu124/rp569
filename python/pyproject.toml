@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rp569"
+dynamic = ["version"]
+description = "Host library for the rp569 board (RP2350B command line, CH569W console and link)"
+requires-python = ">=3.10"
+dependencies = ["pyserial>=3.5"]
+
+[tool.setuptools]
+packages = ["rp569"]
+
+[tool.setuptools.dynamic]
+version = {attr = "rp569._version.__version__"}

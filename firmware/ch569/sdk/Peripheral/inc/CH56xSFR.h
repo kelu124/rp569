@@ -138,7 +138,7 @@ typedef volatile unsigned long *PUINT32V;
   #else
     #define PRINT_LSR    R8_UART1_LSR
   #endif
-  #define PRINT(X...)    printf(X);while(!(PRINT_LSR & RB_LSR_TX_ALL_EMP));
+  #define PRINT(X...)    do { printf(X); while(!(PRINT_LSR & RB_LSR_TX_ALL_EMP)); } while(0)
 #else
   #define PRINT(X...)
 #endif

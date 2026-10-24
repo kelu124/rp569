@@ -47,6 +47,7 @@ JLCPCB production files generated. Not fabricated yet. First firmware for both c
 | [CH569 hardware notes](ch569-hardware-notes.md) | Notes from the CH569 datasheet and reference designs |
 | [Hackaday drafts](hadposts/) | Project-log drafts |
 | [Firmware](https://github.com/kelu124/rp569/tree/main/firmware) | RP2350B command line and CH569 USB3 firmware: build, flash, bring-up |
+| [Python library](https://github.com/kelu124/rp569/tree/main/python) | Host library: finds each chip's serial port, one method per firmware command |
 
 Requirements and design decisions (R-xx, D-xxx) are in
 [specification.md](https://github.com/kelu124/rp569/blob/main/specification.md) at the repository root.

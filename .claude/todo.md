@@ -49,6 +49,7 @@
 
 ## Firmware (D-024; `firmware/`, skill `firmware`)
 
+- [ ] Hardware check of the python library (`python3 -m rp569 ports` / `versions`, `link_test.py`): port roles, CH569 UID read at 0x77FE4.
 - [ ] Install a CH569 flasher (`wch-ch56x-isp` from HydraUSB3 or `wchisp`) before bring-up.
 - [ ] Bring-up on the first boards: RP2350 CLI (LED, `dfu`, `ch status`), `ch boot` + flash the CH569, `link_test.py`.
 - [ ] CH569: confirm the RP2350-link echo and the CDC bridge on a USB3 port; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).

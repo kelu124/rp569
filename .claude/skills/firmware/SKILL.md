@@ -1,6 +1,6 @@
 ---
 name: firmware
-description: Use when building, changing or flashing the rp569 firmware (firmware/rp2350 RP2350B CLI, firmware/ch569 CH569 USB3 composite) — toolchains on this machine, build commands, flash/bring-up sequence, pin sources, known traps.
+description: Use when building, changing or flashing the rp569 firmware (firmware/rp2350 RP2350B CLI, firmware/ch569 CH569 USB3 composite) or the python host library (python/rp569) — toolchains, build commands, flash/bring-up, command tables and their python mirror, versions and the pre-commit hook, known traps.
 ---
 
 # rp569 firmware
@@ -37,8 +37,26 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
 - CDC ports exist only on a USB3 link (vendor USB2 stack is MSC-only).
 - IRQ handlers: plain `__attribute__((interrupt))` (upstream GCC ignores MounRiver's "WCH-Interrupt-fast").
 
+## Commands, python library, versions (D-025)
+
+- Commands = one table per firmware between `COMMANDS-BEGIN` / `COMMANDS-END` (`firmware/rp2350/src/main.c`,
+  `firmware/ch569/src/console.c`). Adding/renaming/removing one means: edit the table, add/rename the
+  `@command("<name>")` method in `python/rp569/rp2350.py` / `ch569.py` (+ its reply regex), a unit test in
+  `python/tests/`, the README help block. `python3 tools/check_commands.py` must say "in sync".
+- Reply formats are parsed by regex in the python methods: changing a `printf` format = changing the method.
+  `version` lines: `rp569 <CHIP> firmware x.y.z git <hash> built <date> uid <hex>` (`FirmwareVersion.parse`).
+- USB identity (python discovery relies on it): RP2350 `2e8a:0009` product "rp569 RP2350B" (CMake
+  `USBD_PRODUCT`); CH569 `1a86:fe2c` product "rp569 CH569" (`StringProduct` in `CH56x_usb30.c`), serial = chip UID
+  (`USB30_SetSerial`), link CDC = interface 1, console = interface 3.
+- Versions: `firmware/*/version.yaml` + `python/rp569/_version.py`. Hook `.githooks/pre-commit` (enabled by
+  `tools/install_hooks.sh`, `core.hooksPath`) runs the command check and `tools/bump_versions.py` (patch +1 per
+  touched component, staged automatically). **Never edit major/minor**: user only. `bump_versions.py --show`.
+- Python tests: `cd python && python3 -m unittest discover -s tests -v` (no hardware, fake firmware). pytest is not
+  installed; pyserial 3.5 is.
+
 ## Testing
 
-- `python3 firmware/tools/link_test.py /dev/ttyACM0 [-n 20]` (pyserial): `ch send ping i` → expects `CH> ping i`.
+- `PYTHONPATH=python python3 firmware/tools/link_test.py [-n 20]`: versions of both chips, then `ch send ping i`
+  → expects the echo. `PYTHONPATH=python python3 -m rp569 ports` lists the port roles.
 - Without hardware: both `build.sh` must finish without compiler warnings (the CH569 link prints
   `_close/_fstat/... not implemented` notes: expected). `firmware/ch569/build.sh check` must print "all good".

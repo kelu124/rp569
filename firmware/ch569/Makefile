@@ -17,7 +17,12 @@ SIZE    := $(PREFIX)size
 # "rv32imac"; override ARCH if yours rejects _zicsr.
 ARCH    ?= -march=rv32imac_zicsr -mabi=ilp32
 
-INCLUDES := -Isrc \
+# Firmware version from version.yaml (major/minor by the user, patch by the pre-commit hook) + git hash
+FW_VERSION := $(shell sed -n 's/^major: *//p' version.yaml).$(shell sed -n 's/^minor: *//p' version.yaml).$(shell sed -n 's/^patch: *//p' version.yaml)
+FW_GIT     := $(shell git describe --always --dirty --abbrev=7 2>/dev/null || echo unknown)
+
+INCLUDES := -I$(BUILD)/generated \
+            -Isrc \
             -Isdk/Peripheral/inc \
             -Isdk/RVMSIS \
             -Isdk/USB30Lib
@@ -48,6 +53,8 @@ C_SOURCES := \
     src/cdc_uart.c \
     src/debug_cdc.c \
     src/ownership.c \
+    src/console.c \
+    src/chip_uid.c \
     sdk/Peripheral/src/CH56x_clk.c \
     sdk/Peripheral/src/CH56x_emmc.c \
     sdk/Peripheral/src/CH56x_gpio.c \
@@ -62,7 +69,16 @@ S_SOURCES := sdk/Startup/startup_CH56x.S
 OBJECTS := $(addprefix $(BUILD)/,$(C_SOURCES:.c=.o)) \
            $(addprefix $(BUILD)/,$(S_SOURCES:.S=.o))
 
-.PHONY: all clean check check-includes size
+.PHONY: all clean check check-includes size FORCE
+
+# fw_version.h is rewritten only when the version or the git hash changes (no needless rebuilds)
+$(BUILD)/generated/fw_version.h: version.yaml FORCE
+	@mkdir -p $(dir $@)
+	@printf '/* Generated from version.yaml by the Makefile: do not edit. */\n#define FW_VERSION "%s"\n#define FW_GIT     "%s"\n' \
+	    "$(FW_VERSION)" "$(FW_GIT)" > $@.tmp
+	@cmp -s $@.tmp $@ && rm $@.tmp || mv $@.tmp $@
+
+$(BUILD)/src/console.o $(BUILD)/src/Main.o: $(BUILD)/generated/fw_version.h
 
 all: check-includes $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).bin $(BUILD)/$(TARGET).hex size
 
@@ -98,3 +114,7 @@ check: check-includes
 
 clean:
 	rm -rf $(BUILD)
+
+FORCE:
+
+.DEFAULT_GOAL := all

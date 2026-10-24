@@ -1,0 +1,8 @@
+#!/bin/sh
+# rp569 pre-commit hook (enabled by tools/install_hooks.sh: git config core.hooksPath .githooks)
+#  1. every firmware command has a method in the python library, and back (tools/check_commands.py)
+#  2. every component changed by this commit gets its patch version bumped (tools/bump_versions.py)
+set -e
+root="$(git rev-parse --show-toplevel)"
+python3 "$root/tools/check_commands.py"
+python3 "$root/tools/bump_versions.py"

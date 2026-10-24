@@ -6,7 +6,16 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — First firmware for the RP2350B and the CH569
+## pending — 2026-10-24 — Python host library, firmware versions and UIDs, pre-commit hooks
+What: python/rp569 (ports.py discovery by VID/PID/product/UID/interface, RP2350 / CH569Console / CH569Link classes,
+@command methods, python -m rp569, unittest suite), firmware/*/version.yaml compiled in (CMake configure_file,
+Makefile generated header) and printed by `version` with git hash and chip UID; RP2350 CLI table-driven, USB product
+"rp569 RP2350B"; CH569 console on the debug CDC (help/version/status), UID at 0x77FE4 as USB serial, product
+"rp569 CH569", PRINT macro made one statement; tools/check_commands.py, tools/bump_versions.py, .githooks/pre-commit,
+tools/install_hooks.sh; link_test.py on the library; D-025; Hackaday drafts 03/04; docs, skill, logs.
+Why: user asked for the host library, version + UID in the CLI, and hooks to keep commands and versions in step.
+
+## 0727cb0 — 2026-10-24 — First firmware for the RP2350B and the CH569
 What: firmware/rp2350 (Pico SDK 2.2, boards/rp569.h, USB CDC CLI: set R|G|B 0|1, dfu, ch on|off|cycle|boot|reset|
 status|send, adc, btn; build.sh), firmware/ch569 (fork of CH569_Composite: UART1 RP2350 link bridged to USB3 CDC
 with echo, UART0 debug, no SD ownership line, RGB status LED, PRINT macro fix; build.sh), firmware/tools/link_test.py,

@@ -34,6 +34,19 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-025 — Host python library, version scheme, sync hooks (status: accepted, 2026-10-24)
+Requested by user. `python/rp569` (pyserial): ports found by role from VID/PID + product string ("rp569 RP2350B" on
+2e8a:0009, "rp569 CH569" on 1a86:fe2c) + USB interface number (CH569: 1 = link CDC, 3 = console CDC) + serial
+number = chip unique ID; explicit ports of another role and wrong `version` identities are refused. One method per
+firmware command, marked `@command(name)`. Firmware commands are one table per firmware (`COMMANDS-BEGIN/END`);
+the CH569 debug port became a console (`help`, `version`, `status`). Versions: major.minor.patch in
+`firmware/*/version.yaml` (compiled in with `git describe`) and `python/rp569/_version.py`; `version` prints
+version, git hash, build date and chip UID (RP2350 `pico_get_unique_board_id`; CH569 8 factory bytes at flash ROM
+0x77FE4, CH569DS1 §2.2.3, read as in HydraUSB3). Git pre-commit hook (`.githooks/`, `tools/install_hooks.sh`):
+`tools/check_commands.py` refuses a commit whose firmware tables and library disagree; `tools/bump_versions.py`
+bumps the patch of each touched component. **Major/minor are changed by the user only.**
+Alternatives: USB vendor requests for version/UID (no human-usable CLI), libusb matching (more setup on Windows).
+
 ## D-024 — First firmware for both chips (status: accepted, 2026-10-24; not run on hardware yet)
 Requested by user: `firmware/rp2350` and `firmware/ch569`, each with its build script.
 - **RP2350B**: Pico SDK 2.2 (`~/.pico-sdk/sdk/2.2.0`), custom board header `firmware/rp2350/boards/rp569.h`

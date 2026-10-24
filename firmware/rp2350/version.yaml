@@ -1,0 +1,6 @@
+# rp569 RP2350B firmware version (semantic: major.minor.patch).
+# major / minor: changed by the user only. patch: bumped by the pre-commit hook (.githooks/pre-commit)
+# on every commit that changes firmware/rp2350/. Read at build time and printed by the 'version' command.
+major: 0
+minor: 1
+patch: 0

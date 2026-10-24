@@ -7,3 +7,6 @@ route/
 hardware/route.log
 hardware/autoroute/*.kicad_prl
 *.lck
+python/**/__pycache__/
+python/*.egg-info/
+python/build/

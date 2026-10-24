@@ -83,4 +83,6 @@ void USBSS_IRQHandler(void) __attribute__((interrupt));
 }
 #endif
 
+void USB30_SetSerial(const char *hex16);   /* USB serial number = chip UID */
+
 #endif /* USB30_CH56X_USB30_H_ */

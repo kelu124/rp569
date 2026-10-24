@@ -55,6 +55,7 @@ it can be power-cycled and forced into its bootloader during automated tests.
 |------|---------|
 | `hardware/` | KiCad project, generated from `hardware/gen/board.py` (run `hardware/gen/build.sh`); `rp569-routed.kicad_pcb` = routed v1.0 board |
 | `hardware/jlcpcb/` | JLCPCB production files: gerbers zip, BOM, CPL |
+| `python/` | Host library: finds the RP2350/CH569 ports by VID/PID/product/UID, one method per firmware command (`python/README.md`) |
 | `firmware/` | `rp2350/` USB command line (LED, `dfu`, CH569 power/boot/link), `ch569/` USB3 serial + SD drive with RP2350 link echo; see `firmware/README.md` |
 | `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
 | `docs/` | GitHub Pages site root (`index.md`, `_config.yml`): `architecture.md`, `production.md`, `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `layout.md`, `bom.md` (JLCPCB BOM), `ch569-hardware-notes.md`, `hadposts/` (Hackaday log drafts) |

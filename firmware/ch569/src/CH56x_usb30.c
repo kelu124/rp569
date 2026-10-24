@@ -20,6 +20,7 @@
 #include "CH56x_usb20.h"
 #include "CH56x_usb30.h"
 #include "SW_UDISK.h"
+#include "console.h"
 #include "cdc_uart.h"
 #include "bridge_config.h"
 #include "ownership.h"
@@ -186,23 +187,30 @@ const UINT8 StringVendor[] =
     'W', 0x00, 'C', 0x00, 'H', 0x00
 };
 
-/*String Descriptor Product: "SD UART Bridge USB3 " (20 chars)*/
+/*String Descriptor Product: "rp569 CH569" (11 chars). The host library
+ * (python/rp569) finds the ports by VID/PID 1a86:fe2c + this product string. */
 const UINT8 StringProduct[] =
 {
-    42, 0x03,
-    'S', 0x00, 'D', 0x00, ' ', 0x00, 'U', 0x00, 'A', 0x00, 'R', 0x00,
-    'T', 0x00, ' ', 0x00, 'B', 0x00, 'r', 0x00, 'i', 0x00, 'd', 0x00,
-    'g', 0x00, 'e', 0x00, ' ', 0x00, 'U', 0x00, 'S', 0x00, 'B', 0x00,
-    '3', 0x00, ' ', 0x00
+    24, 0x03,
+    'r', 0x00, 'p', 0x00, '5', 0x00, '6', 0x00, '9', 0x00, ' ', 0x00,
+    'C', 0x00, 'H', 0x00, '5', 0x00, '6', 0x00, '9', 0x00
 };
 
-/*String Descriptor Serial*/
+/*String Descriptor Serial: the chip unique ID as 16 hex digits, filled in by
+ * USB30_SetSerialFromUID() before USB init (same UID as the 'version' command). */
 UINT8 StringSerial[] =
 {
-    0x16, 0x03,
-    '0', 0x00, '1', 0x00, '2', 0x00, '3', 0x00, '4', 0x00,
-    '5', 0x00, '6', 0x00, '7', 0x00, '8', 0x00, '9', 0x00
+    0x22, 0x03,
+    '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00,
+    '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00, '0', 0x00
 };
+
+void USB30_SetSerial(const char *hex16)
+{
+    UINT8 i;
+    for(i = 0; i < 16 && hex16[i]; i++)
+        StringSerial[2 + 2 * i] = (UINT8)hex16[i];
+}
 
 const UINT8 OSStringDescriptor[] =
 {
@@ -925,13 +933,14 @@ void EP5_OUT_Callback(void)
 {
 }
 
-/* EP6 OUT: debug port is read-only — discard whatever the host sends, re-arm. */
+/* EP6 OUT: bytes typed on the debug port go to the console (console.c), re-arm. */
 void EP6_OUT_Callback(void)
 {
 #if DEBUG_OVER_USB
     UINT16 rx_len;
     UINT8  nump, status;
     USB30_OUT_Status(ENDP_6, &nump, &rx_len, &status);
+    console_rx(endp6Rxbuff, rx_len);
     USB30_OUT_ClearIT(ENDP_6);
     USBSS->UEP6_RX_DMA = (UINT32)(UINT8 *)endp6Rxbuff;
     USB30_OUT_Set(ENDP_6, ACK, DEF_ENDP6_BURST_LEVEL);

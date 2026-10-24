@@ -3,6 +3,9 @@
 // The CLI runs on the USB serial port (and mirrored on the UART0 debug pins of the RP EXT header).
 // Text received from the CH569 on the inter-chip UART is printed as "CH> ..." lines.
 // Pins: boards/rp569.h. CH569 power/boot sequence: specification.md D-004.
+//
+// Commands live in the table between COMMANDS-BEGIN / COMMANDS-END: the host library (python/rp569/rp2350.py)
+// must have one @command(...) method per entry; tools/check_commands.py (pre-commit hook) enforces it.
 
 #include <ctype.h>
 #include <stdio.h>
@@ -15,8 +18,10 @@
 #include "hardware/watchdog.h"
 #include "pico/bootrom.h"
 #include "pico/stdlib.h"
+#include "pico/unique_id.h"
 
-#define FW_VERSION       "0.1"
+#include "fw_version.h"           // FW_VERSION / FW_GIT, generated from version.yaml
+
 #define LINK_BAUD        115200
 #define CH_POWER_ON_BOOT 1        // power the CH569 (normal boot) when the RP2350 starts
 #define LINE_MAX         128
@@ -150,22 +155,6 @@ static void prompt(void) {
     printf("rp569> %.*s", (int)line_len, line);
 }
 
-static void help(void) {
-    printf("commands:\n"
-           "  set <R|G|B> <0|1>    RGB LED colour on/off (also 'set rgb 101')\n"
-           "  led                  LED state\n"
-           "  btn                  user buttons\n"
-           "  adc                  VBUS3 and 3V3_CH voltages\n"
-           "  dfu                  reboot the RP2350 into its USB bootloader (BOOTSEL / UF2)\n"
-           "  reboot               reboot the RP2350\n"
-           "  ch on|off|cycle      CH569 power (cycle = off, then normal boot)\n"
-           "  ch boot              power-cycle the CH569 into its USB bootloader (wch-ch56x-isp, ~10 s)\n"
-           "  ch reset             pulse RST# (only with RESET_EN set in the CH569)\n"
-           "  ch status            power, fault flag, rails\n"
-           "  ch send <text>       send a line to the CH569 over the link UART (it echoes it back)\n"
-           "  version              firmware version\n");
-}
-
 static int led_index(const char *s) {
     switch (toupper((unsigned char)s[0])) {
     case 'R': return 0;
@@ -175,61 +164,137 @@ static int led_index(const char *s) {
     return -1;
 }
 
+// Command handlers: argc/argv are the words after the command name, rest = the raw text after it.
+static void cmd_help(int argc, char **argv, char *rest);
+
+static void cmd_set(int argc, char **argv, char *rest) {
+    if (argc == 2 && !strcasecmp(argv[0], "rgb") && strlen(argv[1]) == 3) {
+        for (int i = 0; i < 3; i++)
+            led_set(i, argv[1][i] == '1');
+        printf("R %d G %d B %d\n", led_on[0], led_on[1], led_on[2]);
+    } else if (argc == 2 && strlen(argv[0]) == 1 && led_index(argv[0]) >= 0 &&
+               (!strcmp(argv[1], "0") || !strcmp(argv[1], "1"))) {
+        led_set(led_index(argv[0]), argv[1][0] == '1');
+        printf("%c %s\n", toupper((unsigned char)argv[0][0]), argv[1][0] == '1' ? "on" : "off");
+    } else {
+        printf("usage: set <R|G|B> <0|1> | set rgb <RGB bits, e.g. 101>\n");
+    }
+}
+
+static void cmd_led(int argc, char **argv, char *rest) {
+    printf("R %d G %d B %d\n", led_on[0], led_on[1], led_on[2]);
+}
+
+static void cmd_btn(int argc, char **argv, char *rest) {
+    printf("BTN1 %s, BTN2 %s\n", gpio_get(RP569_BTN1_PIN) ? "up" : "down", gpio_get(RP569_BTN2_PIN) ? "up" : "down");
+}
+
+static void cmd_adc(int argc, char **argv, char *rest) {
+    printf("VBUS3 %.2f V, 3V3_CH %.2f V\n", vbus3_volts(), ch3v3_volts());
+}
+
+static void cmd_dfu(int argc, char **argv, char *rest) {
+    printf("rebooting into the USB bootloader (RP2350 drive / picotool)\n");
+    stdio_flush();
+    sleep_ms(100);
+    reset_usb_boot(0, 0);
+}
+
+static void cmd_reboot(int argc, char **argv, char *rest) {
+    printf("rebooting\n");
+    stdio_flush();
+    sleep_ms(100);
+    watchdog_reboot(0, 0, 0);
+}
+
+// One line, parsed by the host library: "rp569 RP2350B firmware <x.y.z> git <hash> built <date> uid <hex>"
+static void cmd_version(int argc, char **argv, char *rest) {
+    char uid[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
+    pico_get_unique_board_id_string(uid, sizeof(uid));
+    printf("rp569 RP2350B firmware " FW_VERSION " git " FW_GIT " built " __DATE__ " uid %s\n", uid);
+}
+
+static void cmd_ch_on(int argc, char **argv, char *rest) { ch_power_on(false); }
+static void cmd_ch_off(int argc, char **argv, char *rest) { ch_power_off(); }
+static void cmd_ch_cycle(int argc, char **argv, char *rest) { ch_power_off(); ch_power_on(false); }
+static void cmd_ch_boot(int argc, char **argv, char *rest) { ch_power_on(true); }
+static void cmd_ch_reset(int argc, char **argv, char *rest) { ch_reset_pulse(); }
+static void cmd_ch_status(int argc, char **argv, char *rest) { ch_status(); }
+
+static void cmd_ch_send(int argc, char **argv, char *rest) {
+    if (rest && *rest)
+        ch_send(rest);
+    else
+        printf("usage: ch send <text>\n");
+}
+
+typedef struct {
+    const char *name;             // one or two words
+    const char *args;
+    const char *help;
+    void (*fn)(int argc, char **argv, char *rest);
+} command_t;
+
+// COMMANDS-BEGIN (keep in sync with python/rp569/rp2350.py: tools/check_commands.py)
+static const command_t commands[] = {
+    {"help",      "",                "this list",                                                       cmd_help},
+    {"version",   "",                "firmware version, git hash and chip unique ID",                   cmd_version},
+    {"set",       "<R|G|B> <0|1>",   "RGB LED colour on/off (also 'set rgb 101')",                      cmd_set},
+    {"led",       "",                "LED state",                                                       cmd_led},
+    {"btn",       "",                "user buttons",                                                    cmd_btn},
+    {"adc",       "",                "VBUS3 and 3V3_CH voltages",                                       cmd_adc},
+    {"dfu",       "",                "reboot the RP2350 into its USB bootloader (BOOTSEL / UF2)",       cmd_dfu},
+    {"reboot",    "",                "reboot the RP2350",                                               cmd_reboot},
+    {"ch on",     "",                "CH569 power on (normal boot)",                                    cmd_ch_on},
+    {"ch off",    "",                "CH569 power off",                                                 cmd_ch_off},
+    {"ch cycle",  "",                "CH569 power off, then normal boot",                               cmd_ch_cycle},
+    {"ch boot",   "",                "power-cycle the CH569 into its USB bootloader (~10 s)",           cmd_ch_boot},
+    {"ch reset",  "",                "pulse RST# (only with RESET_EN set in the CH569)",                cmd_ch_reset},
+    {"ch status", "",                "CH569 power, fault flag, rails",                                  cmd_ch_status},
+    {"ch send",   "<text>",          "send a line to the CH569 over the link UART (it echoes it back)", cmd_ch_send},
+};
+// COMMANDS-END
+#define N_COMMANDS (sizeof(commands) / sizeof(commands[0]))
+
+static void cmd_help(int argc, char **argv, char *rest) {
+    printf("commands:\n");
+    for (size_t i = 0; i < N_COMMANDS; i++) {
+        char left[32];
+        snprintf(left, sizeof(left), "%s %s", commands[i].name, commands[i].args);
+        printf("  %-24s %s\n", left, commands[i].help);
+    }
+}
+
+// Longest match on the first one or two words; the handler gets the remaining words and the raw remainder.
 static void run(char *cmd) {
-    char *argv[4] = {0};
-    int argc = 0;
-    char *rest = NULL;                    // text after "ch send"
-    for (char *tok = strtok(cmd, " \t"); tok && argc < 4; tok = strtok(NULL, " \t")) {
-        argv[argc++] = tok;
-        if (argc == 2 && !strcmp(argv[0], "ch") && !strcmp(argv[1], "send")) {
-            rest = strtok(NULL, "");
-            break;
+    while (*cmd == ' ' || *cmd == '\t')
+        cmd++;
+    if (!*cmd)
+        return;
+    const command_t *best = NULL;
+    size_t best_len = 0;
+    for (size_t i = 0; i < N_COMMANDS; i++) {
+        size_t n = strlen(commands[i].name);
+        if (n > best_len && !strncmp(cmd, commands[i].name, n) && (cmd[n] == 0 || cmd[n] == ' ' || cmd[n] == '\t')) {
+            best = &commands[i];
+            best_len = n;
         }
     }
-    if (!argc)
+    if (!best) {
+        printf("unknown command '%s' (try 'help')\n", cmd);
         return;
-    const char *c = argv[0];
-    if (!strcmp(c, "help") || !strcmp(c, "?")) {
-        help();
-    } else if (!strcmp(c, "set") && argc == 3 && !strcasecmp(argv[1], "rgb") && strlen(argv[2]) == 3) {
-        for (int i = 0; i < 3; i++)
-            led_set(i, argv[2][i] == '1');
-        printf("R %d G %d B %d\n", led_on[0], led_on[1], led_on[2]);
-    } else if (!strcmp(c, "set") && argc == 3 && strlen(argv[1]) == 1 && led_index(argv[1]) >= 0 &&
-               (!strcmp(argv[2], "0") || !strcmp(argv[2], "1"))) {
-        led_set(led_index(argv[1]), argv[2][0] == '1');
-        printf("%c %s\n", toupper((unsigned char)argv[1][0]), argv[2][0] == '1' ? "on" : "off");
-    } else if (!strcmp(c, "led")) {
-        printf("R %d G %d B %d\n", led_on[0], led_on[1], led_on[2]);
-    } else if (!strcmp(c, "btn")) {
-        printf("BTN1 %s, BTN2 %s\n", gpio_get(RP569_BTN1_PIN) ? "up" : "down", gpio_get(RP569_BTN2_PIN) ? "up" : "down");
-    } else if (!strcmp(c, "adc")) {
-        printf("VBUS3 %.2f V, 3V3_CH %.2f V\n", vbus3_volts(), ch3v3_volts());
-    } else if (!strcmp(c, "dfu")) {
-        printf("rebooting into the USB bootloader (RP2350 drive / picotool)\n");
-        stdio_flush();
-        sleep_ms(100);
-        reset_usb_boot(0, 0);
-    } else if (!strcmp(c, "reboot")) {
-        printf("rebooting\n");
-        stdio_flush();
-        sleep_ms(100);
-        watchdog_reboot(0, 0, 0);
-    } else if (!strcmp(c, "version")) {
-        printf("rp569 RP2350B firmware " FW_VERSION " (" __DATE__ ")\n");
-    } else if (!strcmp(c, "ch") && argc >= 2) {
-        const char *s = argv[1];
-        if (!strcmp(s, "on")) ch_power_on(false);
-        else if (!strcmp(s, "off")) ch_power_off();
-        else if (!strcmp(s, "cycle")) { ch_power_off(); ch_power_on(false); }
-        else if (!strcmp(s, "boot")) ch_power_on(true);
-        else if (!strcmp(s, "reset")) ch_reset_pulse();
-        else if (!strcmp(s, "status")) ch_status();
-        else if (!strcmp(s, "send") && rest && *rest) ch_send(rest);
-        else printf("usage: ch on|off|cycle|boot|reset|status|send <text>\n");
-    } else {
-        printf("unknown command '%s' (try 'help')\n", c);
     }
+    char *rest = cmd + best_len;
+    while (*rest == ' ' || *rest == '\t')
+        rest++;
+    char raw[LINE_MAX];
+    strncpy(raw, rest, sizeof(raw) - 1);
+    raw[sizeof(raw) - 1] = 0;
+    char *argv[8];
+    int argc = 0;
+    for (char *tok = strtok(rest, " \t"); tok && argc < 8; tok = strtok(NULL, " \t"))
+        argv[argc++] = tok;
+    best->fn(argc, argv, raw);
 }
 
 static void cli_poll(void) {

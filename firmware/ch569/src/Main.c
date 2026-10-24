@@ -8,7 +8,8 @@
  *   - The microSD card (wired straight to the CH569 EMMC pins) is a removable
  *     drive, served as raw sectors over MSC/BOT, mounted at power-up.
  *   - The debug log goes to UART0 (PB6 TX, CH UART header) and to the second
- *     CDC port (DEBUG_OVER_USB).
+ *     CDC port (DEBUG_OVER_USB). Both also take console commands (console.c:
+ *     help, version, status); the USB serial number is the chip unique ID.
  *
  * On a USB2-only link the device falls back to MSC-only (no COM port) — the
  * vendor USB2 stack has no CDC function. The link echo runs either way.
@@ -23,6 +24,9 @@
 #include "cdc_uart.h"
 #include "ownership.h"
 #include "bridge_config.h"
+#include "console.h"
+#include "chip_uid.h"
+#include "fw_version.h"
 #if DEBUG_OVER_USB
 #include "debug_cdc.h"
 #endif
@@ -88,7 +92,12 @@ int main(void)
     Delay_Init(FREQ_SYS);
 
     DebugInit(DEBUG_UART_BAUD);
-    PRINT("\nrp569 CH569 firmware: USB3 serial + SD drive, RP2350 link echo (%d MHz)\n", FREQ_SYS / 1000000);
+    {
+        char uid[2 * CHIP_UID_LEN + 1];
+        chip_uid_hex(uid);
+        USB30_SetSerial(uid);
+        PRINT("\nrp569 CH569W firmware " FW_VERSION " git " FW_GIT " uid %s (%d MHz)\n", uid, FREQ_SYS / 1000000);
+    }
 
     /* SD card state (no ownership line on rp569, see bridge_config.h). */
     ownership_init();
@@ -124,6 +133,7 @@ int main(void)
         CDC_Uart_Deal();        /* CDC <-> UART1 (RP2350) pump               */
         Link_Echo_Deal();       /* echo RP2350 bytes back on UART1           */
         ownership_poll();       /* executes pending SD mount/unmount         */
+        console_poll();         /* commands from the debug port / UART0      */
 #if DEBUG_OVER_USB
         debug_cdc_poll();       /* stream debug log out the 2nd CDC port     */
 #endif
