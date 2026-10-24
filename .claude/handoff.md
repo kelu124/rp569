@@ -19,7 +19,8 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 
 1. USB pairs as coupled pairs (skew 5–9 mm today on USB3_SSTX/SSRX, USB3_D, USBC_D, RP_USB_D; CH_SSTX is fine):
    delete both lines, pcbnew router **6** on F.Cu, then *Tune skew*. Check with `board_metrics.py`.
-2. Silkscreen: ~68 labels over copper, add connector/header/button labels (see the conversation's list in
+2. Silkscreen: ~68 labels over copper, add connector/button labels (header pin labels are on B.SilkS via
+   `hardware/gen/add_header_labels.py`; re-run it after moving a header) (see the conversation's list in
    `docs/layout.md` § Before ordering / todo).
 3. Confirm 0.24/0.13 mm = 90 Ω with JLCPCB's impedance calculator (JLC04161H-7628).
 4. Re-run `python3 hardware/gen/gen_fab.py`, then review gerbers and the JLCPCB placement preview (rotations).

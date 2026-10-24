@@ -47,6 +47,7 @@ The unzipped files are in `hardware/jlcpcb/gerbers/` for a look in KiCad's Gerbe
 ## Before ordering v1.0
 
 - Re-route the USB pairs as coupled pairs (today the P/N length mismatch is 5–9 mm on five of the six pairs).
-- Clean up the silkscreen (labels over pads, missing connector and button labels).
+- Clean up the silkscreen (labels over pads, missing connector and button labels). The header pins are labelled
+  on the bottom silkscreen (`hardware/gen/add_header_labels.py`).
 - Confirm the 90 Ω impedance with JLCPCB.
 - Regenerate the files (`gen_fab.py`) and the [images](images/) (`gen_renders.py`) after any board change.

@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — GitHub Pages documentation site from docs/
+## pending — 2026-10-24 — Header pin labels on the bottom silkscreen
+What: hardware/gen/add_header_labels.py (43 mirrored B.SilkS labels in group 'header_labels', U4 reference
+shrunk/moved to make room), applied to hardware/rp569-routed.kicad_pcb; JLCPCB gerbers and docs/images renders
+regenerated; logs, skill, docs.
+Why: user asked for pin labels on the bottom silkscreen next to the header pins. DRC unchanged (0/0, 119 warnings).
+
+## bb8f900 — 2026-10-24 — GitHub Pages documentation site from docs/
 What: docs/_config.yml (Cayman theme), docs/index.md (home), docs/architecture.md, docs/production.md (JLCPCB
 ordering), docs/power.md brought up to v1.0 (GPIO29/30, TLV62569 +3V3, DNP 0 Ω warning, no HSPI series R),
 README/CLAUDE.md/handoff links, logs.
