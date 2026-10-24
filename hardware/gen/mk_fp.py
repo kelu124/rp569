@@ -74,9 +74,36 @@ def gsb343k33hr():
     return name, '\n'.join(out) + '\n'
 
 
+def tps2121_rux():
+    """TI RUX0012A (VQFN-HR, 2 x 2.5 mm): TPS2121 datasheet SLVSEA3F, "Example board layout" page.
+    Pins 1/8 OUT, 2 IN2, 7 IN1 are 1.05 x 0.4 mm; the other 8 are 0.2 x 0.6 mm at 0.5 mm pitch, rows 2.3 mm apart.
+    Top view: 12 11 10 9 across the top, 3 4 5 6 across the bottom, 1/2 on the left, 8/7 on the right."""
+    name = 'TI_RUX0012A_VQFN-HR-12_2x2.5mm'
+    out = [f'(footprint "{name}"', '\t(version 20241229)', '\t(generator "rp569_gen")', '\t(layer "F.Cu")',
+           '\t(descr "TI RUX0012A VQFN-HR 12 pin 2x2.5 mm (TPS2121), land pattern from datasheet SLVSEA3F")',
+           '\t(tags "VQFN-HR TPS2121")',
+           text('Reference', 'REF**', -2.4, 'F.SilkS'), text('Value', name, 2.4, 'F.Fab'), '\t(attr smd)']
+    big = {'1': (-0.675, -0.35), '8': (0.675, -0.35), '2': (-0.675, 0.35), '7': (0.675, 0.35)}
+    for num, (x, y) in big.items():
+        out.append(f'\t(pad "{num}" smd roundrect (at {f(x)} {f(y)}) (size 1.05 0.4) (layers "F.Cu" "F.Paste" "F.Mask") '
+                   '(roundrect_rratio 0.125))')
+    xs = (-0.75, -0.25, 0.25, 0.75)
+    for nums, y in ((('12', '11', '10', '9'), -1.15), (('3', '4', '5', '6'), 1.15)):
+        for num, x in zip(nums, xs):
+            out.append(f'\t(pad "{num}" smd roundrect (at {f(x)} {f(y)}) (size 0.2 0.6) '
+                       '(layers "F.Cu" "F.Paste" "F.Mask") (roundrect_rratio 0.25))')
+    out.append(rect('F.Fab', -1.0, -1.25, 1.0, 1.25, 0.1))
+    out.append(rect('F.CrtYd', -1.45, -1.7, 1.45, 1.7, 0.05))
+    # silk: pin-1 corner mark, outside the pads
+    out.append(line('F.SilkS', -1.3, -1.55, -1.1, -1.55, 0.12))
+    out.append(line('F.SilkS', -1.3, -1.55, -1.3, -0.75, 0.12))
+    out.append(')')
+    return name, '\n'.join(out) + '\n'
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    for name, body in (gsb343k33hr(),):
+    for name, body in (gsb343k33hr(), tps2121_rux()):
         with open(os.path.join(OUT, name + '.kicad_mod'), 'w') as fh:
             fh.write(body)
         print('footprint', name)

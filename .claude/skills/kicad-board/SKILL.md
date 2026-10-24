@@ -1,0 +1,69 @@
+---
+name: kicad-board
+description: Use when changing the rp569 hardware (parts, nets, footprints, placement, routing) — the board.py → KiCad generator workflow, its checks, and the Freerouting step.
+---
+
+# rp569 KiCad workflow
+
+Everything in `hardware/` is generated. Never edit the `.kicad_sch` / `.kicad_pcb` by hand before hand routing
+starts (`CLAUDE.md`).
+
+## Pipeline
+
+| Step | Script | Notes |
+|---|---|---|
+| Symbols | `gen/mk_lib.py` | CH569W from phantomdrive (pin types fixed), TPS2121 drawn from its datasheet |
+| Footprints | `gen/mk_fp.py` | GSB343K33HR, TI RUX0012A: from the datasheet land pattern; lib registered in `hardware/fp-lib-table` |
+| Schematic | `gen/gen_sch.py` | one sheet, label per pin, LCSC/MPN fields |
+| PCB | `gen/gen_pcb.py` (system `/usr/bin/python3`) | fixed parts dict + two-sided nearest-spot placer; `main(out=, rot={value: deg})` for experiments |
+| Net classes | `gen/gen_pro.py` | merges into the KiCad-written `.kicad_pro` (kicad-cli rewrites it, so `build.sh` runs it twice) |
+| BOM/CPL | `gen/gen_bom.py` | JLCPCB files in `hardware/jlcpcb/` |
+| Checks | `gen/build.sh` | ERC, DRC with schematic parity → `hardware/reports/` |
+| Routing | `/usr/bin/python3 gen/route.py [passes] [pcb] [--keep]` | patched Freerouting 2.1.0 (Java 21), GND fan-out vias, DSN → SES, GND fills on In2/F/B; `--keep` continues from the current routing |
+
+Targets after `build.sh`: ERC 0, DRC 0 electrical, parity 0. Silk overlaps are cosmetic.
+
+## Gotchas found so far
+
+- Board net names carry the schematic's `/` prefix (`/GND`); strip it when matching against `board.py` nets.
+- Every new symbol/footprint field must exist on both sides or parity reports `footprint_symbol_field_mismatch`.
+- ERC: a pin tied to GND clashes with the USB3 symbol's GND `power_out` pin if it is `open_collector`/`output`.
+- Footprint orientation: check pad positions (`fp.Pads()`) to know which side is the connector opening before
+  choosing a rotation (USB-C HRO opens toward +y at 0°; KiCad rotation is CCW on screen).
+- `SetLayerAndFlip(B_Cu)` around the origin, then position; bounding boxes change after the flip.
+- Freerouting: In1 typed `LT_POWER` (GND plane, reached by vias); zones on signal layers would be exported
+  as obstacles, so `route.py` removes them before export and adds the GND fills after import.
+- Freerouting does not do coupled diff pairs: route USB3/USB2 pairs in pcbnew (diff-pair router), then
+  autoroute the rest.
+- Experiments: generate variants into the scratchpad with absolute paths and run several `route.py` in parallel
+  (8 cores, ~45 s per pass each). Saving a board rewrites the `.kicad_pro` next to it with default rules
+  (0.2/0.2 mm, no classes); `route.py` therefore copies `hardware/rp569.kicad_pro` next to any variant board and
+  aborts if the DSN has no `(class Power`. Always check `(width`/`(clearance` in the DSN before trusting a result.
+- Stock Freerouting 2.1.0 ignores `-mp` (runs to its 12 h job timeout) and a job timeout stops it mid-pass with
+  connections ripped up. `route.py` uses `~/.local/share/freerouting/freerouting-2.1.0-mp.jar`, built by
+  `gen/patch_freerouting_mp.py` (see its docstring); rebuild it if the jar is missing.
+- Freerouting places no via for the In1 plane net: `route.py:gnd_fanout()` adds the GND vias before export.
+- Never run `build.sh` while `route.py` is running: route.py saves over `rp569.kicad_pcb` at the end, with the
+  board it loaded at the start.
+
+## Rule: watch every routing run (user request, 2026-10-24)
+
+Whenever Freerouting runs (route.py or a direct `java -jar`), start a **Monitor** that reports progress
+**every 3 minutes** until it stops, and relay each report to the user in one line (time, pass, unrouted):
+
+```bash
+L=/home/kelu/projets/rp569/hardware/route.log      # or the variant's log
+sleep 40
+while true; do
+  last=$(grep -a -o "pass #[0-9]* .*([0-9]* unrouted" "$L" 2>/dev/null | awk '{print $2, $(NF-1)")"}' | tail -1)
+  if pgrep -f "[j]ava -jar .*freerouting" >/dev/null; then echo "$(date +%H:%M) running: ${last:-no pass yet}";
+  else sleep 60; echo "$(date +%H:%M) Freerouting stopped. last ${last:-none}. log tail: $(grep -av 'property.h' "$L" | tail -1 | cut -c1-160)"; exit 0; fi
+  sleep 180
+done
+```
+
+- Monitor `timeout_ms` 1800000 (the maximum); re-arm it when it expires while the router is still running.
+- Stop the previous watch (TaskStop) before starting a new run that writes the same log.
+- `pgrep -f "[j]ava ..."`: the bracket keeps the pattern from matching the shell running it (same for `pkill`).
+- If the count stops falling for ~10 passes, analyse the leftovers (`kicad-cli pcb drc --format json` →
+  `unconnected_items`, grouped by net and footprint) instead of waiting longer.

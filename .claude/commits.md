@@ -6,7 +6,17 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-23 — JLCPCB BOM and placement files with LCSC part numbers
+## pending — 2026-10-24 — TPS2121 power mux, v0.3 placement, pin reassignment, autorouting setups
+What: board.py (TPS2121 replaces the LM66100s; HSPI series arrays dropped; RP2350/CH569 pins reassigned by side),
+mk_lib/mk_fp (TPS2121 symbol + RUX0012A footprint), gen_pcb (v0.3 layout, buttons/LEDs at the edges, passive
+orientation, hole clearance 0.2), gen_pro (Rail class, HSPI/Power 0.1 mm clearance), gen/route.py (Freerouting with
+GND fan-out vias, patched jar), gen/patch_freerouting_mp.py, gen/route_krt.sh (KiCadRoutingTools chain), regenerated
+hardware files and reports, specification (D-015..D-019, R-06/08/10/11/15), docs (pinmap, layout, power, bom),
+project skills kicad-board and jlcpcb-parts, datasheet/TPS2121.
+Why: user asked for the TPS2121, routing and JLCPCB; routability fixes D-017..D-019. Board still unrouted in git
+(routing is done on copies: 27 links left with KRT, 35 with Freerouting).
+
+## 9b192cc — 2026-10-23 — JLCPCB BOM and placement files with LCSC part numbers
 What: board.py LCSC table + LED/resistor/inductor changes, gen_sch/gen_pcb LCSC+MPN fields, gen/gen_bom.py,
 hardware/jlcpcb/ (BOM, CPL), docs/bom.md, specification (R-18, D-014, D-005), todo/done.
 Why: User plans to have the board made and assembled by JLCPCB.

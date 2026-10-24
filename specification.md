@@ -16,29 +16,89 @@ All requested by the user, 2026-10-23.
 | R-03 | SD card on the CH569's SD/eMMC pins | met | 4-bit SD on the eMMC controller (D-003) |
 | R-04 | RP2350B on USB 2.0 through a USB-C connector | met | USB-C, 5.1k CC pull-downs, 27 Ω series, ESD |
 | R-05 | The RP2350 can program the CH569, or at least enable its programming, for automated testing | met | Power switch + boot pin control (D-004) |
-| R-06 | Shared I2C bus between the two chips | met | RP GPIO26/27 ↔ CH569 PB22/PB23, 4.7k pull-ups |
+| R-06 | Shared I2C bus between the two chips | met | RP I2C1 GPIO26/27 ↔ CH569 PA14/PA15 (bit-bang), 4.7k pull-ups (D-018) |
 | R-07 | Shared UART between the two chips | met | RP UART1 GPIO24/25 ↔ CH569 UART1 PA7/PA8 |
-| R-08 | Parallel bus with clock: the RP2350 sends high-speed data, the CH569 exports it over USB 3 | met (8-bit) | CH569 HSPI 8-bit + handshake, 33 Ω series (D-002, D-003; 16-bit asked first, conflicts with the SD card) |
+| R-08 | Parallel bus with clock: the RP2350 sends high-speed data, the CH569 exports it over USB 3 | met (8-bit) | CH569 HSPI 8-bit + handshake, direct connection (D-002, D-003, D-018; 16-bit asked first, conflicts with the SD card) |
 | R-09 | Logic analyser: 8 RP2350 pins sampled and streamed over the parallel bus | met | GPIO0–7, 100 Ω series, LA IN header |
-| R-10 | One RGB LED per chip, placed close to its chip | met | Discrete RGB on PWM pins (D-005), placed beside each chip (D-011) |
-| R-11 | Breakout I2C bus on each chip, separate from the shared bus (CH569: bit-bang allowed) | met | RP I2C0 GPIO28/29; CH569 PB8/PB9 bit-banged; headers with pull-ups |
+| R-10 | One RGB LED per chip (first asked close to its chip; 2026-10-24: may sit further away) | met | Discrete RGB on PWM pins (D-005), at the board edge on its chip's half (D-018) |
+| R-11 | Breakout I2C bus on each chip, separate from the shared bus (CH569: bit-bang allowed) | met | RP I2C0 GPIO36/37; CH569 PB12/PB13 bit-banged; headers with pull-ups (D-018) |
 | R-12 | CH569 powered from its own USB3 VBUS through an RP2350-controlled switch; ideal diodes so the two USB connectors cannot back-feed each other | met | D-007, D-009 |
 | R-13 | Board 50×70 mm, angled corners, parts on both sides, main chips on the same side as the USB connectors and the SD socket | met | D-011 |
 | R-14 | 2.54 mm 2x1 header for a physical jumper to program a blank CH569 | met | CH BOOT JP, PA5 → 1k → GND (D-004) |
-| R-15 | Two user buttons for the RP2350 and two for the CH569 | met | RP GPIO30/31, CH569 PB3/PB4, 10k pull-ups (D-012) |
+| R-15 | Two user buttons for the RP2350 and two for the CH569 (2026-10-24: may sit away from the chips) | met | RP GPIO31/39, CH569 PA12/PA13, 10k pull-ups, at the board edges (D-018) |
 | R-16 | USB3 Micro-B with through-hole legs, for a firm mechanical hold | met | Amphenol GSB343K33HR, project footprint (D-013) |
 | R-17 | The RP2350 can put the CH569 in its bootloader the same way as the BOOT button | met | Checked on the netlist, sequence in D-004 |
-| R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | partial | D-014; `docs/bom.md`; 3 parts must be consigned |
+| R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | partial | D-014, D-016; `docs/bom.md`; 2 parts must be consigned |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-019 — HSPI and Power net classes at 0.1 mm clearance (status: accepted, 2026-10-24; KRT routing under trial)
+Context: KiCadRoutingTools (KRT) with QFN fanout of both chips left 13 of ~405 connections at 0.1 mm clearance
+everywhere, but 32 when the 0.15 mm (HSPI, Power) and 0.13 mm (USB) class clearances were kept (Freerouting:
+35). The 0.4 mm-pitch escapes do not fit at 0.15 mm.
+Choice (user, 2026-10-24): Power (VBUS, 5 V, switch nodes) 0.15 → 0.1 mm, HSPI 0.15 → 0.1 mm, USB pairs keep
+0.13 mm to other nets. Track widths unchanged.
+Alternatives: keep every class and hand-finish ~30 links; 6-layer board.
+Rationale: 0.1 mm is JLCPCB standard; nothing on the 5 V nets needs more; HSPI runs are 2–3 cm on one board,
+the extra crosstalk is the accepted cost (firmware can lower drive strength / slew if needed); USB keeps margin
+for its 90 Ω impedance.
+Routing: `hardware/gen/route_krt.sh <workdir>` (KRT chain, documented in `docs/layout.md`); Freerouting
+(`route.py`) stays as a documented option.
+
+## D-018 — Routability: HSPI series resistors dropped, pins reassigned by chip side, buttons/LEDs at the edges (status: accepted, 2026-10-24)
+Context: after D-017 the autorouter still left ~40–60 of ~420 connections; the leftovers sat in the HSPI corridor
+(four 33 Ω arrays between the chips) and on the CH569 bottom/left edge. The user allowed (2026-10-24): dropping the
+HSPI series resistors, reassigning the reassignable pins, moving buttons and LEDs away from the chips.
+Choice:
+- HSPI: RP2350 GPIO8–23 wired straight to the CH569 (2–3 cm on one board, no termination). The 4 × 4D02 33 Ω arrays
+  are gone. Firmware: keep RP2350 drive strength low (4 mA) and slew limited on these pins if ringing shows up.
+- RP2350 GPIO24–39 (RP2350 datasheet §1.2.3 table 3): UART1 24/25 → CH569 (F2), I2C1 26/27 link (F3),
+  28 CH569_RST_N, 29 CH569_PWR_EN, 30 CH569_PWR_FAULT_N (lower right side, toward the CH569 and its power switch);
+  32/33 UART0 debug (F2, top-right corner, toward RP EXT); 36/37 I2C0 breakout (F3, top side, toward RP I2C);
+  LEDs on 34/35/38 (PWM9A/9B/11A); buttons on 31/39. The two UARTs and the two I2C buses stay on different instances.
+- CH569 generic GPIOs (CH569DS1 table 1-2): EXT header = PA17 + bottom pins PB3, PB4, PA16, PB7, PB8, PB9, PB22,
+  PB10, PB23, PB11, PB24 (header pin order = chip pin order); CH I2C (bit-bang) PB12/PB13 (bottom-right corner,
+  toward the right-edge header); I2C link (bit-bang) PA14/PA15 (right side, toward the RP2350); buttons PA12/PA13;
+  SD card detect PA20 (bottom-left corner, next to the socket). LEDs stay on PB0–PB2 (PWM/timer pins).
+  HSPI, SD, USB, UARTs, RST# and PA5 (boot) are unchanged.
+- Buttons and LEDs fixed at the board edges, each on its chip's half (gen_pcb `fixed`).
+Alternatives: 6-layer board, 55×75 mm board, smaller vias, hand-finishing in pcbnew; kept for later if needed.
+Rationale: removes 16 connections and 4 parts from the densest area; every reassigned line now leaves its chip on
+the side facing its destination.
+
+## D-017 — v0.3 placement and routing setup (status: accepted, 2026-10-24)
+Placement from pin sides: RP2350B at (25, 19) rotated 90° (GPIO8–23 face down), CH569 at (25, 46) rotated 270°
+(HSPI pins up, USB3 pins at its top-right corner next to the USB3 connector). Bottom keep-out = QFN pad box + 1.2 mm,
+0.4 mm part spacing, passives turned toward their net partners.
+Net classes: `Rail` 0.2/0.1 mm for +3V3, 3V3_CH, 1V2_CH, 1V1 and GND (Freerouting cannot neck a 0.3 mm track into
+the 0.2 mm QFN pins); `Power` 0.3 mm only for VBUS / 5 V / switch nodes (clearance 0.1 mm since D-019). Hole-to-copper clearance 0.2 mm.
+Routing (`hardware/gen/route.py`): In1 is the GND plane; Freerouting places no via for a plane net, so the script
+puts a locked via beside every SMD GND pad (and 4 in each exposed pad) before export. Freerouting 2.1.0 is used
+patched so that `-mp` works (`hardware/gen/patch_freerouting_mp.py`): the stock jar ignores it and its job
+timeout stops mid-pass.
+
+## D-016 — Stackup JLC04161H-7628 and JLCPCB design rules; autorouting with Freerouting (status: proposed, 2026-10-23)
+Stackup: JLCPCB 4-layer 1.6 mm JLC04161H-7628 (L1–L2 prepreg 7628, 0.2104 mm, er 4.4). In1/In2 = GND planes.
+USB3/USB2 90 Ω differential on F.Cu over In1: 0.24 mm / 0.13 mm gap (IPC-2141A estimate ~91 Ω). **Confirm with
+JLCPCB's impedance calculator**, or order controlled impedance. Rules: track/clearance 0.15/0.1 mm default, power
+0.3 mm, vias 0.3/0.5 mm (JLCPCB standard, no extra cost).
+Routing: `hardware/gen/route.py` (Freerouting 2.1.0, Java 21) routes the generated board. Freerouting does not
+route coupled differential pairs, so the USB pairs need a manual check / re-route in pcbnew.
+
+## D-015 — Power OR = TI TPS2121 instead of 2 × LM66100 (status: accepted, 2026-10-23)
+Context: LM66100 is not stocked by JLCPCB (D-014). User chose the TPS2121 (C485916, 28k in stock).
+Choice: TPS2121RUXR in VCOMP mode (datasheet SLVSEA3F §10.5): IN1 = VBUS_C, IN2 = VBUS_3, OUT = 5V_SYS; PR1 = CP2 =
+GND, so the higher input wins (IN2 on a tie); OV1/OV2 dividers 23.7k/4.99k → inputs above 1.06 × 28.69/4.99 ≈ 6.1 V
+are rejected; RILM 100k (range 18–100k) ≈ 1.2 A typical, load < 0.3 A; SS 10 nF (TI example); ST tied to GND.
+Symbol and footprint (RUX0012A land pattern) generated by `gen/mk_lib.py` and `gen/mk_fp.py` from the datasheet.
+
 ## D-014 — JLCPCB assembly, LCSC part numbers in board.py (status: accepted, 2026-10-23)
 Requirement R-18. Choice: every part gets an LCSC number from the JLCPCB catalogue (jlcparts snapshot 2026-10-23),
 preferring Basic parts and large stock. `gen_bom.py` writes JLCPCB BOM + CPL files to `hardware/jlcpcb/`.
 Substitutions made for availability: RGB LED → LiteOn LTST-C19HE1WT (G/B resistors 100 Ω, D-005); 2.2 µH →
-FTC303020D2R2MBCA. Not at JLCPCB, consigned: CH569W, LM66100DCKR ×2, GSB343K33HR. Details: docs/bom.md.
+FTC303020D2R2MBCA; LM66100 ×2 → TPS2121 (D-015). Not at JLCPCB, consigned: CH569W, GSB343K33HR. Details: docs/bom.md.
 
 ## D-013 — USB3 Micro-B = Amphenol GSB343K33HR, through-hole shell legs (status: accepted, 2026-10-23)
 Requirement R-16: through-hole mounting legs for a firm mechanical hold. The Connfly DS1104-01 (D-008) is all-SMD
@@ -74,7 +134,7 @@ Choice: USB3 Micro-B receptacle (device), SSTX AC caps 100 nF, TPD2EUSB30 ESD on
 Alternative: USB3 Type-A plug like phantomdrive (stick form factor).
 
 ## D-007 — Power paths: ideal-diode OR for 5V_SYS, switched 5V_CH from USB3 VBUS (status: proposed)
-Choice: VBUS_C and VBUS_3 ORed by two LM66100 ideal diodes → 5V_SYS (RP2350 side, no back-feed between connectors).
+Choice: VBUS_C and VBUS_3 ORed (first two LM66100 ideal diodes, now one TPS2121, D-015) → 5V_SYS (RP2350 side, no back-feed between connectors).
 CH569 powered only from VBUS_3 through a current-limited load switch (AP2171W, D-009), EN = RP2350 GPIO35 (pull-down), FAULT# → GPIO39.
 Optional DNP link 5V_SYS → switch input to run the CH569 without a USB3 cable.
 Requested by user 2026-10-23. Details: docs/power.md.
@@ -84,7 +144,7 @@ Choice: dedicated 3V3 and 1V2 TLV62569 bucks for the CH569 (external 1.2 V on V1
 Source: docs/ch569-hardware-notes.md.
 
 ## D-005 — Discrete RGB LEDs on PWM pins (status: proposed)
-Choice: one discrete RGB LED per chip. RP2350 GPIO36/37/38 (PWM10A/10B/11A); CH569 PB0 (TMR1_), PB1 (PWM2), PB2 (PWM3).
+Choice: one discrete RGB LED per chip. RP2350 GPIO34/35/38 (PWM9A/9B/11A, D-018); CH569 PB0 (TMR1_), PB1 (PWM2), PB2 (PWM3).
 Part (D-014): LiteOn LTST-C19HE1WT, common anode to the chip's 3.3 V rail, GPIO sinks; 330 Ω red, 100 Ω green/blue.
 Alternatives: WS2812/SK6812 (1 pin, but 5 V supply/levels and a timing-critical protocol on the CH569).
 Rationale: works at 3.3 V on both chips, PWM in hardware on both.

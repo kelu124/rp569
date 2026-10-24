@@ -1,13 +1,9 @@
-ERC report (2026-10-23T23:28:35, Encoding UTF8)
+ERC report (2026-10-24T14:07:57, Encoding UTF8)
 Report includes: Errors, Warnings
 
 ***** Sheet /
-[pin_to_pin]: Pins of type Power output and Power output are connected
-    ; error
-    @(179.07 mm, 49.53 mm): Symbol U2 Pin 6 [VOUT, Power output, Line]
-    @(224.79 mm, 49.53 mm): Symbol U3 Pin 6 [VOUT, Power output, Line]
 
- ** ERC messages: 1  Errors 1  Warnings 0
+ ** ERC messages: 0  Errors 0  Warnings 0
 
  ** Ignored checks:
     - Global label only appears once in the schematic

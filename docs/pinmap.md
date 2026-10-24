@@ -1,6 +1,6 @@
 # Pin map — RP2350B ↔ CH569W
 
-Status: **draft v0.1 (2026-10-23)**. Sources: `datasheet/CH569DS1.pdf` Table 1-2 (CH569 QFN-68 pin
+Status: **v0.2 (2026-10-24, pins reassigned by chip side, D-018)**. Sources: `datasheet/CH569DS1.pdf` Table 1-2 (CH569 QFN-68 pin
 definitions) and Table 10-1 (HSPI interface); `datasheet/rp2350-datasheet.pdf` GPIO function table
 (§9.4, F1–F11). Pin numbers checked against the PDFs, not the Markdown conversions.
 
@@ -44,27 +44,27 @@ analyser inputs and drive the bus.
 |---|---|---|---|---|---|
 | GPIO24 | UART1 TX | RP_TX_CH_RX | 13 PA7 | RXD1 | Inter-chip UART (same UART phantomdrive uses for debug) |
 | GPIO25 | UART1 RX | CH_TX_RP_RX | 12 PA8 | TXD1 | |
-| GPIO26 | I2C1 SDA | I2C_LINK_SDA | 45 PB22 | GPIO (bit-bang) | Shared inter-chip I2C, pull-ups 4.7k to 3V3 |
-| GPIO27 | I2C1 SCL | I2C_LINK_SCL | 47 PB23 | GPIO (bit-bang) | |
-| GPIO35 | GPIO out | CH569_PWR_EN | — | — | Load-switch EN for 5V_CH (CH569 power from its USB3 VBUS), pull-down. See `docs/power.md` (D-004, D-007) |
-| GPIO39 | GPIO in | CH569_PWR_FAULT# | — | — | Load-switch fault (open-drain) |
+| GPIO26 | I2C1 SDA | I2C_LINK_SDA | 59 PA14 | GPIO (bit-bang) | Shared inter-chip I2C, pull-ups 4.7k to 3V3 |
+| GPIO27 | I2C1 SCL | I2C_LINK_SCL | 60 PA15 | GPIO (bit-bang) | |
+| GPIO29 | GPIO out | CH569_PWR_EN | — | — | Load-switch EN for 5V_CH (CH569 power from its USB3 VBUS), pull-down. See `docs/power.md` (D-004, D-007) |
+| GPIO30 | GPIO in | CH569_PWR_FAULT# | — | — | Load-switch fault (open-drain) |
 | GPIO46 | ADC6 | VBUS3_SENSE | — | — | USB3 VBUS present/level (divider) |
 | GPIO47 | ADC7 | CH569_3V3_SENSE | — | — | CH569 3V3 rail monitor (divider) |
-| GPIO34 | GPIO out (open-drain) | CH569_RST# | 30 PB15 | RST# | Only works if config bit RESET_EN = 1 (default 0). 10k pull-up |
+| GPIO28 | GPIO out (open-drain) | CH569_RST# | 30 PB15 | RST# | Only works if config bit RESET_EN = 1 (default 0). 10k pull-up |
 
 ## 4. RP2350B local I/O
 
 | RP2350B GPIO | Function | Net | Notes |
 |---|---|---|---|
-| GPIO28 | I2C0 SDA | RP_I2C_SDA | Breakout header (3V3, SDA, SCL, GND), 4.7k pull-ups |
-| GPIO29 | I2C0 SCL | RP_I2C_SCL | |
+| GPIO36 | I2C0 SDA | RP_I2C_SDA | Breakout header (3V3, SDA, SCL, GND), 4.7k pull-ups |
+| GPIO37 | I2C0 SCL | RP_I2C_SCL | |
 | GPIO32 | UART0 TX | RP_DBG_TX | Debug UART, on the RP EXT header (pins 2/3) |
 | GPIO33 | UART0 RX | RP_DBG_RX | |
-| GPIO36 | PWM10 A | RP_LED_R | Discrete RGB LED (D-005), active low via series R |
-| GPIO37 | PWM10 B | RP_LED_G | |
+| GPIO34 | PWM9 A | RP_LED_R | Discrete RGB LED (D-005), active low via series R |
+| GPIO35 | PWM9 B | RP_LED_G | |
 | GPIO38 | PWM11 A | RP_LED_B | |
 | GPIO40–45 | ADC0–5 / GPIO | EXT0–5 | RP EXT header 1x10: 3V3, DBG_TX, DBG_RX, ADC0–5, GND |
-| GPIO30, GPIO31 | GPIO | RP_BTN1, RP_BTN2 | User buttons to GND, 10k pull-ups to +3V3 |
+| GPIO31, GPIO39 | GPIO | RP_BTN1, RP_BTN2 | User buttons to GND, 10k pull-ups to +3V3 |
 | — | USB DP/DM | USB-C | Dedicated pins |
 | — | QSPI | Flash + BOOTSEL | Dedicated pins |
 | — | SWCLK/SWDIO | SWD header | Dedicated pins |
@@ -78,24 +78,24 @@ analyser inputs and drive the bus.
 | 31 PB14 | MSDCK | SD_CLK | SD clock |
 | 29 PB16 | MCMD | SD_CMD | 47k pull-up |
 | 27–24 PB17–PB20 | MD0–MD3 | SD_D0–D3 | 47k pull-ups |
-| 60 PA15 | GPIO | SD_DET | Card detect (as phantomdrive) |
+| 35 PA20 | GPIO | SD_DET | Card detect, next to the socket (D-018) |
 | 32 PB0 | TMR1_ (PWM) | CH_LED_R | Discrete RGB LED (D-005) |
 | 33 PB1 | PWM2 | CH_LED_G | |
 | 34 PB2 | PWM3 | CH_LED_B | |
-| 43 PB8 | GPIO (bit-bang) | CH_I2C_SDA | Breakout header, 4.7k pull-ups |
-| 44 PB9 | GPIO (bit-bang) | CH_I2C_SCL | |
+| 50 PB12 | GPIO (bit-bang) | CH_I2C_SDA | Breakout header, 4.7k pull-ups |
+| 51 PB13 | GPIO (bit-bang) | CH_I2C_SCL | |
 | 39 PB6 / 38 PB5 | TXD0 / RXD0 | CH_DBG_TX/RX | CH569 debug UART header |
-| 36 PB3 / 37 PB4 | GPIO | CH_BTN1, CH_BTN2 | User buttons to GND, 10k pull-ups to 3V3_CH |
+| 57 PA12 / 58 PA13 | GPIO | CH_BTN1, CH_BTN2 | User buttons to GND, 10k pull-ups to 3V3_CH |
 | 15 PA5 | HD0 / boot | CH_BOOT_SW (via 1k) | BOOT button + 2-pin jumper `CH BOOT JP` to GND: fitted = bootloader at every power-up |
 | 67, 68 | XO/XI | — | 30 MHz crystal, 15 pF |
 | 65, 66 | GXM/GXP | — | SerDes, not connected |
-| PA12–PA14, PA16, PA17, PA20, PB7, PB10–PB13, PB24 | — | CH_EXTx | Spare header 2x07 (12 GPIO + 3V3_CH + GND) |
+| 28 PA17, 36 PB3, 37 PB4, 40 PA16, 41 PB7, 43 PB8, 44 PB9, 45 PB22, 46 PB10, 47 PB23, 48 PB11, 49 PB24 | — | CH_EXTx | Spare header 2x07 (12 GPIO in this order + 3V3_CH + GND) |
 
 ## 6. Constraints to respect in firmware / schematic
 
 - **Back-powering**: when CH569 is powered off, the RP2350 must tri-state every line to the CH569 except
-  HSPI_D0 (held low to select the bootloader, or released). Consider series resistors (22–33 Ω) on the
-  bus, which also help signal integrity.
+  HSPI_D0 (held low to select the bootloader, or released). The HSPI lines have no series resistors (D-018):
+  set the RP2350 pads to 4 mA drive and slow slew if edges ring.
 - **Bootloader entry**: RP2350 drives HSPI_D0 (PA5) low → asserts CH569_PWR_EN → waits → releases.
   CH569 enumerates as `4348:55E0` on the USB3 connector's USB2 lines; host runs `wch-ch56x-isp`.
   The bootloader times out after ~10 s without activity.

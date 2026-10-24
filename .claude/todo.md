@@ -25,17 +25,18 @@
 
 - [ ] Power (D-007): confirm parts (LM66100, TPS2553, TLV62569) and stock; size the TPS2553 current limit from the CH569 current draw.
 - [ ] Check that the CH569 I/Os don't clamp the shared I2C / inter-chip lines while the CH569 is unpowered (power.md rules).
-- [ ] Review `docs/pinmap.md` v0.1 with the user, then freeze it.
+- [ ] Review `docs/pinmap.md` v0.2 (D-018 reassignment) with the user, then freeze it.
 - [ ] Confirm the HSPI packet format (header/CRC, Table 10-x) so the PIO TX program can be written.
 - [ ] Read HydraUSB3 schematic + `HydraUSB3_V1_CH569_HSPI.ods` to answer the HSPI/eMMC pin-collision and power-rail questions above.
 - [ ] Collect datasheets/reference designs into `docs/` (CH569 EVT schematic, RP2350 hardware design guide).
 - [ ] Block diagram (`docs/`).
 - [ ] Review schematic v0.1 (`hardware/rp569-schematic.pdf`) with the user.
-- [ ] Pick fab + stackup; recompute 90 Ω diff-pair width/gap in `gen/gen_pro.py`.
-- [ ] Hand-review v0.2 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
-- [ ] Routing: USB3/USB2 pairs → power → HSPI (length-matched) → rest (maybe Freerouting).
+- [ ] Confirm the 90 Ω width/gap (0.24/0.13 mm, D-016) with JLCPCB's impedance calculator.
+- [ ] Hand-review v0.3 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
+- [ ] Routing: finish the KRT result (`gen/route_krt.sh`, 27 links left) by hand in pcbnew; re-route the 3 uncoupled USB pairs with the diff-pair router; HSPI length match.
+- [ ] Place the USB3 ESD (TPD2EUSB30) in line with each pair so the pairs can stay coupled.
 - [ ] Silkscreen cleanup.
-- [ ] Decide on the 3 consigned parts (CH569W, LM66100 ×2, GSB343K33HR): consign, or swap LM66100 for TPS2121/Schottky (docs/bom.md).
+- [ ] Consigned parts: CH569W and GSB343K33HR (LM66100 replaced by TPS2121, D-015).
 - [ ] Check JLCPCB rotations in the placement preview; recheck stock before ordering.
 - [ ] Confirm the 3.3 µH alternative against the RP2350 HW design guide (AOTA-B201610S3R3 has 119 in stock).
 - [ ] Check AP2171W 1 A limit vs. CH569 + SD peak current (D-009).

@@ -73,10 +73,18 @@ R('5.1k', 'USBC_CC2', 'GND', B)
 add('U', 'Power_Protection:TPD2EUSB30', 'TPD2EUSB30', 'Package_TO_SOT_SMD:Texas_DRT-3',
     {'1': 'USBC_DP', '2': 'USBC_DM', '3': 'GND'}, B)
 C('4.7uF', 'VBUS_C', B)
-# ideal-diode OR -> 5V_SYS (no back-feed between the two connectors)
-for vin in ('VBUS_C', 'VBUS_3'):
-    add('U', 'Power_Management:LM66100DCK', 'LM66100', 'Package_TO_SOT_SMD:SOT-363_SC-70-6',
-        {'1': vin, '2': 'GND', '3': 'GND', '6': '5V_SYS'}, B)
+# TPS2121 power mux -> 5V_SYS (no back-feed between the two connectors), D-015. VCOMP mode (datasheet §10.5):
+# PR1 = CP2 = GND, the higher input wins. OV1/OV2 dividers 23.7k/4.99k: inputs above ~6.1 V are rejected.
+# ILIM 100k: ~1.2 A typ (RILM range 18-100k). SS 10 nF as in the TI example. ST not used.
+add('U', 'rp569:TPS2121', 'TPS2121', 'rp569:TI_RUX0012A_VQFN-HR-12_2x2.5mm',
+    {'7': 'VBUS_C', '2': 'VBUS_3', '1': '5V_SYS', '8': '5V_SYS', '5': 'PMUX_OV1', '4': 'PMUX_OV2',
+     '6': 'GND', '3': 'GND', '9': 'GND', '10': 'PMUX_ILIM', '11': 'PMUX_SS', '12': 'GND'}, B)
+R('23.7k', 'VBUS_C', 'PMUX_OV1', B)
+R('4.99k', 'PMUX_OV1', 'GND', B)
+R('23.7k', 'VBUS_3', 'PMUX_OV2', B)
+R('4.99k', 'PMUX_OV2', 'GND', B)
+R('100k', 'PMUX_ILIM', 'GND', B)
+C('10nF', 'PMUX_SS', B)
 C('10uF', '5V_SYS', B)
 # CH569 supply: VBUS_3 (or 5V_SYS, DNP) -> 5V_CH_IN -> load switch -> 5V_CH
 R('0R', 'VBUS_3', '5V_CH_IN', B)
@@ -138,11 +146,14 @@ gpio = {}
 for i in range(8):
     gpio[i] = f'LA{i}_R'
 for i, n in enumerate(HSPI):
-    gpio[8 + i] = n + '_RP'
+    gpio[8 + i] = n            # direct, no series resistors (D-018)
+# GPIO24-39 by pin side (D-018, RP2350 datasheet table 3): the lines to the CH569 / power switch on the lower
+# right side (pins 25-28, 36-38), UART0 debug at the top-right corner (pins 40/42), I2C0 breakout and LED on the
+# top side (pins 43-48). UART1 = 24/25 (F2), UART0 = 32/33 (F2), I2C1 = 26/27 (F3), I2C0 = 36/37 (F3).
 gpio.update({24: 'UART_RP2CH', 25: 'UART_CH2RP', 26: 'I2C_LINK_SDA', 27: 'I2C_LINK_SCL',
-             28: 'RP_I2C_SDA', 29: 'RP_I2C_SCL', 30: 'RP_BTN1', 31: 'RP_BTN2',
-             32: 'RP_DBG_TX', 33: 'RP_DBG_RX', 34: 'CH569_RST_N', 35: 'CH569_PWR_EN',
-             36: 'RP_LED_R', 37: 'RP_LED_G', 38: 'RP_LED_B', 39: 'CH569_PWR_FAULT_N',
+             28: 'CH569_RST_N', 29: 'CH569_PWR_EN', 30: 'CH569_PWR_FAULT_N', 31: 'RP_BTN1',
+             32: 'RP_DBG_TX', 33: 'RP_DBG_RX', 34: 'RP_LED_R', 35: 'RP_LED_G',
+             36: 'RP_I2C_SDA', 37: 'RP_I2C_SCL', 38: 'RP_LED_B', 39: 'RP_BTN2',
              46: 'VBUS3_SENSE', 47: 'CH3V3_SENSE'})
 for i in range(40, 46):
     gpio[i] = f'RP_ADC{i - 40}'
@@ -204,8 +215,6 @@ RN('100R', [(f'LA{i}', f'LA{i}_R') for i in range(4, 8)], B)
 
 # --------------------------------------------------------------------------- inter-chip link
 B = 'Inter-chip'
-for k in range(4):
-    RN('33R', [(n + '_RP', n) for n in HSPI[4 * k:4 * k + 4]], B)
 R('4.7k', 'I2C_LINK_SDA', '+3V3', B)
 R('4.7k', 'I2C_LINK_SCL', '+3V3', B)
 R('10k', 'CH569_RST_N', '3V3_CH', B)
@@ -219,12 +228,12 @@ ch = {
     '15': 'HSPI_D0', '16': '3V3_CH', '17': 'HSPI_D1', '18': 'HSPI_TRDY', '19': 'HSPI_D3', '20': 'HSPI_D4',
     '21': 'HSPI_D5', '22': 'HSPI_D6', '23': 'HSPI_D7', '24': 'SD_D3', '25': 'SD_D2', '26': 'SD_D1',
     '27': 'SD_D0', '28': 'CH_PA17', '29': 'SD_CMD', '30': 'CH569_RST_N', '31': 'SD_CLK',
-    '32': 'CH_LED_R', '33': 'CH_LED_G', '34': 'CH_LED_B', '35': 'CH_PA20', '36': 'CH_BTN1', '37': 'CH_BTN2',
+    '32': 'CH_LED_R', '33': 'CH_LED_G', '34': 'CH_LED_B', '35': 'SD_DET', '36': 'CH_PB3', '37': 'CH_PB4',
     '38': 'CH_DBG_RX', '39': 'CH_DBG_TX', '40': 'CH_PA16', '41': 'CH_PB7', '42': '3V3_CH',
-    '43': 'CH_I2C_SDA', '44': 'CH_I2C_SCL', '45': 'I2C_LINK_SDA', '46': 'CH_PB10', '47': 'I2C_LINK_SCL',
-    '48': 'CH_PB11', '49': 'CH_PB24', '50': 'CH_PB12', '51': 'CH_PB13', '52': 'HSPI_TVLD', '53': 'HSPI_D2',
-    '54': 'HSPI_TREQ', '55': 'HSPI_RACK', '56': 'HSPI_TCLK', '57': 'CH_PA12', '58': 'CH_PA13',
-    '59': 'CH_PA14', '60': 'SD_DET', '61': '3V3_CH', '62': '3V3_CH', '63': '1V2_CH', '64': '3V3_CH',
+    '43': 'CH_PB8', '44': 'CH_PB9', '45': 'CH_PB22', '46': 'CH_PB10', '47': 'CH_PB23',
+    '48': 'CH_PB11', '49': 'CH_PB24', '50': 'CH_I2C_SDA', '51': 'CH_I2C_SCL', '52': 'HSPI_TVLD', '53': 'HSPI_D2',
+    '54': 'HSPI_TREQ', '55': 'HSPI_RACK', '56': 'HSPI_TCLK', '57': 'CH_BTN1', '58': 'CH_BTN2',
+    '59': 'I2C_LINK_SDA', '60': 'I2C_LINK_SCL', '61': '3V3_CH', '62': '3V3_CH', '63': '1V2_CH', '64': '3V3_CH',
     '67': 'XO_CH', '68': 'XI_CH', '69': 'GND',
 }
 add('U', 'rp569:CH569W', 'CH569W', 'Package_DFN_QFN:QFN-68-1EP_8x8mm_P0.4mm_EP5.2x5.2mm', ch, B)
@@ -249,8 +258,8 @@ add('J', 'Connector_Generic:Conn_01x04', 'CH I2C', hdr(4), {'1': '3V3_CH', '2': 
 R('4.7k', 'CH_I2C_SDA', '3V3_CH', B)
 R('4.7k', 'CH_I2C_SCL', '3V3_CH', B)
 add('J', 'Connector_Generic:Conn_01x03', 'CH UART', hdr(3), {'1': 'CH_DBG_TX', '2': 'CH_DBG_RX', '3': 'GND'}, B)
-ext = ['CH_PA12', 'CH_PA13', 'CH_PA14', 'CH_PA16', 'CH_PA17', 'CH_PA20', 'CH_PB7',
-       'CH_PB10', 'CH_PB11', 'CH_PB12', 'CH_PB13', 'CH_PB24']
+ext = ['CH_PA17', 'CH_PB3', 'CH_PB4', 'CH_PA16', 'CH_PB7', 'CH_PB8',      # in CH569 pin order (28, 36-49)
+       'CH_PB9', 'CH_PB22', 'CH_PB10', 'CH_PB23', 'CH_PB11', 'CH_PB24']
 add('J', 'Connector_Generic:Conn_02x07_Odd_Even', 'CH EXT',
     'Connector_PinHeader_2.54mm:PinHeader_2x07_P2.54mm_Vertical',
     {**{str(i + 1): n for i, n in enumerate(ext)}, '13': '3V3_CH', '14': 'GND'}, B)
@@ -292,7 +301,8 @@ LCSC_BY_VALUE = {
     ('Device:R', '330R'): ('C25104', '0402WGF3300TCE'), ('Device:R', '1k'): ('C11702', '0402WGF1001TCE'),
     ('Device:R', '4.7k'): ('C25900', '0402WGF4701TCE'), ('Device:R', '5.1k'): ('C25905', '0402WGF5101TCE'),
     ('Device:R', '10k'): ('C25744', '0402WGF1002TCE'), ('Device:R', '47k'): ('C25792', '0402WGF4702TCE'),
-    ('Device:R', '100k'): ('C25741', '0402WGF1003TCE'), ('Device:R', '453k'): ('C27009', '0402WGF4533TCE'),
+    ('Device:R', '100k'): ('C25741', '0402WGF1003TCE'), ('Device:R', '23.7k'): ('C226363', 'AC0402FR-0723K7L'),
+    ('Device:R', '4.99k'): ('C25903', '0402WGF4991TCE'), ('Device:C', '10nF'): ('C15195', 'CL05B103KB5NNNC'), ('Device:R', '453k'): ('C27009', '0402WGF4533TCE'),
     ('Device:R_Pack04', '33R'): ('C25501', '4D02WGJ0330TCE'), ('Device:R_Pack04', '100R'): ('C48442', '4D02WGJ0101TCE'),
     ('Device:L', '2.2uH'): ('C7423318', 'FTC303020D2R2MBCA'),     # FTC303015D2R2MBCA: only 9 in stock; same 3x3 family, 2.0 mm high
     ('Device:L', '3.3uH'): ('C42411119', 'AOTA-B201610S3R3-101-T'),   # the part named in the RP2350 HW design guide
@@ -309,7 +319,7 @@ LCSC_BY_VALUE = {
     ('Connector:USB_C_Receptacle_USB2.0_16P', None): ('C165948', 'TYPE-C-31-M-12'),
     ('Connector:Micro_SD_Card_Det_Hirose_DM3AT', None): ('C114218', 'DM3AT-SF-PEJM5'),
     ('rp569:CH569W', 'CH569W'): ('', 'CH569W'),                         # not at JLCPCB: consign
-    ('Power_Management:LM66100DCK', 'LM66100'): ('', 'LM66100DCKR'),    # not at JLCPCB: consign
+    ('rp569:TPS2121', 'TPS2121'): ('C485916', 'TPS2121RUXR'),
     ('Connector:USB3_B_Micro', None): ('', 'GSB343K33HR'),              # not at JLCPCB: consign
     # 2.54 mm headers (THT): assembled by JLCPCB only if THT assembly is ordered
     ('Connector_Generic:Conn_01x02', None): ('C492401', 'PZ254V-11-02P'),

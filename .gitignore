@@ -3,3 +3,5 @@ hardware/*-backups/
 hardware/fp-info-cache
 hardware/#auto_saved_files#
 __pycache__/
+route/
+hardware/route.log

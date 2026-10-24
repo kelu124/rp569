@@ -2,6 +2,12 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-10-24 — D-019: HSPI and Power clearance 0.1 mm; `gen/route_krt.sh` (KiCadRoutingTools chain): 27 of 405 links left, 0 clearance violations against the project rules.
+- 2026-10-24 — KiCadRoutingTools evaluated (`~/tools/KiCadRoutingTools`): fab-floor relaxation, In1 use and class-clearance lowering found and disabled.
+- 2026-10-24 — D-018: HSPI series resistors dropped, RP2350 GPIO24–39 and CH569 generic GPIOs reassigned by chip side, buttons/LEDs moved to the edges (`docs/pinmap.md` v0.2).
+- 2026-10-24 — Freerouting set up (`gen/route.py`): net classes guard, GND fan-out vias, Rail class, patched 2.1.0 jar so `-mp` works; best 35 links left. Kept as a documented option.
+- 2026-10-24 — D-017: v0.3 placement from pin sides (RP2350 90°, CH569 270°), passives turned toward their nets.
+- 2026-10-23 — D-015: TPS2121 power mux replaces the 2 × LM66100 (symbol + RUX0012A footprint from the datasheet), LCSC C485916.
 - 2026-10-23 — JLCPCB BOM + CPL with LCSC numbers (`gen/gen_bom.py`, `docs/bom.md`, D-014): RGB LED → LTST-C19HE1WT (pinout checked, G/B 100 Ω), 2.2 µH → FTC303020D2R2MBCA; 3 consigned parts.
 - 2026-10-23 — USB3 Micro-B swapped to Amphenol GSB343K33HR (THT shell legs, R-16/D-013): footprint generated from the drawing by `gen/mk_fp.py`, `hardware/fp-lib-table`.
 - 2026-10-23 — `specification.md`: requirements R-01..R-17 + all design decisions (replaces `.claude/decisions.md`). Checked on the netlist that the RP2350 can force the CH569 bootloader like the BOOT button (D-004 rewritten).

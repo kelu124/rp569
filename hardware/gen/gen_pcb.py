@@ -35,32 +35,38 @@ def by_value(v):
 
 # Top side: both chips, USB connectors, microSD, LEDs, buttons. RP2350 in the top half (USB-C on the
 # top edge), CH569 in the bottom half (USB3 + microSD on the bottom edge), HSPI bus in between.
+# v0.3 layout (D-017), chosen from the pin sides: RP2350B rotated 90 so GPIO8-23 (HSPI) face down; CH569 rotated
+# 270 so its HSPI pins 10-23 face up and its USB3 pins 1-8 sit at its top-right corner, next to the USB3
+# connector on the right edge. microSD bottom-left, next to the CH569 SD pins.
 fixed = {
     first(lambda p: 'USB_C' in p['lib_id'])['ref']: (25, 4.3, 180),
-    first(lambda p: 'USB3_B_Micro' in p['lib_id'])['ref']: (16, H - 1.45, 0),   # slots 1.45 mm from the edge
-    first(lambda p: 'Micro_SD' in p['lib_id'])['ref']: (33.5, H - 9.0, 0),
-    by_value('RP2350B'): (25, 21, 0),
-    by_value('CH569W'): (25, 45, 0),
+    first(lambda p: 'USB3_B_Micro' in p['lib_id'])['ref']: (W - 1.45, 43, 90),   # slots 1.45 mm from the edge
+    first(lambda p: 'Micro_SD' in p['lib_id'])['ref']: (16, H - 9.0, 0),
+    by_value('RP2350B'): (25, 19, 90),
+    by_value('CH569W'): (25, 46, 270),
     # headers (THT, both sides): along the edges
     by_value('SWD'): (10, 2.2, 90),
     by_value('RP I2C'): (33, 2.2, 90),
     by_value('LA IN'): (2.2, 10.5, 0),
     by_value('RP EXT'): (W - 2.2, 9.5, 0),
-    by_value('CH EXT'): (2.2, 38, 0),
-    by_value('CH I2C'): (W - 2.2, 37, 0),
-    by_value('CH UART'): (W - 2.2, 48.3, 0),
-    by_value('CH BOOT JP'): (W - 2.2, 57.2, 0),
-    # buttons and RGB LEDs, each next to its chip
-    by_value('BOOTSEL'): (10.5, 8, 0),
-    by_value('RUN'): (10.5, 12.5, 0),
-    by_value('RP BTN1'): (39.5, 8, 0),
-    by_value('RP BTN2'): (39.5, 12.5, 0),
-    by_value('CH BTN1'): (10.5, 54.5, 0),
-    by_value('CH BTN2'): (16.7, 54.5, 0),
-    by_value('CH569 BOOT'): (13.5, 59, 0),
-    first(lambda p: p['lib_id'] == 'Device:LED_RGBA' and p['block'] == 'RP2350B')['ref']: (34, 13, 0),
-    first(lambda p: p['lib_id'] == 'Device:LED_RGBA' and p['block'] == 'CH569W')['ref']: (37.5, 41, 0),
+    by_value('CH EXT'): (2.2, 37, 0),
+    by_value('CH I2C'): (W - 2.2, 52.5, 0),
+    by_value('CH UART'): (27, H - 2.2, 90),
+    by_value('CH BOOT JP'): (36.5, H - 2.2, 90),
+    # buttons and RGB LEDs out at the edges, on their chip's half, clear of the QFN escape areas (D-018)
+    by_value('BOOTSEL'): (16.5, 7.5, 0),
+    by_value('RUN'): (10.5, 7.5, 0),
+    by_value('RP BTN1'): (41.5, 21, 0),        # GPIO31, right side of the RP2350
+    by_value('RP BTN2'): (39.5, 9, 0),         # GPIO39, top side
+    by_value('CH BTN1'): (29.5, 62.5, 0),
+    by_value('CH BTN2'): (36.5, 62.5, 0),
+    by_value('CH569 BOOT'): (42.5, 57.5, 0),
+    first(lambda p: p['lib_id'] == 'Device:LED_RGBA' and p['block'] == 'RP2350B')['ref']: (43, 13, 0),
+    first(lambda p: p['lib_id'] == 'Device:LED_RGBA' and p['block'] == 'CH569W')['ref']: (41.5, 62.5, 0),
 }
+# placer knobs (placement experiments): spacing between parts, bottom keep-out around the QFN pins
+SPACING = 0.4
+QFN_RING = 1.2
 holes = [p['ref'] for p in board.parts if p['lib_id'] == 'Mechanical:MountingHole']
 for ref, xy in zip(holes, [(4, 4), (W - 4, 4), (4, H - 4), (W - 4, H - 4)]):
     fixed[ref] = (*xy, 0)
@@ -98,14 +104,41 @@ def load_fp(fpid):
     return fp
 
 
-def main():
+def outline_pts():
+    c = CHAMFER
+    return [(c, 0), (W - c, 0), (W, c), (W, H - c), (W - c, H), (c, H), (0, H - c), (0, c)]
+
+
+def add_gnd_zone(brd, layer, net, priority=0):
+    """GND zone over the whole board on one layer (outline pulled in by 0.5 mm)."""
+    z = pcbnew.ZONE(brd)
+    z.SetLayer(layer)
+    z.SetNet(net)
+    z.SetLocalClearance(mm(0.2))
+    z.SetMinThickness(mm(0.2))
+    z.SetAssignedPriority(priority)
+    ol = z.Outline()
+    ol.NewOutline()
+    for x, y in outline_pts():
+        ol.Append(mm(x + (0.5 if x < W / 2 else -0.5)), mm(y + (0.5 if y < H / 2 else -0.5)))
+    brd.Add(z)
+    return z
+
+
+def main(out=None, rot=None):
+    """rot: {value: rotation} overrides for fixed parts (placement experiments)."""
     brd = pcbnew.BOARD()
     brd.SetCopperLayerCount(4)
     ds = brd.GetDesignSettings()
-    ds.m_TrackMinWidth = mm(0.127)
-    ds.m_MinClearance = mm(0.127)
-    ds.m_ViasMinSize = mm(0.45)
-    ds.m_MinThroughDrill = mm(0.2)
+    # JLCPCB 4-layer capabilities (min 0.09 mm track/space, 0.3 mm via drill without extra cost)
+    ds.m_TrackMinWidth = mm(0.1)
+    ds.m_MinClearance = mm(0.1)
+    ds.m_ViasMinSize = mm(0.5)
+    ds.m_MinThroughDrill = mm(0.3)
+    # hole to copper: a 0.5/0.3 via with 0.1 mm copper clearance leaves 0.2 mm (KiCad default 0.25 flags every via)
+    ds.m_HoleClearance = mm(0.2)
+    # In1 = solid GND plane (reference for the F.Cu USB pairs); In2 = routing layer, GND-filled after routing
+    brd.SetLayerType(pcbnew.In1_Cu, pcbnew.LT_POWER)
 
     nets = {}
     for p in board.parts:
@@ -145,9 +178,9 @@ def main():
         fps[p['ref']] = (fp, p)
 
     # fixed parts
-    for ref, (x, y, rot) in fixed.items():
+    for ref, (x, y, r) in fixed.items():
         fp = fps[ref][0]
-        fp.SetOrientationDegrees(rot)
+        fp.SetOrientationDegrees((rot or {}).get(fps[ref][1]['value'], r))
         fp.SetPosition(P(x, y))
         if ref in holes:
             fp.Reference().SetVisible(False)
@@ -166,10 +199,16 @@ def main():
         occupied['F'].append(fp.GetBoundingBox(False))
         if is_tht(fp):
             occupied['B'].append(fp.GetBoundingBox(False))
-        elif fps[r][1]['value'] in ('RP2350B', 'CH569W'):    # keep the bottom free under the EP (thermal vias)
-            ep = max(fp.Pads(), key=lambda pad: pad.GetBoundingBox().GetArea()).GetBoundingBox()
-            ep.Inflate(mm(0.5))
-            occupied['B'].append(ep)
+        elif fps[r][1]['value'] in ('RP2350B', 'CH569W'):
+            # keep the bottom free under the chip and 1.2 mm around its pins: EP thermal vias and fan-out vias
+            pb = None
+            for pad in fp.Pads():
+                if pb is None:
+                    pb = pad.GetBoundingBox()
+                else:
+                    pb.Merge(pad.GetBoundingBox())
+            pb.Inflate(mm(QFN_RING))
+            occupied['B'].append(pb)
     placed = set(fixed)
     pad_pos = {}
 
@@ -197,13 +236,13 @@ def main():
                 ic = fps[ref][1]
                 if ic['ref'].startswith('U') and ic['block'] == p['block'] and (ref, num) not in claimed:
                     claimed.add((ref, num))
-                    return pos
+                    return pos, True
         pts = [pos for n in (sig or nets) for (_, pos, _) in pad_pos.get(n, [])
                if n != 'GND']
         if pts:
-            return pcbnew.VECTOR2I(sum(q.x for q in pts) // len(pts), sum(q.y for q in pts) // len(pts))
+            return pcbnew.VECTOR2I(sum(q.x for q in pts) // len(pts), sum(q.y for q in pts) // len(pts)), False
         x0, y0, x1, y1 = ZONES.get(zone_of(p), (10, 10, W - 10, H - 10))
-        return P((x0 + x1) / 2, (y0 + y1) / 2)
+        return P((x0 + x1) / 2, (y0 + y1) / 2), False
 
     offsets = sorted(((dx * 0.5, dy * 0.5) for dx in range(-70, 71) for dy in range(-70, 71)),
                      key=lambda t: t[0] ** 2 + t[1] ** 2)
@@ -219,26 +258,51 @@ def main():
                 continue
             fp.SetPosition(P(x, y))
             nb = fp.GetBoundingBox(False)
-            nb.Inflate(mm(0.25))
+            nb.Inflate(mm(SPACING))       # room for a track or a via between parts
             if any(nb.Intersects(o) for o in occupied[side]):
                 continue
             return (dx * dx + dy * dy) ** 0.5, x, y, nb
         return None
 
     PASSIVE = {'Device:R', 'Device:C', 'Device:R_Pack04'}
+
+    def orient(fp, ref, tx, ty):
+        """Turn a passive so each signal pad faces the nearest other pad of its net (resistor arrays sat with
+        both pin columns sideways to the RP2350 -> CH569 flow, and Freerouting could not untangle them)."""
+        best = None
+        for r in (0, 90, 180, 270):
+            fp.SetOrientationDegrees(r)
+            fp.SetPosition(P(tx, ty))
+            score = 0.0
+            for pad in fp.Pads():
+                n = pad.GetNetname().lstrip('/')
+                others = [q for (o, q, _) in pad_pos.get(n, []) if o != ref] if n not in POWER else []
+                if others:
+                    a = pad.GetPosition()
+                    score += min(((a.x - q.x) ** 2 + (a.y - q.y) ** 2) ** 0.5 for q in others)
+            if best is None or score < best[0] - mm(0.2):   # keep 0 deg unless a turn is clearly shorter
+                best = (score, r)
+        fp.SetOrientationDegrees(best[1])
     # order: big parts first
     rest = [r for r in fps if r not in placed]
     rest.sort(key=lambda r: -fps[r][0].GetBoundingBox(False).GetArea())
     for ref in rest:
         fp, p = fps[ref]
-        t = target(fp, p)
+        t, decap = target(fp, p)
         tx, ty = pcbnew.ToMM(t.x), pcbnew.ToMM(t.y)
         top_only = bool(set(p['pins'].values()) & TOP_ONLY_NETS)
-        bias = {'F': 2.0, 'B': 0.0} if p['lib_id'] in PASSIVE else {'F': 0.0, 'B': 4.0}
+        # decoupling caps go under their IC on the bottom; other passives slightly prefer the top
+        bias = {'F': 2.0, 'B': 0.0} if decap else {'F': 0.0, 'B': 1.0} if p['lib_id'] in PASSIVE else {'F': 0.0, 'B': 4.0}
+        passive = p['lib_id'] in PASSIVE
+        if passive:
+            orient(fp, ref, tx, ty)
         cand = {'F': find_spot(fp, 'F', tx, ty)}
+        rot_f = fp.GetOrientationDegrees()
         if not top_only:
             fp.SetPosition(P(0, 0))
             fp.SetLayerAndFlip(pcbnew.B_Cu)
+            if passive:
+                orient(fp, ref, tx, ty)
             cand['B'] = find_spot(fp, 'B', tx, ty)
         cand = {k: v for k, v in cand.items() if v}
         if not cand:
@@ -249,6 +313,7 @@ def main():
         if side == 'F' and fp.IsFlipped():
             fp.SetPosition(P(0, 0))
             fp.SetLayerAndFlip(pcbnew.F_Cu)
+            fp.SetOrientationDegrees(rot_f)
         fp.SetPosition(P(x, y))
         occupied[side].append(nb)
         if is_tht(fp):
@@ -257,8 +322,7 @@ def main():
         refresh(ref)
 
     # outline
-    c = CHAMFER
-    corners = [(c, 0), (W - c, 0), (W, c), (W, H - c), (W - c, H), (c, H), (0, H - c), (0, c)]
+    corners = outline_pts()
     for (x0, y0), (x1, y1) in zip(corners, corners[1:] + corners[:1]):
         s = pcbnew.PCB_SHAPE(brd)
         s.SetShape(pcbnew.SHAPE_T_SEGMENT)
@@ -268,21 +332,10 @@ def main():
         s.SetWidth(mm(0.1))
         brd.Add(s)
 
-    # GND planes on In1 and In2 (reference planes for USB3 / HSPI)
-    for layer in (pcbnew.In1_Cu, pcbnew.In2_Cu):
-        z = pcbnew.ZONE(brd)
-        z.SetLayer(layer)
-        z.SetNet(nets['GND'])
-        z.SetLocalClearance(mm(0.2))
-        z.SetMinThickness(mm(0.2))
-        ol = z.Outline()
-        ol.NewOutline()
-        for x, y in corners:      # board outline pulled in by 0.5 mm
-            ol.Append(mm(x + (0.5 if x < W / 2 else -0.5)), mm(y + (0.5 if y < H / 2 else -0.5)))
-        brd.Add(z)
+    add_gnd_zone(brd, pcbnew.In1_Cu, nets['GND'])      # In2 / outer GND fills: added by route.py
     pcbnew.ZONE_FILLER(brd).Fill(brd.Zones())
 
-    out = os.path.join(HW, 'rp569.kicad_pcb')
+    out = out or os.path.join(HW, 'rp569.kicad_pcb')
     brd.Save(out)
     print(f'{len(fps)} footprints, {len(nets)} nets -> {out}')
 
