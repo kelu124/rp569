@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-10-24 — GitHub Pages site in `docs/` (index, architecture, production pages; power.md updated to v1.0).
 - 2026-10-24 — Renders in `docs/images/` (`gen/gen_renders.py`: 3D views + layer plots).
 - 2026-10-24 — Handoff for a later session (`.claude/handoff.md`), check scripts saved in the kicad-board skill, two Hackaday log drafts in `docs/hadposts/`.
 - 2026-10-24 — JLCPCB production files for v1.0 (`gen/gen_fab.py` → `hardware/jlcpcb/rp569-gerbers.zip`, BOM, CPL), routed board renamed `hardware/rp569-routed.kicad_pcb`, v1.0 renders, docs updated (D-022).

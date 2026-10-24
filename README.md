@@ -6,7 +6,7 @@ The RP2350B generates high-speed data and the CH569 streams it to a host over **
 Status: **v1.0** (tag `v1.0`). Schematic complete, PCB **fully routed** (4-layer, 50×70 mm, chamfered corners,
 parts on both sides; 0 unconnected, 0 DRC errors) and **JLCPCB production files generated**. Before ordering:
 USB pairs as coupled pairs, silkscreen cleanup, impedance check (see [`docs/layout.md`](docs/layout.md)).
-[Schematic PDF](hardware/rp569-schematic.pdf).
+[Schematic PDF](hardware/rp569-schematic.pdf). Documentation site: https://kelu124.github.io/rp569/ (GitHub Pages from `docs/`).
 
 ## Production files (JLCPCB)
 
@@ -55,7 +55,7 @@ it can be power-cycled and forced into its bootloader during automated tests.
 | `hardware/` | KiCad project, generated from `hardware/gen/board.py` (run `hardware/gen/build.sh`); `rp569-routed.kicad_pcb` = routed v1.0 board |
 | `hardware/jlcpcb/` | JLCPCB production files: gerbers zip, BOM, CPL |
 | `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
-| `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `layout.md`, `bom.md` (JLCPCB BOM), `ch569-hardware-notes.md`, `hadposts/` (Hackaday log drafts) |
+| `docs/` | GitHub Pages site root (`index.md`, `_config.yml`): `architecture.md`, `production.md`, `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `layout.md`, `bom.md` (JLCPCB BOM), `ch569-hardware-notes.md`, `hadposts/` (Hackaday log drafts) |
 | `project/` | Reference projects: [HydraUSB3](https://github.com/hydrausb3), [phantomdrive](https://github.com/o7-machinehum/phantomdrive) (see `project/README.md`) |
 | `specification.md` | Requirements (R-xx) and design decisions (D-xxx) |
 | `CLAUDE.md`, `.claude/` | Project context, todo/done logs, commit log |

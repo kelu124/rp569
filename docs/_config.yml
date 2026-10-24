@@ -1,0 +1,11 @@
+# GitHub Pages site, served from the docs/ folder of main (Settings → Pages → Deploy from a branch → main /docs)
+title: rp569
+description: RP2350B + WCH CH569 board — PIO-generated data streamed to a host over USB 3.0
+theme: jekyll-theme-cayman
+markdown: kramdown
+# GitHub Pages enables these by default; listed so a local `jekyll serve` behaves the same
+plugins:
+  - jekyll-optional-front-matter   # the existing .md pages have no front matter
+  - jekyll-relative-links           # links to other .md files become page links
+  - jekyll-readme-index             # images/README.md and hadposts/README.md become their folder's index
+  - jekyll-titles-from-headings

@@ -22,6 +22,8 @@
 
 ## Tasks
 
+- [ ] Enable GitHub Pages (Settings → Pages → Deploy from branch `main`, folder `/docs`) and check the site renders.
+
 - [ ] Review and publish the Hackaday drafts (`docs/hadposts/`), add a before/after ratsnest screenshot.
 
 

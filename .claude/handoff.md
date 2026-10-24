@@ -9,6 +9,8 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 - **Production files**: `hardware/jlcpcb/rp569-gerbers.zip`, `rp569-bom.csv`, `rp569-cpl.csv` from
   `python3 hardware/gen/gen_fab.py` (DRC-gated). 2 consigned parts: CH569W, GSB343K33HR.
 - Images: `python3 hardware/gen/gen_renders.py` → `docs/images/` (re-run after board changes).
+- Docs site: `docs/` is the GitHub Pages root (`index.md`, `_config.yml`); enable it in the repo settings
+  (Pages → main → /docs) if not done. URL https://kelu124.github.io/rp569/.
 - `hardware/rp569.kicad_pcb` is the **generated, unrouted** board (`build.sh`); it is not the one to fabricate.
 - How v1.0 was made: generator (`board.py` → `build.sh`) → KiCadRoutingTools chain (`hardware/gen/route_krt.sh`,
   16 links left) → hand finishing in pcbnew by the user, checked with `.claude/skills/kicad-board/drc_check.py`.

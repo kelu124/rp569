@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Board renders in docs/images
+## pending — 2026-10-24 — GitHub Pages documentation site from docs/
+What: docs/_config.yml (Cayman theme), docs/index.md (home), docs/architecture.md, docs/production.md (JLCPCB
+ordering), docs/power.md brought up to v1.0 (GPIO29/30, TLV62569 +3V3, DNP 0 Ω warning, no HSPI series R),
+README/CLAUDE.md/handoff links, logs.
+Why: user asked for GitHub Pages docs with docs/ as root, an index page and missing documentation.
+
+## 4e5573c — 2026-10-24 — Board renders in docs/images
 What: hardware/gen/gen_renders.py (3D top/bottom/angled renders, per-layer and assembly SVG + PNG plots),
 docs/images/ (v1.0 images + index), hadposts index, logs.
 Why: user asked for renders in docs/images (for docs and the Hackaday posts).
