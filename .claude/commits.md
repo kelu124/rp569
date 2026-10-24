@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — TPS2121 power mux, v0.3 placement, pin reassignment, autorouting setups
+## pending — 2026-10-24 — Autorouted board (KiCadRoutingTools, 21 links left)
+What: hardware/autoroute/rp569-krt.kicad_pcb (+ project copy, fp-lib-table pointing at ../lib), docs/layout.md
+trial table and status, logs.
+Why: user asked to continue the KRT routing and commit; starting point for hand finishing (todo: routing).
+
+## 250594e — 2026-10-24 — TPS2121 power mux, v0.3 placement, pin reassignment, autorouting setups
 What: board.py (TPS2121 replaces the LM66100s; HSPI series arrays dropped; RP2350/CH569 pins reassigned by side),
 mk_lib/mk_fp (TPS2121 symbol + RUX0012A footprint), gen_pcb (v0.3 layout, buttons/LEDs at the edges, passive
 orientation, hole clearance 0.2), gen_pro (Rail class, HSPI/Power 0.1 mm clearance), gen/route.py (Freerouting with

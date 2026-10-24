@@ -5,3 +5,4 @@ hardware/#auto_saved_files#
 __pycache__/
 route/
 hardware/route.log
+hardware/autoroute/*.kicad_prl

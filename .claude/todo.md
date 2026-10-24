@@ -33,7 +33,7 @@
 - [ ] Review schematic v0.1 (`hardware/rp569-schematic.pdf`) with the user.
 - [ ] Confirm the 90 Ω width/gap (0.24/0.13 mm, D-016) with JLCPCB's impedance calculator.
 - [ ] Hand-review v0.3 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
-- [ ] Routing: finish the KRT result (`gen/route_krt.sh`, 27 links left) by hand in pcbnew; re-route the 3 uncoupled USB pairs with the diff-pair router; HSPI length match.
+- [ ] Routing: finish `hardware/autoroute/rp569-krt.kicad_pcb` (21 links left, 6 dangling tracks + 4 vias to delete) by hand in pcbnew; re-route the 3 uncoupled USB pairs with the diff-pair router; HSPI length match.
 - [ ] Place the USB3 ESD (TPD2EUSB30) in line with each pair so the pairs can stay coupled.
 - [ ] Silkscreen cleanup.
 - [ ] Consigned parts: CH569W and GSB343K33HR (LM66100 replaced by TPS2121, D-015).
