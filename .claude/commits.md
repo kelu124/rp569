@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — v1.0: hand-finished board, fully connected
+## pending — 2026-10-24 — v1.0 production files: routed board next to the schematic, JLCPCB gerbers/BOM/CPL
+What: hardware/autoroute/rp569-krt.* → hardware/rp569-routed.kicad_pcb/.kicad_pro; gen/gen_fab.py (DRC gate,
+gerbers, drill, zip, BOM/CPL); gen_bom.py takes the CPL from the routed board; hardware/jlcpcb/ (rp569-gerbers.zip,
+gerbers/, BOM, CPL), reports/drc-routed.json; v1.0 renders; specification D-022 + R-18; README, CLAUDE.md,
+docs/layout.md, docs/bom.md; skills kicad-board and jlcpcb-parts.
+Why: user asked for the routed board next to the schematic, JLCPCB outputs, and the docs updated.
+
+## ab8df3d — 2026-10-24 — v1.0: hand-finished board, fully connected
 What: hardware/autoroute/rp569-krt.kicad_pcb (hand-routed last links incl. tracks on In1, D-021; dangling copper
 removed; "rp569 v1.0" silkscreen), specification D-021, docs/layout.md status, .gitignore (*.lck), logs. Tag v1.0.
 Why: user asked to commit as v1. DRC: 0 unconnected, 0 errors (warnings: silkscreen, 1 VREG_AVDD stub).

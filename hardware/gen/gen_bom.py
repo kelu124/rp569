@@ -1,7 +1,9 @@
 """JLCPCB assembly files: hardware/jlcpcb/rp569-bom.csv and rp569-cpl.csv.
 
-BOM rows are grouped by LCSC part (or by MPN for consigned parts). The CPL comes from the placed PCB through
-`kicad-cli pcb export pos`. JLCPCB's rotation convention differs from KiCad's for some packages: check every
+BOM rows are grouped by LCSC part (or by MPN for consigned parts). The CPL comes from the routed board
+(`rp569-routed.kicad_pcb`, whose part positions can differ slightly from the generated `rp569.kicad_pcb`: the
+autorouter's decap cleanup nudges caps) through `kicad-cli pcb export pos`, or from the generated board if there is
+no routed one. JLCPCB's rotation convention differs from KiCad's for some packages: check every
 part in JLCPCB's placement preview before ordering.
 """
 import csv
@@ -13,6 +15,8 @@ import board
 
 HW = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(HW, 'jlcpcb')
+ROUTED = os.path.join(HW, 'rp569-routed.kicad_pcb')
+PCB = ROUTED if os.path.exists(ROUTED) else os.path.join(HW, 'rp569.kicad_pcb')
 
 
 def main():
@@ -33,7 +37,7 @@ def main():
             w.writerow([value, ','.join(refs), p['fp'].split(':')[1], p['lcsc'], p['mpn'], len(refs), note])
     pos = os.path.join(OUT, 'pos.csv')
     subprocess.run(['kicad-cli', 'pcb', 'export', 'pos', '--format', 'csv', '--units', 'mm', '--side', 'both',
-                    '--exclude-dnp', '-o', pos, os.path.join(HW, 'rp569.kicad_pcb')], check=True, capture_output=True)
+                    '--exclude-dnp', '-o', pos, PCB], check=True, capture_output=True)
     ok = {p['ref'] for p in board.parts if 'mpn' in p and not p['dnp']}
     with open(pos) as fi, open(os.path.join(OUT, 'rp569-cpl.csv'), 'w', newline='') as fo:
         w = csv.writer(fo)
@@ -43,7 +47,7 @@ def main():
                 w.writerow([r['Ref'], r['PosX'] + 'mm', r['PosY'] + 'mm', 'Top' if r['Side'] == 'top' else 'Bottom',
                             r['Rot']])
     os.remove(pos)
-    print(f'{len(groups)} BOM lines, {len(ok)} placed parts -> {OUT}')
+    print(f'{len(groups)} BOM lines, {len(ok)} placed parts (CPL from {os.path.basename(PCB)}) -> {OUT}')
 
 
 if __name__ == '__main__':

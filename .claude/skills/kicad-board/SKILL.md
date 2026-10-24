@@ -19,10 +19,16 @@ starts (`CLAUDE.md`).
 | Net classes | `gen/gen_pro.py` | merges into the KiCad-written `.kicad_pro` (kicad-cli rewrites it, so `build.sh` runs it twice) |
 | BOM/CPL | `gen/gen_bom.py` | JLCPCB files in `hardware/jlcpcb/` |
 | Checks | `gen/build.sh` | ERC, DRC with schematic parity → `hardware/reports/` |
-| Routing (main) | `gen/route_krt.sh <workdir>` | KiCadRoutingTools chain on a copy, DRC against the real project rules; best result kept in `hardware/autoroute/` |
+| Routing (main) | `gen/route_krt.sh <workdir>` | KiCadRoutingTools chain on a copy, DRC against the real project rules |
+| Routed board | `hardware/rp569-routed.kicad_pcb` + `.kicad_pro` | v1.0: KRT result finished by hand; the board to fabricate. `rp569.kicad_pcb` stays the generated, unrouted one |
+| Fab outputs | `gen/gen_fab.py` | DRC gate (0 unconnected, 0 errors) → gerbers + drill → `jlcpcb/rp569-gerbers.zip`, then BOM/CPL (CPL from the routed board) |
 | Routing (option) | `/usr/bin/python3 gen/route.py [passes] [pcb] [--keep]` | patched Freerouting 2.1.0 (Java 21), GND fan-out vias, DSN → SES, GND fills on In2/F/B; `--keep` continues from the current routing |
 
 Targets after `build.sh`: ERC 0, DRC 0 electrical, parity 0. Silk overlaps are cosmetic.
+
+**After a `board.py` change** the routed board is stale: `build.sh` regenerates `rp569.kicad_pcb` only. Either
+re-route (`route_krt.sh`, then hand finishing) or apply the change in pcbnew on `rp569-routed.kicad_pcb` with
+*Update PCB from Schematic*. `build.sh` also re-runs `gen_bom.py`, which takes the CPL from the routed board.
 
 ## Gotchas found so far
 
@@ -46,6 +52,9 @@ Targets after `build.sh`: ERC 0, DRC 0 electrical, parity 0. Silk overlaps are c
 - Freerouting places no via for the In1 plane net: `route.py:gnd_fanout()` adds the GND vias before export.
 - Never run `build.sh` while `route.py` is running: route.py saves over `rp569.kicad_pcb` at the end, with the
   board it loaded at the start.
+
+- pcbnew *Cleanup Tracks & Vias*: refill zones (**B**) first, or it deletes the GND fan-out vias (connected only
+  through the In1 fill) as "connected on one layer". Check the preview count, DRC afterwards.
 
 ## Rule: watch every routing run (user request, 2026-10-24)
 

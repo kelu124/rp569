@@ -1,7 +1,8 @@
 # BOM for JLCPCB assembly
 
-Status: **v0.2, 2026-10-23.** Generated files: `hardware/jlcpcb/rp569-bom.csv` (BOM) and `rp569-cpl.csv`
-(placement), both written by `hardware/gen/gen_bom.py` (run by `build.sh`). LCSC numbers live in
+Status: **v1.0, 2026-10-24.** Production files in `hardware/jlcpcb/`: `rp569-gerbers.zip` (board), `rp569-bom.csv`
+(BOM) and `rp569-cpl.csv` (placement, from the routed board `hardware/rp569-routed.kicad_pcb`), written by
+`hardware/gen/gen_fab.py` (DRC gate, gerbers, drill, then `gen_bom.py`; `build.sh` also re-runs `gen_bom.py`). LCSC numbers live in
 `hardware/gen/board.py` (`LCSC_BY_VALUE`) and are copied into the `LCSC` and `MPN` fields of every symbol and
 footprint.
 

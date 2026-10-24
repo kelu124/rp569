@@ -28,6 +28,22 @@ python3 .claude/skills/jlcpcb-parts/jlc.py --info C25744 C485916
 3. `gen_bom.py` (run by `build.sh`) writes `hardware/jlcpcb/rp569-bom.csv` and `rp569-cpl.csv`.
 4. Update `docs/bom.md` (table with class/stock/price) and the specification (D-014 and the part's decision).
 
+## Production files (hardware/jlcpcb/)
+
+`python3 hardware/gen/gen_fab.py` writes everything JLCPCB needs from `hardware/rp569-routed.kicad_pcb`:
+
+| File | Upload where |
+|---|---|
+| `rp569-gerbers.zip` (gerbers + PTH/NPTH Excellon + drill maps) | PCB order, "Add gerber file" |
+| `rp569-bom.csv` (Comment, Designator, Footprint, LCSC Part #) | Assembly, BOM |
+| `rp569-cpl.csv` (Designator, Mid X, Mid Y, Layer, Rotation) | Assembly, CPL |
+| `gerbers/` | the unzipped files, for review in KiCad's Gerber viewer |
+
+Settings follow JLCPCB's KiCad guide (Protel extensions, no X2/netlist, soldermask subtracted from silk, drill
+mm/decimal/absolute, alternate oval mode). Order: 4 layers, JLC04161H-7628 stackup, 1.6 mm, both sides assembled.
+In JLCPCB's preview, check every part's rotation (CPL uses KiCad's convention) and that the consigned parts
+(CH569W, GSB343K33HR) are marked as such. The script stops if DRC has unconnected items or errors.
+
 ## Checks when swapping a part
 
 - Footprint: use the exact KiCad footprint for the part if one exists (e.g. `LED_LiteOn_LTST-C19HE1WT`);

@@ -39,11 +39,14 @@ Design, in KiCad, a board pairing a **Raspberry Pi RP2350B** (QFN-80, 48 GPIO) w
 - **Source of truth: `hardware/gen/board.py`.** Edit it, then run `hardware/gen/build.sh` (regenerates
   schematic, PCB and net classes, then runs ERC, DRC and schematic parity into `hardware/reports/`).
 - `gen_pcb.py` needs the system Python (`/usr/bin/python3`, it imports `pcbnew`).
+- **Routed board: `hardware/rp569-routed.kicad_pcb` (v1.0, hand-finished)**; production files with
+  `python3 hardware/gen/gen_fab.py` → `hardware/jlcpcb/` (DRC-gated gerbers zip, BOM, CPL). After a `board.py` change
+  the routed board is stale: update it in pcbnew (*Update PCB from Schematic*) or re-route.
 - Routing: `build.sh` produces an unrouted board. Two autorouting options, see `docs/layout.md` § Routing options:
-  Freerouting via `hardware/gen/route.py` (patched 2.1.0 jar, on hold) and KiCadRoutingTools (`~/tools/KiCadRoutingTools`,
-  under evaluation). Watch every routing run with 3-minute progress reports (skill `kicad-board`).
-- **Once hand routing has started, never run `gen_pcb.py` / `build.sh` again** (it would wipe the routing). Use pcbnew's
-  *Update PCB from Schematic* instead. See `docs/layout.md`.
+  Freerouting via `hardware/gen/route.py` (patched 2.1.0 jar, on hold) and KiCadRoutingTools (`hardware/gen/route_krt.sh`, `~/tools/KiCadRoutingTools`,
+  used for v1.0). Watch every routing run with 3-minute progress reports (skill `kicad-board`).
+- `build.sh` / `gen_pcb.py` only rewrite the generated `hardware/rp569.kicad_pcb`; they never touch the hand-routed
+  `rp569-routed.kicad_pcb`. Carry schematic changes into the routed board with pcbnew's *Update PCB from Schematic*.
 
 ## Working rules
 

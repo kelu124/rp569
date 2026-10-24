@@ -1,14 +1,15 @@
 # Layout status
 
 Status: **v0.3, 2026-10-24. Schematic complete, PCB placed (50×70 mm, two-sided).** **v1.0 board:
-`hardware/autoroute/rp569-krt.kicad_pcb`** — KRT autoroute finished by hand, 0 unconnected, 0 DRC errors (D-021:
-some tracks on In1). Still to do before ordering: USB pairs as coupled pairs, silkscreen; see `.claude/todo.md`.
+`hardware/rp569-routed.kicad_pcb`** — KRT autoroute finished by hand, 0 unconnected, 0 DRC errors (D-021:
+some tracks on In1). Production files in `hardware/jlcpcb/` (D-022). Still to do before ordering: USB pairs as
+coupled pairs, silkscreen; see `.claude/todo.md`.
 
 | Top | Bottom |
 |---|---|
-| ![top](img/pcb-render-v0.2-top.png) | ![bottom](img/pcb-render-v0.2-bottom.png) |
+| ![top](img/pcb-render-v1.0-top.png) | ![bottom](img/pcb-render-v1.0-bottom.png) |
 
-(renders are still v0.2)
+(v1.0, `kicad-cli pcb render` of `hardware/rp569-routed.kicad_pcb`)
 
 ## How the KiCad files are produced
 
@@ -22,6 +23,7 @@ Everything under `hardware/` is generated from `hardware/gen/board.py` (parts, f
 | `gen/gen_pcb.py` | `rp569.kicad_pcb`: 4-layer 50×70 mm with 3 mm chamfered corners, footprints + nets, fixed connectors/chips/buttons/LEDs, two-sided automatic placement, GND plane on In1 |
 | `gen/gen_pro.py` | net classes in `rp569.kicad_pro` (USB3_90R, USB2_90R, HSPI, Power, Rail) |
 | `gen/route_krt.sh` | KiCadRoutingTools chain on a copy of the board (Routing options B) |
+| `gen/gen_fab.py` | DRC gate, then gerbers + drill (`jlcpcb/rp569-gerbers.zip`), BOM and CPL from `rp569-routed.kicad_pcb` |
 | `gen/gen_bom.py` | JLCPCB BOM and CPL in `hardware/jlcpcb/` |
 | `gen/build.sh` | runs all of the above, then ERC and DRC with schematic parity → `hardware/reports/` |
 
@@ -100,11 +102,28 @@ Trials on v0.3/D-018 (unconnected by KiCad DRC against the project rules):
 | + a second `route.py` pass on that result | 21 | 0 |
 | D-020 placement (TPS2121 at the USB-C, sense dividers at their rail, pull-ups at their chip), 2 passes | **16** | 0 |
 
-Each chain runs in ~10–15 min. The best result is in **`hardware/autoroute/rp569-krt.kicad_pcb`** (open it in
-KiCad; its project file is a copy of `hardware/rp569.kicad_pro`): 16 links left, 0 electrical DRC violations,
+Each chain runs in ~10–15 min. The result, finished by hand, is **`hardware/rp569-routed.kicad_pcb`** (its
+project file `rp569-routed.kicad_pro` is a copy of `hardware/rp569.kicad_pro`); at the time of the last autoroute: 16 links left, 0 electrical DRC violations,
 6 dangling tracks and 2 dangling vias to delete, 3 of 6 USB pairs coupled. It is a starting point for hand
 finishing. `hardware/rp569.kicad_pcb` stays the generated, unrouted source of truth; after a `board.py` change,
 regenerate and re-run the chain rather than editing the autorouted copy.
+
+## Production files (v1.0, D-022)
+
+```bash
+python3 hardware/gen/gen_fab.py      # DRC gate -> hardware/jlcpcb/
+```
+
+| File | Content |
+|---|---|
+| `hardware/jlcpcb/rp569-gerbers.zip` | 11 gerber layers (4 copper, paste, silkscreen, mask, Edge.Cuts) + PTH/NPTH Excellon + drill maps |
+| `hardware/jlcpcb/rp569-bom.csv` | JLCPCB BOM, 43 lines with LCSC numbers (2 consigned) |
+| `hardware/jlcpcb/rp569-cpl.csv` | Placement, 141 parts, from the routed board |
+| `hardware/jlcpcb/gerbers/` | Same files unzipped, for review in KiCad's Gerber viewer |
+| `hardware/reports/drc-routed.json` | DRC of the routed board at export (v1.0: 0 unconnected, 0 errors) |
+
+JLCPCB order: 4 layers, 1.6 mm, JLC04161H-7628 stackup, PCBA on both sides. Check every part's rotation in the
+placement preview.
 
 ## Before ordering
 

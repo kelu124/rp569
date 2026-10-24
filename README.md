@@ -3,14 +3,28 @@
 An open hardware board (KiCad) that pairs a **Raspberry Pi RP2350B** with a **WCH CH569W**.
 The RP2350B generates high-speed data and the CH569 streams it to a host over **USB 3.0**.
 
-Status: **v0.2**. The schematic is complete (ERC clean apart from one expected error) and the PCB is placed (4-layer, 50×70 mm, chamfered corners, parts on both sides) but **not routed yet**.
-See [`docs/layout.md`](docs/layout.md) and the [schematic PDF](hardware/rp569-schematic.pdf).
+Status: **v1.0** (tag `v1.0`). Schematic complete, PCB **fully routed** (4-layer, 50×70 mm, chamfered corners,
+parts on both sides; 0 unconnected, 0 DRC errors) and **JLCPCB production files generated**. Before ordering:
+USB pairs as coupled pairs, silkscreen cleanup, impedance check (see [`docs/layout.md`](docs/layout.md)).
+[Schematic PDF](hardware/rp569-schematic.pdf).
+
+## Production files (JLCPCB)
+
+| File | Use |
+|---|---|
+| [`hardware/jlcpcb/rp569-gerbers.zip`](hardware/jlcpcb/rp569-gerbers.zip) | PCB order (gerbers + drill) |
+| [`hardware/jlcpcb/rp569-bom.csv`](hardware/jlcpcb/rp569-bom.csv) | Assembly BOM with LCSC part numbers |
+| [`hardware/jlcpcb/rp569-cpl.csv`](hardware/jlcpcb/rp569-cpl.csv) | Assembly placement (CPL) |
+
+Board to fabricate: [`hardware/rp569-routed.kicad_pcb`](hardware/rp569-routed.kicad_pcb). Regenerate the files
+with `python3 hardware/gen/gen_fab.py`. Two parts are not stocked by JLCPCB and must be consigned: CH569W and the
+Amphenol GSB343K33HR USB3 connector ([`docs/bom.md`](docs/bom.md)).
 
 | Top | Bottom |
 |---|---|
-| ![top](docs/img/pcb-render-v0.2-top.png) | ![bottom](docs/img/pcb-render-v0.2-bottom.png) |
+| ![top](docs/img/pcb-render-v1.0-top.png) | ![bottom](docs/img/pcb-render-v1.0-bottom.png) |
 
-## Features (planned)
+## Features
 
 | Block | RP2350B | CH569W |
 |-------|---------|--------|
@@ -23,7 +37,7 @@ See [`docs/layout.md`](docs/layout.md) and the [schematic PDF](hardware/rp569-sc
 **Logic analyser**: 8 input pins on the RP2350B are sampled by PIO and streamed over the
 parallel bus to the CH569, then to the host over USB 3.
 
-**Power**: the RP2350B runs from either USB connector, ORed by ideal diodes so neither back-feeds the
+**Power**: the RP2350B runs from either USB connector through a TI TPS2121 power mux, so neither back-feeds the
 other. The CH569 is powered from its own USB3 VBUS through a load switch that the RP2350B controls, so
 it can be power-cycled and forced into its bootloader during automated tests.
 
@@ -38,7 +52,8 @@ it can be power-cycled and forced into its bootloader during automated tests.
 
 | Path | Content |
 |------|---------|
-| `hardware/` | KiCad project, generated from `hardware/gen/board.py` (run `hardware/gen/build.sh`) |
+| `hardware/` | KiCad project, generated from `hardware/gen/board.py` (run `hardware/gen/build.sh`); `rp569-routed.kicad_pcb` = routed v1.0 board |
+| `hardware/jlcpcb/` | JLCPCB production files: gerbers zip, BOM, CPL |
 | `datasheet/` | Datasheets as PDF and Markdown (see `datasheet/README.md`) |
 | `docs/` | `pinmap.md` (RP2350B ↔ CH569 pin map), `power.md`, `layout.md`, `bom.md` (JLCPCB BOM), `ch569-hardware-notes.md` |
 | `project/` | Reference projects: [HydraUSB3](https://github.com/hydrausb3), [phantomdrive](https://github.com/o7-machinehum/phantomdrive) (see `project/README.md`) |

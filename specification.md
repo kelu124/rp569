@@ -28,14 +28,23 @@ All requested by the user, 2026-10-23.
 | R-15 | Two user buttons for the RP2350 and two for the CH569 (2026-10-24: may sit away from the chips) | met | RP GPIO31/39, CH569 PA12/PA13, 10k pull-ups, at the board edges (D-018) |
 | R-16 | USB3 Micro-B with through-hole legs, for a firm mechanical hold | met | Amphenol GSB343K33HR, project footprint (D-013) |
 | R-17 | The RP2350 can put the CH569 in its bootloader the same way as the BOOT button | met | Checked on the netlist, sequence in D-004 |
-| R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | partial | D-014, D-016; `docs/bom.md`; 2 parts must be consigned |
+| R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | met (v1.0 files) | D-014, D-016, D-022; `hardware/jlcpcb/` (gerbers, BOM, CPL); 2 parts must be consigned |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-022 — v1.0 production files from the routed board (status: accepted, 2026-10-24)
+The board to fabricate is `hardware/rp569-routed.kicad_pcb` (+ `rp569-routed.kicad_pro` with the project rules):
+the KRT autoroute (D-019, D-020) finished by hand (D-021), tagged v1.0. `hardware/rp569.kicad_pcb` stays the
+generated, unrouted board. `hardware/gen/gen_fab.py` runs a DRC gate (0 unconnected, 0 errors; result in
+`hardware/reports/drc-routed.json`), then writes `hardware/jlcpcb/rp569-gerbers.zip` (gerbers + Excellon, JLCPCB's
+KiCad settings), `rp569-bom.csv` and `rp569-cpl.csv` (CPL from the routed board, since the autorouter's decap
+cleanup may move caps). Before ordering: USB pairs as coupled pairs, silkscreen cleanup, impedance check, rotation
+check in JLCPCB's preview (`.claude/todo.md`).
+
 ## D-021 — Signal tracks allowed on In1.Cu for this design (status: accepted, 2026-10-24)
-Context: hand-finishing `hardware/autoroute/rp569-krt.kicad_pcb`, the last links (HSPI, inter-chip UART, CH EXT
+Context: hand-finishing the routed board (now `hardware/rp569-routed.kicad_pcb`), the last links (HSPI, inter-chip UART, CH EXT
 header lines, VBUS into the TPS2121, …) could not be routed without In1. Moving those 62 segments to In2.Cu
 creates 40 crossings and 12 shorts (In2 is already full there).
 Choice (user): keep short signal/power tracks on In1.Cu, the GND reference plane, for this revision.

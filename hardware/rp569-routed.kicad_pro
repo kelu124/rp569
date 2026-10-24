@@ -264,7 +264,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "rp569-krt.kicad_pro",
+    "filename": "rp569-routed.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -477,7 +477,7 @@
     "legacy_lib_list": [],
     "top_level_sheets": [
       {
-        "filename": "rp569-krt.kicad_sch",
+        "filename": "rp569.kicad_sch",
         "name": "rp569-krt",
         "uuid": "00000000-0000-0000-0000-000000000000"
       }
