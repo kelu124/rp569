@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Rounded board corners, RPDFU/BOOT button labels
+## pending — 2026-10-24 — Session wrap-up: handoff, skill gotchas
+What: .claude/handoff.md (state after D-023, post-processing scripts, silkscreen next steps), kicad-board skill
+gotchas (pcbnew Python quirks), commit log hash.
+Why: user is closing the session and asked to save memory and skills.
+
+## 2190ebf — 2026-10-24 — Rounded board corners, RPDFU/BOOT button labels
 What: hardware/gen/round_corners.py (chamfer → tangent arc on Edge.Cuts), applied to rp569-routed.kicad_pcb;
 gen_pcb.py draws arcs for new boards; add_header_labels.py also labels SW1 `RPDFU` and SW5 `BOOT` on F.SilkS
 (references hidden, first free spot). JLCPCB gerbers/BOM/CPL and docs/images regenerated; D-023; docs, skill, logs.

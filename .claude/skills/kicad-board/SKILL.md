@@ -52,6 +52,10 @@ After edits: `python3 hardware/gen/gen_fab.py` to refresh the JLCPCB files.
 
 ## Gotchas found so far
 
+- pcbnew Python (KiCad 10): `str(fp.GetFPID().GetLibItemName())` (it is a UTF8, no `.startswith`); pad size via
+  `GetBoundingBox()` (`GetSize()` wants a layer); `VECTOR2I` has no scalar `*` (use `a + a - b`); text
+  `GetBoundingBox()` includes line spacing, use `GetEffectiveTextShape().BBox()` for the drawn extent.
+- Project rule `min_text_height` is 0.8 mm: smaller silkscreen text adds `text_height` warnings.
 - Board net names carry the schematic's `/` prefix (`/GND`); strip it when matching against `board.py` nets.
 - Every new symbol/footprint field must exist on both sides or parity reports `footprint_symbol_field_mismatch`.
 - ERC: a pin tied to GND clashes with the USB3 symbol's GND `power_out` pin if it is `open_collector`/`output`.

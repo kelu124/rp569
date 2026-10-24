@@ -5,7 +5,11 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 ## State
 
 - **v1.0 board done**: `hardware/rp569-routed.kicad_pcb` (+ `rp569-routed.kicad_pro`), tag `v1.0`. Fully routed:
-  0 unconnected, 0 DRC errors (warnings: ~116 silkscreen, 1 VREG_AVDD stub that is part of the connection).
+  0 unconnected, 0 DRC errors (119 warnings: 116 silkscreen, 2 lib_footprint, 1 VREG_AVDD stub that is part of
+  the connection). 3 mm rounded corners; header pin labels on B.SilkS; SW1 printed `RPDFU`, SW5 `BOOT` (D-023).
+- Board post-processing scripts, both idempotent, both edit the routed board in place (close it in KiCad first):
+  `/usr/bin/python3 hardware/gen/add_header_labels.py` (silkscreen labels, group `header_labels`) and
+  `/usr/bin/python3 hardware/gen/round_corners.py`. After any board change: `gen_fab.py`, then `gen_renders.py`.
 - **Production files**: `hardware/jlcpcb/rp569-gerbers.zip`, `rp569-bom.csv`, `rp569-cpl.csv` from
   `python3 hardware/gen/gen_fab.py` (DRC-gated). 2 consigned parts: CH569W, GSB343K33HR.
 - Images: `python3 hardware/gen/gen_renders.py` → `docs/images/` (re-run after board changes).
@@ -19,9 +23,9 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 
 1. USB pairs as coupled pairs (skew 5–9 mm today on USB3_SSTX/SSRX, USB3_D, USBC_D, RP_USB_D; CH_SSTX is fine):
    delete both lines, pcbnew router **6** on F.Cu, then *Tune skew*. Check with `board_metrics.py`.
-2. Silkscreen: ~68 labels over copper, add connector/button labels (header pin labels are on B.SilkS via
-   `hardware/gen/add_header_labels.py`; re-run it after moving a header) (see the conversation's list in
-   `docs/layout.md` § Before ordering / todo).
+2. Silkscreen: ~68 reference labels over copper; connector names and the other buttons (SW2–4, SW6–7) still show
+   references only. Header pin labels and RPDFU/BOOT are done (`add_header_labels.py`, re-run after moving a
+   header; add names to its `BUTTON_LABELS`).
 3. Confirm 0.24/0.13 mm = 90 Ω with JLCPCB's impedance calculator (JLC04161H-7628).
 4. Re-run `python3 hardware/gen/gen_fab.py`, then review gerbers and the JLCPCB placement preview (rotations).
 5. Later: HSPI lengths 19.9–32.6 mm vs RCLK 20.6 (fine below ~100 MHz); open firmware questions in todo.
