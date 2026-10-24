@@ -19,7 +19,8 @@ starts (`CLAUDE.md`).
 | Net classes | `gen/gen_pro.py` | merges into the KiCad-written `.kicad_pro` (kicad-cli rewrites it, so `build.sh` runs it twice) |
 | BOM/CPL | `gen/gen_bom.py` | JLCPCB files in `hardware/jlcpcb/` |
 | Checks | `gen/build.sh` | ERC, DRC with schematic parity → `hardware/reports/` |
-| Routing | `/usr/bin/python3 gen/route.py [passes] [pcb] [--keep]` | patched Freerouting 2.1.0 (Java 21), GND fan-out vias, DSN → SES, GND fills on In2/F/B; `--keep` continues from the current routing |
+| Routing (main) | `gen/route_krt.sh <workdir>` | KiCadRoutingTools chain on a copy, DRC against the real project rules; best result kept in `hardware/autoroute/` |
+| Routing (option) | `/usr/bin/python3 gen/route.py [passes] [pcb] [--keep]` | patched Freerouting 2.1.0 (Java 21), GND fan-out vias, DSN → SES, GND fills on In2/F/B; `--keep` continues from the current routing |
 
 Targets after `build.sh`: ERC 0, DRC 0 electrical, parity 0. Silk overlaps are cosmetic.
 

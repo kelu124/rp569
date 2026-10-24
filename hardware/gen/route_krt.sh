@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Autoroute a copy of hardware/rp569.kicad_pcb with KiCadRoutingTools (docs/layout.md, Routing options B).
-#   hardware/gen/route_krt.sh <workdir>     -> <workdir>/k5.kicad_pcb, DRC against the real project rules
+#   hardware/gen/route_krt.sh <workdir>     -> <workdir>/k6.kicad_pcb, DRC against the real project rules
 # Needs the KRT clone (KRT, default ~/tools/KiCadRoutingTools) with its .venv and prebuilt grid_router.
 # Chain (KRT's plan-pcb-routing order): GND pour on In1 -> QFN fanout U7 (RP2350B), U9 (CH569W) -> decap cleanup
-# -> USB differential pairs on F.Cu -> everything else on F.Cu/In2.Cu/B.Cu.
+# -> USB differential pairs on F.Cu -> everything else on F.Cu/In2.Cu/B.Cu -> a second route pass on the result
+# (clears a few more links and its dead-end sweep trims the unused fanout stubs).
 # Flags that matter on this board (see .claude/skills/kicad-board):
 #   --escalation off --fab-tier standard  no silent drop below JLCPCB standard (0.089 mm tracks, 0.25 mm vias)
 #   --no-fix-drc-settings                 keep the project's net-class clearances (steps otherwise lower them)
@@ -27,8 +28,9 @@ step decaps;  $P $KRT/py_placer/place_fanout_clearance.py k2.kicad_pcb k3.kicad_
 step diff;    $P $KRT/py_router/route_diff.py k3.kicad_pcb k4.kicad_pcb --nets "*USB3_SS*" "*CH_SSTX*" "/USB3_D?" "/USBC_D?" \
                  "/RP_USB_D?" --track-width 0.24 --diff-pair-gap 0.13 --layers F.Cu $F > k4.log 2>&1
 step route;   $P $KRT/py_router/route.py k4.kicad_pcb k5.kicad_pcb --nets "*" --layers F.Cu In2.Cu B.Cu "${POWER[@]}" $F > k5.log 2>&1
+step route2;  $P $KRT/py_router/route.py k5.kicad_pcb k6.kicad_pcb --nets "*" --layers F.Cu In2.Cu B.Cu "${POWER[@]}" $F > k6.log 2>&1
 step drc      # graded against the real project rules, not the steps' own .kicad_pro
-mkdir -p check && cp k5.kicad_pcb check/rp569.kicad_pcb && cp "$HW/rp569.kicad_pro" check/rp569.kicad_pro
+mkdir -p check && cp k6.kicad_pcb check/rp569.kicad_pcb && cp "$HW/rp569.kicad_pro" check/rp569.kicad_pro
 kicad-cli pcb drc --refill-zones --format json -o check/drc.json check/rp569.kicad_pcb 2>&1 | grep -v assert | tail -1
 python3 - check/drc.json <<'EOF'
 import collections, json, sys

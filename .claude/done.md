@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-10-24 — D-020: TPS2121 moved next to the USB-C, sense dividers at their rail, pull-ups at their chip; KRT 16 of 405 links left, 0 electrical violations.
 - 2026-10-24 — Second KRT route pass: 21 of 405 links left, 0 electrical violations → `hardware/autoroute/rp569-krt.kicad_pcb`.
 - 2026-10-24 — D-019: HSPI and Power clearance 0.1 mm; `gen/route_krt.sh` (KiCadRoutingTools chain): 27 of 405 links left, 0 clearance violations against the project rules.
 - 2026-10-24 — KiCadRoutingTools evaluated (`~/tools/KiCadRoutingTools`): fab-floor relaxation, In1 use and class-clearance lowering found and disabled.

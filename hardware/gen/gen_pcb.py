@@ -43,6 +43,8 @@ fixed = {
     first(lambda p: 'USB3_B_Micro' in p['lib_id'])['ref']: (W - 1.45, 43, 90),   # slots 1.45 mm from the edge
     first(lambda p: 'Micro_SD' in p['lib_id'])['ref']: (16, H - 9.0, 0),
     by_value('RP2350B'): (25, 19, 90),
+    # power mux next to the USB-C VBUS pins, out of the HSPI corridor between the chips (D-020)
+    by_value('TPS2121'): (33.5, 7.5, 0),
     by_value('CH569W'): (25, 46, 270),
     # headers (THT, both sides): along the edges
     by_value('SWD'): (10, 2.2, 90),
@@ -188,6 +190,11 @@ def main(out=None, rot=None):
     # Nearest-free-spot placement on two sides: each part goes as close as possible to the pads it connects
     # to. Small passives prefer the bottom side (decoupling right under the IC pads), other parts the top.
     POWER = {'GND', '+3V3', '1V1', '3V3_CH', '1V2_CH', '5V_SYS', '5V_CH'}
+    # sense net -> (measured rail, part at which the divider sits: USB3 connector, 3V3_CH buck inductor)
+    SENSE_AT = {'VBUS3_SENSE': ('VBUS_3', lambda q: 'USB3_B_Micro' in q['lib_id']),
+                'CH3V3_SENSE': ('3V3_CH', lambda q: q['lib_id'] == 'Device:L')}
+    # pull-up rail -> the chip whose pins it serves
+    PULLUP_IC = {'+3V3': by_value('RP2350B'), '3V3_CH': by_value('CH569W')}
     margin = 1.0
     occupied = {'F': [], 'B': []}
 
@@ -227,8 +234,22 @@ def main(out=None, rot=None):
     def target(fp, p):
         nets = set(p['pins'].values())
         sig = nets - POWER
+        # sense dividers sit at the rail they measure; only the high-impedance sense line runs to the ADC (D-020)
+        sense = next((n for n in nets if n in SENSE_AT), None)
+        if sense:
+            rail, anchor = SENSE_AT[sense]
+            pts = [pos for ref, pos, _ in pad_pos.get(rail, []) if anchor(fps[ref][1])]
+            if pts:
+                return pts[0], False
+        # pull-ups sit at the pin of the chip on their rail, not mid-way along the line (D-020)
+        if p['lib_id'] == 'Device:R' and len(nets) == 2 and len(sig) == 1 and nets - sig <= set(PULLUP_IC):
+            ic = PULLUP_IC[next(iter(nets - sig))]
+            pts = [pos for ref, pos, _ in pad_pos.get(next(iter(sig)), []) if ref == ic]
+            if pts:
+                return pts[0], False
         if p['block'] == 'Power':      # power-path parts follow the power nets, not their control signals
             sig = (nets & {'VBUS_C', 'VBUS_3', '5V_SYS', '5V_CH_IN', '5V_CH', '3V3_CH_SW', '1V2_CH_SW', '+3V3_SW'}) or sig
+            sig = {n for n in nets if n.startswith('PMUX_')} or sig    # TPS2121 dividers/ILIM/SS: at the TPS2121
         if p['lib_id'] == 'Device:C' and not sig:
             rail = (nets - {'GND'}) or nets
             rail = next(iter(rail))

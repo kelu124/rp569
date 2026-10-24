@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Autorouted board (KiCadRoutingTools, 21 links left)
+## pending — 2026-10-24 — D-020 placement: corridor between the chips cleared; autorouted board at 16 links
+What: gen_pcb.py (TPS2121 fixed at the USB-C, PMUX parts follow it, sense dividers at their rail, pull-ups at
+their chip), route_krt.sh (second route pass built in), regenerated hardware + reports + BOM/CPL,
+hardware/autoroute/rp569-krt.kicad_pcb, specification D-020, docs/layout.md, logs.
+Why: user chose path 1 (fix the placement before hand finishing); 21 → 16 links left.
+
+## 555a41c — 2026-10-24 — Autorouted board (KiCadRoutingTools, 21 links left)
 What: hardware/autoroute/rp569-krt.kicad_pcb (+ project copy, fp-lib-table pointing at ../lib), docs/layout.md
 trial table and status, logs.
 Why: user asked to continue the KRT routing and commit; starting point for hand finishing (todo: routing).

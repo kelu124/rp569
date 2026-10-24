@@ -34,6 +34,17 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-020 — Corridor between the chips kept clear: TPS2121 at the USB-C, sense dividers at their rail, pull-ups at their chip (status: accepted, 2026-10-24)
+Context: of the 21 links KRT left on the D-019 board, most ran through the corridor between the RP2350 and the
+CH569. The placer had put the TPS2121 (U2) and its six passives there (centroid of VBUS_C from the top and
+VBUS_3 from the right edge), the CH3V3 sense divider up by the RP2350 ADC pin, and the inter-chip pull-ups
+half-way along their lines.
+Choice (gen_pcb.py): TPS2121 fixed at (33.5, 7.5), next to the USB-C VBUS pins; its dividers, ILIM resistor and
+SS cap follow its PMUX_* pins. Sense dividers placed at the rail they measure (VBUS3 at the USB3 connector,
+CH3V3 at the 3V3_CH buck inductor), so only the high-impedance sense line runs to the RP2350. A pull-up to +3V3
+(RP2350 rail) sits at its RP2350 pin, one to 3V3_CH at its CH569 pin.
+Rationale: frees the HSPI / control corridor; power traces stay short, the long runs are thin signal lines.
+
 ## D-019 — HSPI and Power net classes at 0.1 mm clearance (status: accepted, 2026-10-24; KRT routing under trial)
 Context: KiCadRoutingTools (KRT) with QFN fanout of both chips left 13 of ~405 connections at 0.1 mm clearance
 everywhere, but 32 when the 0.15 mm (HSPI, Power) and 0.13 mm (USB) class clearances were kept (Freerouting:

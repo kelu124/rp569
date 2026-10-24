@@ -1,7 +1,7 @@
 # Layout status
 
 Status: **v0.3, 2026-10-24. Schematic complete, PCB placed (50×70 mm, two-sided).** Autorouted copy with
-KiCadRoutingTools in `hardware/autoroute/` (21 of 405 links left, to finish by hand); Freerouting kept as an option.
+KiCadRoutingTools in `hardware/autoroute/` (16 of 405 links left, to finish by hand); Freerouting kept as an option.
 
 | Top | Bottom |
 |---|---|
@@ -96,11 +96,12 @@ Trials on v0.3/D-018 (unconnected by KiCad DRC against the project rules):
 | + QFN fanout, 0.15/0.13 mm classes kept | 32 | 1 |
 
 | `route_krt.sh` after D-019 (HSPI/Power 0.1 mm, USB 0.13 mm) | 27 | 0 |
-| + a second `route.py` pass on that result | **21** | 0 |
+| + a second `route.py` pass on that result | 21 | 0 |
+| D-020 placement (TPS2121 at the USB-C, sense dividers at their rail, pull-ups at their chip), 2 passes | **16** | 0 |
 
 Each chain runs in ~10–15 min. The best result is in **`hardware/autoroute/rp569-krt.kicad_pcb`** (open it in
-KiCad; its project file is a copy of `hardware/rp569.kicad_pro`): 21 links left, 0 electrical DRC violations,
-6 dangling tracks and 4 dangling vias to delete, 3 of 6 USB pairs coupled. It is a starting point for hand
+KiCad; its project file is a copy of `hardware/rp569.kicad_pro`): 16 links left, 0 electrical DRC violations,
+6 dangling tracks and 2 dangling vias to delete, 3 of 6 USB pairs coupled. It is a starting point for hand
 finishing. `hardware/rp569.kicad_pcb` stays the generated, unrouted source of truth; after a `board.py` change,
 regenerate and re-run the chain rather than editing the autorouted copy.
 
