@@ -6,7 +6,11 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Python host library, firmware versions and UIDs, pre-commit hooks
+## pending — 2026-10-24 — Session wrap-up: handoff and logs
+What: .claude/handoff.md next steps (hardware bring-up with the python library), commit log hash.
+Why: user is closing the session and asked to save memory and skills.
+
+## 21b60e4 — 2026-10-24 — Python host library, firmware versions and UIDs, pre-commit hooks
 What: python/rp569 (ports.py discovery by VID/PID/product/UID/interface, RP2350 / CH569Console / CH569Link classes,
 @command methods, python -m rp569, unittest suite), firmware/*/version.yaml compiled in (CMake configure_file,
 Makefile generated header) and printed by `version` with git hash and chip UID; RP2350 CLI table-driven, USB product

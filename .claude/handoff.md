@@ -27,7 +27,13 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 - How v1.0 was made: generator (`board.py` → `build.sh`) → KiCadRoutingTools chain (`hardware/gen/route_krt.sh`,
   16 links left) → hand finishing in pcbnew by the user, checked with `.claude/skills/kicad-board/drc_check.py`.
 
-## Next steps (before ordering)
+## Next steps
+
+Firmware/host (no board yet): see `.claude/todo.md` § Firmware. On the first board: flash the RP2350 (RPDFU + RUN,
+uf2), `python3 -m rp569 ports` / `versions` (PYTHONPATH=python), `ch boot` + flash the CH569 (install
+`wch-ch56x-isp` or `wchisp` first), `firmware/tools/link_test.py`. Skill `firmware` has the details.
+
+## Next steps (board, before ordering)
 
 1. USB pairs as coupled pairs (skew 5–9 mm today on USB3_SSTX/SSRX, USB3_D, USBC_D, RP_USB_D; CH_SSTX is fine):
    delete both lines, pcbnew router **6** on F.Cu, then *Tune skew*. Check with `board_metrics.py`.
