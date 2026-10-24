@@ -1,7 +1,8 @@
 # Layout status
 
-Status: **v0.3, 2026-10-24. Schematic complete, PCB placed (50×70 mm, two-sided).** Autorouted copy with
-KiCadRoutingTools in `hardware/autoroute/` (16 of 405 links left, to finish by hand); Freerouting kept as an option.
+Status: **v0.3, 2026-10-24. Schematic complete, PCB placed (50×70 mm, two-sided).** **v1.0 board:
+`hardware/autoroute/rp569-krt.kicad_pcb`** — KRT autoroute finished by hand, 0 unconnected, 0 DRC errors (D-021:
+some tracks on In1). Still to do before ordering: USB pairs as coupled pairs, silkscreen; see `.claude/todo.md`.
 
 | Top | Bottom |
 |---|---|

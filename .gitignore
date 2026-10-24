@@ -6,3 +6,4 @@ __pycache__/
 route/
 hardware/route.log
 hardware/autoroute/*.kicad_prl
+*.lck

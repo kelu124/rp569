@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — D-020 placement: corridor between the chips cleared; autorouted board at 16 links
+## pending — 2026-10-24 — v1.0: hand-finished board, fully connected
+What: hardware/autoroute/rp569-krt.kicad_pcb (hand-routed last links incl. tracks on In1, D-021; dangling copper
+removed; "rp569 v1.0" silkscreen), specification D-021, docs/layout.md status, .gitignore (*.lck), logs. Tag v1.0.
+Why: user asked to commit as v1. DRC: 0 unconnected, 0 errors (warnings: silkscreen, 1 VREG_AVDD stub).
+A KiCad "Cleanup Tracks & Vias" run with stale zone fills had deleted 22 GND fan-out vias; the board was rebuilt
+from the 16:26 save minus the dangling items plus the new silkscreen text.
+
+## 2d1be9a — 2026-10-24 — D-020 placement: corridor between the chips cleared; autorouted board at 16 links
 What: gen_pcb.py (TPS2121 fixed at the USB-C, PMUX parts follow it, sense dividers at their rail, pull-ups at
 their chip), route_krt.sh (second route pass built in), regenerated hardware + reports + BOM/CPL,
 hardware/autoroute/rp569-krt.kicad_pcb, specification D-020, docs/layout.md, logs.

@@ -264,7 +264,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "rp569.kicad_pro",
+    "filename": "rp569-krt.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -290,44 +290,6 @@
       },
       {
         "bus_width": 12,
-        "clearance": 0.13,
-        "diff_pair_gap": 0.13,
-        "diff_pair_via_gap": 0.25,
-        "diff_pair_width": 0.24,
-        "line_style": 0,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1,
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 0,
-        "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.24,
-        "tuning_profile": "",
-        "via_diameter": 0.5,
-        "via_drill": 0.3,
-        "wire_width": 6,
-        "name": "USB3_90R"
-      },
-      {
-        "bus_width": 12,
-        "clearance": 0.13,
-        "diff_pair_gap": 0.13,
-        "diff_pair_via_gap": 0.25,
-        "diff_pair_width": 0.24,
-        "line_style": 0,
-        "microvia_diameter": 0.3,
-        "microvia_drill": 0.1,
-        "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 1,
-        "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.24,
-        "tuning_profile": "",
-        "via_diameter": 0.5,
-        "via_drill": 0.3,
-        "wire_width": 6,
-        "name": "USB2_90R"
-      },
-      {
-        "bus_width": 12,
         "clearance": 0.1,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
@@ -335,6 +297,7 @@
         "line_style": 0,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
+        "name": "HSPI",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
@@ -342,8 +305,7 @@
         "tuning_profile": "",
         "via_diameter": 0.5,
         "via_drill": 0.3,
-        "wire_width": 6,
-        "name": "HSPI"
+        "wire_width": 6
       },
       {
         "bus_width": 12,
@@ -354,6 +316,7 @@
         "line_style": 0,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
+        "name": "Power",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 3,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
@@ -361,8 +324,7 @@
         "tuning_profile": "",
         "via_diameter": 0.5,
         "via_drill": 0.3,
-        "wire_width": 6,
-        "name": "Power"
+        "wire_width": 6
       },
       {
         "bus_width": 12,
@@ -373,6 +335,7 @@
         "line_style": 0,
         "microvia_diameter": 0.3,
         "microvia_drill": 0.1,
+        "name": "Rail",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 4,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
@@ -380,8 +343,45 @@
         "tuning_profile": "",
         "via_diameter": 0.5,
         "via_drill": 0.3,
-        "wire_width": 6,
-        "name": "Rail"
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.13,
+        "diff_pair_gap": 0.13,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.24,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "USB2_90R",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 1,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.24,
+        "tuning_profile": "",
+        "via_diameter": 0.5,
+        "via_drill": 0.3,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.13,
+        "diff_pair_gap": 0.13,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.24,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "USB3_90R",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.24,
+        "tuning_profile": "",
+        "via_diameter": 0.5,
+        "via_drill": 0.3,
+        "wire_width": 6
       }
     ],
     "meta": {
@@ -475,7 +475,13 @@
     "bus_aliases": {},
     "legacy_lib_dir": "",
     "legacy_lib_list": [],
-    "top_level_sheets": []
+    "top_level_sheets": [
+      {
+        "filename": "rp569-krt.kicad_sch",
+        "name": "rp569-krt",
+        "uuid": "00000000-0000-0000-0000-000000000000"
+      }
+    ]
   },
   "sheets": [],
   "text_variables": {},

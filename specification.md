@@ -34,6 +34,15 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-021 — Signal tracks allowed on In1.Cu for this design (status: accepted, 2026-10-24)
+Context: hand-finishing `hardware/autoroute/rp569-krt.kicad_pcb`, the last links (HSPI, inter-chip UART, CH EXT
+header lines, VBUS into the TPS2121, …) could not be routed without In1. Moving those 62 segments to In2.Cu
+creates 40 crossings and 12 shorts (In2 is already full there).
+Choice (user): keep short signal/power tracks on In1.Cu, the GND reference plane, for this revision.
+Checked: the In1 GND fill stays one piece; under the USB pairs the only reference gaps are via antipads
+(1–2 mm stretches near pads), none from In1 tracks. Do not route anything else on In1 near the USB pairs.
+Alternatives for a later revision: 6-layer stack, or a placement that frees In2 (see D-018–D-020).
+
 ## D-020 — Corridor between the chips kept clear: TPS2121 at the USB-C, sense dividers at their rail, pull-ups at their chip (status: accepted, 2026-10-24)
 Context: of the 21 links KRT left on the D-019 board, most ran through the corridor between the RP2350 and the
 CH569. The placer had put the TPS2121 (U2) and its six passives there (centroid of VBUS_C from the top and
