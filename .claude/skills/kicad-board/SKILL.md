@@ -21,7 +21,8 @@ starts (`CLAUDE.md`).
 | Checks | `gen/build.sh` | ERC, DRC with schematic parity → `hardware/reports/` |
 | Routing (main) | `gen/route_krt.sh <workdir>` | KiCadRoutingTools chain on a copy, DRC against the real project rules |
 | Routed board | `hardware/rp569-routed.kicad_pcb` + `.kicad_pro` | v1.0: KRT result finished by hand; the board to fabricate. `rp569.kicad_pcb` stays the generated, unrouted one |
-| Header labels | `/usr/bin/python3 gen/add_header_labels.py [pcb]` | Mirrored B.SilkS pin labels beside every PinHeader (group `header_labels`, re-run replaces them; reports overlaps; uses drawn-text extent, not GetBoundingBox). Re-run after moving a header, before `gen_fab.py` |
+| Header labels | `/usr/bin/python3 gen/add_header_labels.py [pcb]` | Mirrored B.SilkS pin labels beside every PinHeader, plus `BUTTON_LABELS` (SW1 `RPDFU`, SW5 `BOOT`) on F.SilkS in place of the reference (group `header_labels`, re-run replaces them; reports overlaps; uses drawn-text extent, not GetBoundingBox). Re-run after moving a header, before `gen_fab.py` |
+| Round corners | `/usr/bin/python3 gen/round_corners.py [pcb]` | Edge.Cuts chamfers → tangent arcs (no-op when already round); gen_pcb.py draws arcs itself |
 | Images | `gen/gen_renders.py [pcb] [--tag v1.0]` | 3D renders + layer/assembly plots (SVG, PNG via Inkscape) → `docs/images/`, ~2 min |
 | Fab outputs | `gen/gen_fab.py` | DRC gate (0 unconnected, 0 errors) → gerbers + drill → `jlcpcb/rp569-gerbers.zip`, then BOM/CPL (CPL from the routed board) |
 | Routing (option) | `/usr/bin/python3 gen/route.py [passes] [pcb] [--keep]` | patched Freerouting 2.1.0 (Java 21), GND fan-out vias, DSN → SES, GND fills on In2/F/B; `--keep` continues from the current routing |

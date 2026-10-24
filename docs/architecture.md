@@ -83,6 +83,6 @@ shared clock is the HSPI data clock, driven by the RP2350.
 
 ## PCB
 
-4 layers (JLC04161H-7628, 1.6 mm), 50 × 70 mm, chamfered corners, parts on both sides, both chips on top. In1 is
+4 layers (JLC04161H-7628, 1.6 mm), 50 × 70 mm, 3 mm rounded corners, parts on both sides, both chips on top. In1 is
 the GND plane under the 90 Ω USB pairs on F.Cu; In2 and B.Cu carry the rest. See [layout and routing](layout.md)
 and the [images](images/).

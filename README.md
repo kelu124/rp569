@@ -3,7 +3,7 @@
 An open hardware board (KiCad) that pairs a **Raspberry Pi RP2350B** with a **WCH CH569W**.
 The RP2350B generates high-speed data and the CH569 streams it to a host over **USB 3.0**.
 
-Status: **v1.0** (tag `v1.0`). Schematic complete, PCB **fully routed** (4-layer, 50×70 mm, chamfered corners,
+Status: **v1.0** (tag `v1.0`). Schematic complete, PCB **fully routed** (4-layer, 50×70 mm, rounded corners,
 parts on both sides; 0 unconnected, 0 DRC errors) and **JLCPCB production files generated**. Before ordering:
 USB pairs as coupled pairs, silkscreen cleanup, impedance check (see [`docs/layout.md`](docs/layout.md)).
 [Schematic PDF](hardware/rp569-schematic.pdf). Documentation site: https://kelu124.github.io/rp569/ (GitHub Pages from `docs/`).

@@ -1,4 +1,4 @@
-"""Pin labels on the bottom silkscreen next to every 2.54 mm header (routed board).
+"""Pin labels on the bottom silkscreen next to every 2.54 mm header, and button names on the top (routed board).
 
     /usr/bin/python3 hardware/gen/add_header_labels.py [board.kicad_pcb]
 
@@ -6,8 +6,11 @@ Default board: hardware/rp569-routed.kicad_pcb (edited in place). One mirrored B
 inward side of the header (the headers sit ~1 mm from the edge). Column headers (rot 0) get horizontal text
 beside each pin; row headers (rot 90) get text above/below each pin, turned vertical when the labels are
 wider than the pitch, or 0.8 mm horizontal when the vertical ones would hit a part. The 2x07 CH EXT gets one "inner outer" pair per row beside its inner column.
+Buttons in BUTTON_LABELS show a function name on F.SilkS instead of their reference (the reference stays the
+same for BOM/CPL, only its silkscreen text is hidden), at the first free spot near the
+reference (or the opposite side of the button).
 All labels live in the group 'header_labels': a re-run deletes it and starts again. Prints any label whose
-box hits a bottom pad, other bottom silkscreen or the board edge.
+box hits a pad, other silkscreen on its side or the board edge.
 """
 import os
 import sys
@@ -20,6 +23,7 @@ H, T = 0.9, 0.15           # text height / stroke (JLCPCB: >= 0.8 mm / 0.15 mm l
 GAP = 0.35                 # pad edge -> text box
 CX, CY = 25.0, 35.0        # board centre, defines "inward"
 REF_FIXUPS = {'U4': (33.5, 5.0, 0.8)}  # reference moved/shrunk to make room: ref -> (x, y, height mm)
+BUTTON_LABELS = {'SW1': 'RPDFU', 'SW5': 'BOOT'}  # SW1 = RP2350 BOOTSEL (USB DFU), SW5 = CH569 boot mode
 SHORT = {'+3V3': '3V3', '3V3_CH': '3V3', 'SWCLK': 'CLK', 'SWDIO': 'DIO', 'CH_BOOT_SW': 'BOOT'}
 
 
@@ -37,11 +41,11 @@ def label(net):
     return n
 
 
-def text(board, s, vertical=False, h=H):
+def text(board, s, vertical=False, h=H, layer=pcbnew.B_SilkS):
     t = pcbnew.PCB_TEXT(board)
     t.SetText(s)
-    t.SetLayer(pcbnew.B_SilkS)
-    t.SetMirrored(True)
+    t.SetLayer(layer)
+    t.SetMirrored(layer == pcbnew.B_SilkS)
     t.SetTextSize(pcbnew.VECTOR2I(mm(h), mm(h)))
     t.SetTextThickness(mm(T))
     t.SetHorizJustify(pcbnew.GR_TEXT_H_ALIGN_CENTER)
@@ -81,27 +85,48 @@ def main():
         f.SetTextThickness(mm(min(T, h / 5)))
         place(f, x, y)
     made = []
-    # obstacles: bottom pads, other bottom silkscreen, board edge
+    for ref in BUTTON_LABELS:
+        board.FindFootprintByReference(ref).Reference().SetVisible(False)
+    # obstacles per silkscreen layer: pads on that side, other silkscreen, board edge
     edge = board.GetBoardEdgesBoundingBox()
-    obst = []
+    obst = {pcbnew.B_SilkS: [], pcbnew.F_SilkS: []}
+    cu = {pcbnew.B_SilkS: pcbnew.B_Cu, pcbnew.F_SilkS: pcbnew.F_Cu}
     for fp in board.GetFootprints():
-        for p in fp.Pads():
-            if p.IsOnLayer(pcbnew.B_Cu):
-                obst.append((f'pad {fp.GetReference()}.{p.GetNumber()}', p.GetBoundingBox()))
-        for it in fp.GraphicalItems():
-            if it.GetLayer() == pcbnew.B_SilkS:
-                obst.append((f'silk {fp.GetReference()}', it.GetBoundingBox()))
-        for it in (fp.Reference(), fp.Value()):
-            if it.GetLayer() == pcbnew.B_SilkS and it.IsVisible():
-                obst.append((f'silk {fp.GetReference()}', ink(it)))
+        for silk, o in obst.items():
+            for p in fp.Pads():
+                if p.IsOnLayer(cu[silk]):
+                    o.append((f'pad {fp.GetReference()}.{p.GetNumber()}', p.GetBoundingBox()))
+            for it in fp.GraphicalItems():
+                if it.GetLayer() == silk:
+                    o.append((f'silk {fp.GetReference()}', it.GetBoundingBox()))
+            for it in (fp.Reference(), fp.Value()):
+                if it.GetLayer() == silk and it.IsVisible():
+                    o.append((f'silk {fp.GetReference()}', ink(it)))
     for d in board.GetDrawings():
-        if d.GetLayer() == pcbnew.B_SilkS:
-            obst.append(('silk drawing', d.GetBoundingBox()))
+        if d.GetLayer() in obst:
+            obst[d.GetLayer()].append(('silk drawing', d.GetBoundingBox()))
 
     def hits(t):
         bb = ink(t)
-        out = sorted({n for n, o in obst if bb.Intersects(o)})
+        out = sorted({n for n, o in obst[t.GetLayer()] if bb.Intersects(o)})
         return out + ([] if edge.Contains(bb) else ['board edge'])
+
+    for ref, name in BUTTON_LABELS.items():
+        f = board.FindFootprintByReference(ref).Reference()
+        fp = f.GetParentFootprint()
+        here, there = f.GetPosition(), fp.GetPosition() + fp.GetPosition() - f.GetPosition()   # reference spot, mirrored side
+        # first free spot: reference side then opposite side, centred then shifted sideways, then at 0.8 mm
+        cands = [(h, pos, dx) for h in (f.GetTextHeight() / 1e6, 0.8) for pos in (here, there)
+                 for dx in (0, -0.5, 0.5, -1, 1, -1.5, 1.5)]
+        for h, pos, dx in cands:
+            t = text(board, name, h=h, layer=pcbnew.F_SilkS)
+            t.SetPosition(pos + pcbnew.VECTOR2I(mm(dx), 0))
+            if not hits(t):
+                break
+        else:
+            t = text(board, name, h=f.GetTextHeight() / 1e6, layer=pcbnew.F_SilkS)
+            t.SetPosition(here)
+        made.append(t)
 
     for fp in board.GetFootprints():
         if 'PinHeader' not in str(fp.GetFPID().GetLibItemName()):

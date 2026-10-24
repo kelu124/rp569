@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-10-24 — Rounded board corners (`gen/round_corners.py`, gen_pcb arcs), SW1 `RPDFU` / SW5 `BOOT` silkscreen labels, gerbers and renders regenerated (D-023).
 - 2026-10-24 — Header pin labels on the bottom silkscreen (`gen/add_header_labels.py`), gerbers and renders regenerated.
 - 2026-10-24 — GitHub Pages site in `docs/` (index, architecture, production pages; power.md updated to v1.0).
 - 2026-10-24 — Renders in `docs/images/` (`gen/gen_renders.py`: 3D views + layer plots).

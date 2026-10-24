@@ -34,6 +34,15 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-023 — Rounded corners, silkscreen labels (status: accepted, 2026-10-24)
+Requested by user. Board corners: the 3 mm 45° chamfers of D-011 become 3 mm-radius arcs through the same tangent
+points (`gen/gen_pcb.py` for new boards, `gen/round_corners.py` applied to the routed board). The arc lies outside
+the chamfer line, so the board only gains area and nothing had to move; the GND zone outlines keep their chamfered
+polygon (the fill stops slightly short of the edge in the corners). Silkscreen: pin labels for every header on
+B.SilkS, mirrored (`gen/add_header_labels.py`); the RP2350 BOOTSEL button (SW1) is labelled `RPDFU` (USB DFU mode)
+and the CH569 boot button (SW5) `BOOT` on F.SilkS, in place of their reference designators (references unchanged
+for BOM/CPL). DRC unchanged: 0 unconnected, 0 errors.
+
 ## D-022 — v1.0 production files from the routed board (status: accepted, 2026-10-24)
 The board to fabricate is `hardware/rp569-routed.kicad_pcb` (+ `rp569-routed.kicad_pro` with the project rules):
 the KRT autoroute (D-019, D-020) finished by hand (D-021), tagged v1.0. `hardware/rp569.kicad_pcb` stays the
@@ -142,7 +151,7 @@ Source: datasheet/GSB343K33HR/gsb343k33hr.pdf (rev C), product spec ps-7428.pdf.
 Context: 50×70 mm leaves no edge room for a separate 3-pin RP UART header. GPIO30/31 became user buttons.
 Choice: RP EXT 1x10 = 3V3, DBG_TX (GPIO32), DBG_RX (GPIO33), ADC0–5, GND. CH EXT shrinks to 2x07 (PB3/PB4 → CH buttons).
 
-## D-011 — Board 50×70 mm, two-sided, chamfered corners (status: accepted, 2026-10-23)
+## D-011 — Board 50×70 mm, two-sided, chamfered corners (status: accepted, 2026-10-23; corners rounded by D-023)
 Requested by user: 50×70 mm, angled corners, parts on both sides, main chips on the same side as the
 USB connectors and the microSD. Choice: 3 mm 45° chamfers; RP2350/USB-C top half, CH569/USB3/microSD bottom
 half, all on F.Cu; small passives and the flash on B.Cu; USB ESD and SSTX caps forced to F.Cu.

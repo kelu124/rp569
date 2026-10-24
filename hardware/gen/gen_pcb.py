@@ -3,6 +3,7 @@
 Run with the system Python that ships pcbnew:  /usr/bin/python3 gen_pcb.py
 Routing is NOT done here (see docs/layout.md).
 """
+import math
 import os
 import sys
 
@@ -16,7 +17,7 @@ from kisym import get_symbol, pins  # noqa: E402
 HW = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FPLIB = '/usr/share/kicad/footprints/'
 W, H = 50.0, 70.0           # board size, mm
-CHAMFER = 3.0               # 45-degree corner chamfer, mm
+CHAMFER = 3.0               # corner radius, mm (rounded corners; the zone outlines use a 45-degree chamfer of this size)
 mm = pcbnew.FromMM
 
 
@@ -346,9 +347,16 @@ def main(out=None, rot=None):
     corners = outline_pts()
     for (x0, y0), (x1, y1) in zip(corners, corners[1:] + corners[:1]):
         s = pcbnew.PCB_SHAPE(brd)
-        s.SetShape(pcbnew.SHAPE_T_SEGMENT)
-        s.SetStart(P(x0, y0))
-        s.SetEnd(P(x1, y1))
+        if x0 == x1 or y0 == y1:
+            s.SetShape(pcbnew.SHAPE_T_SEGMENT)
+            s.SetStart(P(x0, y0))
+            s.SetEnd(P(x1, y1))
+        else:                                           # corner: arc tangent to both edges
+            cx = x0 if y0 in (0, H) else x1
+            cy = y1 if y0 in (0, H) else y0
+            k = CHAMFER / math.sqrt(2)
+            s.SetShape(pcbnew.SHAPE_T_ARC)
+            s.SetArcGeometry(P(x0, y0), P(cx + (k if cx > W / 2 else -k), cy + (k if cy > H / 2 else -k)), P(x1, y1))
         s.SetLayer(pcbnew.Edge_Cuts)
         s.SetWidth(mm(0.1))
         brd.Add(s)

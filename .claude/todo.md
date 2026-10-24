@@ -39,7 +39,7 @@
 - [ ] Hand-review v0.3 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
 - [ ] USB pairs: re-route USB3_SSTX, USB3_SSRX, USB3_D, USBC_D, RP_USB_D as coupled pairs (skew now 5–9 mm), fewer vias on SSRX.
 - [ ] HSPI lengths: 19.9–32.6 mm vs RCLK 20.6 mm; tune outliers only if the bus runs near its limit (target ~±10 mm).
-- [ ] Silkscreen: ~68 labels over copper, connector/button labels (header pin labels on B.SilkS done).
+- [ ] Silkscreen: ~68 labels over copper, connector/button labels (header pin labels on B.SilkS and RPDFU/BOOT done).
 - [ ] Place the USB3 ESD (TPD2EUSB30) in line with each pair so the pairs can stay coupled.
 - [ ] Silkscreen cleanup.
 - [ ] Consigned parts: CH569W and GSB343K33HR (LM66100 replaced by TPS2121, D-015).

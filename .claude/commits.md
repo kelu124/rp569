@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Header pin labels on the bottom silkscreen
+## pending — 2026-10-24 — Rounded board corners, RPDFU/BOOT button labels
+What: hardware/gen/round_corners.py (chamfer → tangent arc on Edge.Cuts), applied to rp569-routed.kicad_pcb;
+gen_pcb.py draws arcs for new boards; add_header_labels.py also labels SW1 `RPDFU` and SW5 `BOOT` on F.SilkS
+(references hidden, first free spot). JLCPCB gerbers/BOM/CPL and docs/images regenerated; D-023; docs, skill, logs.
+Why: user asked for rounded instead of bevelled corners and for the DFU/boot button labels. DRC unchanged (0/0, 119 warnings).
+
+## ac6a49c — 2026-10-24 — Header pin labels on the bottom silkscreen
 What: hardware/gen/add_header_labels.py (43 mirrored B.SilkS labels in group 'header_labels', U4 reference
 shrunk/moved to make room), applied to hardware/rp569-routed.kicad_pcb; JLCPCB gerbers and docs/images renders
 regenerated; logs, skill, docs.

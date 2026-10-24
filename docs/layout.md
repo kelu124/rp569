@@ -20,7 +20,7 @@ Everything under `hardware/` is generated from `hardware/gen/board.py` (parts, f
 | `gen/mk_lib.py` | `lib/rp569.kicad_sym`: CH569W symbol from phantomdrive (MIT), pin types corrected; TPS2121 |
 | `gen/mk_fp.py` | `lib/rp569.pretty`: GSB343K33HR and TI RUX0012A footprints from the datasheets |
 | `gen/gen_sch.py` | `rp569.kicad_sch`: one sheet, symbols grouped by block, a net label on every pin |
-| `gen/gen_pcb.py` | `rp569.kicad_pcb`: 4-layer 50×70 mm with 3 mm chamfered corners, footprints + nets, fixed connectors/chips/buttons/LEDs, two-sided automatic placement, GND plane on In1 |
+| `gen/gen_pcb.py` | `rp569.kicad_pcb`: 4-layer 50×70 mm with 3 mm rounded corners, footprints + nets, fixed connectors/chips/buttons/LEDs, two-sided automatic placement, GND plane on In1 |
 | `gen/gen_pro.py` | net classes in `rp569.kicad_pro` (USB3_90R, USB2_90R, HSPI, Power, Rail) |
 | `gen/route_krt.sh` | KiCadRoutingTools chain on a copy of the board (Routing options B) |
 | `gen/gen_fab.py` | DRC gate, then gerbers + drill (`jlcpcb/rp569-gerbers.zip`), BOM and CPL from `rp569-routed.kicad_pcb` |
@@ -38,7 +38,7 @@ Schematic*. Footprints are already linked to their symbols, and schematic parity
 
 ## Placement summary (D-011, D-017, D-018)
 
-Board 50×70 mm, portrait, 3 mm 45° chamfers, M3 holes 4 mm from each corner.
+Board 50×70 mm, portrait, 3 mm-radius rounded corners (D-023; 45° chamfers until then), M3 holes 4 mm from each corner.
 
 - **Chips** (top side): RP2350B at (25, 19) rotated 90° so GPIO8–23 (HSPI) face down; CH569W at (25, 46) rotated
   270° so its HSPI pins face up and its USB3 pins sit at its top-right corner. The HSPI bus runs straight between
