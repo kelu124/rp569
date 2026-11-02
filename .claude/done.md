@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-11-02 — Last 3 vias off passive pads (R9, C28, R48), silkscreen text; via-in-pad list empty for passives; JLCPCB files + renders regenerated.
 - 2026-11-02 — Vias off passive pads (42 → 1 inside + 2 on the edge: R9, C28, R48), last 0.1 mm microvia removed, In1 GND
   zone restored (lost in 9b067cd) and plane pieces stitched; 0 unconnected / 0 DRC errors; JLCPCB files regenerated;
   skill scripts `via_check.py`, `restore_gnd_zone.py`.

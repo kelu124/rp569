@@ -37,8 +37,6 @@
 - [ ] Review schematic v0.1 (`hardware/rp569-schematic.pdf`) with the user.
 - [ ] Confirm the 90 Ω width/gap (0.24/0.13 mm, D-016) with JLCPCB's impedance calculator.
 - [ ] Hand-review v0.3 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
-- [ ] Last vias in passive pads: R9 pad 1 (35.00,15.00) hole inside; C28 pad 2 (18.60,8.00) and R48 pad 2 (18.32,46.37)
-      on the pad edge. Then `via_check.py` clean, `gen_fab.py`, `gen_renders.py`.
 - [ ] In1 GND plane in 3 pieces at the bottom left (DRC-clean, stitched): move SD_D1 / CH_PB11 (and CH_PB8, CH_PB3) off In1 to get one plane.
 - [ ] USB pairs: re-route USB3_SSTX, USB3_SSRX, USB3_D, USBC_D, RP_USB_D as coupled pairs (skew now 5–9 mm), fewer vias on SSRX.
 - [ ] HSPI lengths: 19.9–32.6 mm vs RCLK 20.6 mm; tune outliers only if the bus runs near its limit (target ~±10 mm).

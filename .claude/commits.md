@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-02 — Via-in-pad cleanup, GND plane restored, JLCPCB files regenerated
+## pending — 2026-11-02 — Last vias off passive pads, silkscreen text, fab files and renders
+What: `hardware/rp569-routed.kicad_pcb` (user's pcbnew edits: R9/C28/R48 vias moved off the pads, Y1 and CH569 pad 34
+cleared, silkscreen text added), `hardware/jlcpcb/*`, `hardware/reports/drc-routed.json`, `docs/images/*` (renders),
+logs.
+Why: via-in-pad list now empty for passives; 0 unconnected / 0 DRC errors / 115 cosmetic warnings; production files
+and renders match the board.
+
+## 30cfcfb — 2026-11-02 — Via-in-pad cleanup, GND plane restored, JLCPCB files regenerated
 What: `hardware/rp569-routed.kicad_pcb` (user's pcbnew edits: vias moved off passive pads 42 → 1 inside / 2 on the
 edge, 0.1 mm microvia removed, In1 GND zone re-added and refilled, bottom-left plane pieces stitched; 0 unconnected,
 0 DRC errors), `hardware/jlcpcb/*` + `hardware/reports/drc-routed.json` from `gen_fab.py`, new skill scripts
