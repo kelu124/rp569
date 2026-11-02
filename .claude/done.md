@@ -2,6 +2,10 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-11-02 — Vias off passive pads (42 → 1 inside + 2 on the edge: R9, C28, R48), last 0.1 mm microvia removed, In1 GND
+  zone restored (lost in 9b067cd) and plane pieces stitched; 0 unconnected / 0 DRC errors; JLCPCB files regenerated;
+  skill scripts `via_check.py`, `restore_gnd_zone.py`.
+
 - 2026-10-24 — Python host library `python/rp569` (port roles by VID/PID/product/UID/interface, one method per command), `version` + chip UID on both firmwares, version.yaml, pre-commit hook (command sync + patch bump), CH569 console, Hackaday drafts 03/04 (D-025).
 - 2026-10-24 — First firmware (D-024): `firmware/rp2350` USB CLI (LED, `dfu`, CH569 power/boot/reset/link) and `firmware/ch569` (CH569_Composite fork: USB3 serial bridged to the RP2350 link with echo, SD drive); both build; skill `firmware`.
 - 2026-10-24 — README/docs image links moved to the regenerated `docs/images/` renders; stale `docs/img/pcb-render-v1.0-*` removed.

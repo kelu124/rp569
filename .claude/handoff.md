@@ -1,12 +1,18 @@
-# Handoff — where the rp569 work stands (2026-10-24)
+# Handoff — where the rp569 work stands (2026-11-02)
 
 Read this first when resuming. Details live in `specification.md` (D-xxx), `docs/layout.md`, `.claude/todo.md`.
 
 ## State
 
 - **v1.0 board done**: `hardware/rp569-routed.kicad_pcb` (+ `rp569-routed.kicad_pro`), tag `v1.0`. Fully routed:
-  0 unconnected, 0 DRC errors (119 warnings: 116 silkscreen, 2 lib_footprint, 1 VREG_AVDD stub that is part of
-  the connection). 3 mm rounded corners; header pin labels on B.SilkS; SW1 printed `RPDFU`, SW5 `BOOT` (D-023).
+  0 unconnected, 0 DRC errors (118 warnings: 116 silkscreen, 2 lib_footprint). 3 mm rounded corners; header pin
+  labels on B.SilkS; SW1 printed `RPDFU`, SW5 `BOOT` (D-023).
+- 2026-11-02 pass (user in pcbnew + checks here): vias moved off passive pads (3 left: R9 pad 1 hole inside,
+  C28 pad 2 / R48 pad 2 on the edge; CH569 pads 34/69 and Y1 pad 3 touch), no microvia left (424 × 0.3/0.5 mm),
+  In1 GND zone restored after it vanished in commit 9b067cd. The plane is in 3 pieces at the bottom left (SD_D1,
+  CH_PB11, CH_PB8, CH_PB3 run on In1), tied by GND vias + short F/B tracks: DRC-clean, but moving SD_D1/CH_PB11
+  to In2 would make it one plane. Checks: `.claude/skills/kicad-board/via_check.py`, `drc_check.py`; the zone
+  comes back with `restore_gnd_zone.py` (then *File > Revert* in pcbnew, or its next save drops it again).
 - Board post-processing scripts, both idempotent, both edit the routed board in place (close it in KiCad first):
   `/usr/bin/python3 hardware/gen/add_header_labels.py` (silkscreen labels, group `header_labels`) and
   `/usr/bin/python3 hardware/gen/round_corners.py`. After any board change: `gen_fab.py`, then `gen_renders.py`.
@@ -41,7 +47,9 @@ uf2), `python3 -m rp569 ports` / `versions` (PYTHONPATH=python), `ch boot` + fla
    references only. Header pin labels and RPDFU/BOOT are done (`add_header_labels.py`, re-run after moving a
    header; add names to its `BUTTON_LABELS`).
 3. Confirm 0.24/0.13 mm = 90 Ω with JLCPCB's impedance calculator (JLC04161H-7628).
-4. Re-run `python3 hardware/gen/gen_fab.py`, then review gerbers and the JLCPCB placement preview (rotations).
+4. Move the last 3 vias off passive pads (R9, C28, R48), optionally SD_D1/CH_PB11 off In1; re-run
+   `python3 hardware/gen/gen_fab.py` (done 2026-11-02 for the current state) and `gen_renders.py`, then review
+   gerbers and the JLCPCB placement preview (rotations).
 5. Later: HSPI lengths 19.9–32.6 mm vs RCLK 20.6 (fine below ~100 MHz); open firmware questions in todo.
 
 ## Tools on this machine

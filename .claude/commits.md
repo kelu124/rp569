@@ -6,7 +6,19 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-10-24 — Session wrap-up: handoff and logs
+## pending — 2026-11-02 — Via-in-pad cleanup, GND plane restored, JLCPCB files regenerated
+What: `hardware/rp569-routed.kicad_pcb` (user's pcbnew edits: vias moved off passive pads 42 → 1 inside / 2 on the
+edge, 0.1 mm microvia removed, In1 GND zone re-added and refilled, bottom-left plane pieces stitched; 0 unconnected,
+0 DRC errors), `hardware/jlcpcb/*` + `hardware/reports/drc-routed.json` from `gen_fab.py`, new skill scripts
+`.claude/skills/kicad-board/via_check.py` and `restore_gnd_zone.py`, SKILL.md gotchas, handoff/todo/done.
+Why: the 2026-10-27 "autoupdate" commit had lost the In1 GND zone (52 unconnected) and still had vias in passive
+pads; both block ordering. Scripts so the checks are one command next time.
+
+## 9b067cd — 2026-10-27 — autoupdate
+What: `hardware/rp569-routed.kicad_pcb` (user's pcbnew session: via-in-pad cleanup in progress), `rp569.kicad_pro`.
+Why: user checkpoint; this version had lost the In1 GND zone (fixed 2026-11-02).
+
+## cb150be — 2026-10-24 — Session wrap-up: handoff and logs
 What: .claude/handoff.md next steps (hardware bring-up with the python library), commit log hash.
 Why: user is closing the session and asked to save memory and skills.
 

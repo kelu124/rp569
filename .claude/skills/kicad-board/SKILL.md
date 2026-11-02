@@ -40,6 +40,8 @@ re-route (`route_krt.sh`, then hand finishing) or apply the change in pcbnew on 
 | `drc_check.py [board] [--pro P] [--json out]` | any | DRC against the **real** project rules (copies the board next to `hardware/rp569.kicad_pro`), lists unconnected links with coordinates and non-cosmetic violations. Default board: `hardware/rp569-routed.kicad_pcb` |
 | `board_metrics.py [board]` | `/usr/bin/python3` | HSPI lengths vs RCLK, USB pair skew/vias, In1 GND fill islands, tracks on In1, USB length not over In1 and why |
 | `remove_dangling.py in out [--keep NET..]` | `/usr/bin/python3` | Safe replacement for pcbnew's Cleanup: removes DRC-dangling items by uuid, repeats, refuses to write if unconnected goes up |
+| `via_check.py [board]` | `/usr/bin/python3` | Via sizes (anything but 0.3/0.5 mm through is flagged), vias whose hole is inside/touching a pad (solder wicking; the U7/U9 exposed-pad thermal vias are expected), In1 GND fill pieces with their position and GND vias |
+| `restore_gnd_zone.py [board]` | `/usr/bin/python3` | Re-creates the v1.0 In1 GND zone (rectangle inset 0.5 mm, 0.1/0.1 mm, thermal 0.2/0.2) when it went missing, refills, saves; no-op if a zone exists |
 
 ## Hand-editing loop with the user (v1.0 was finished this way)
 
@@ -77,6 +79,15 @@ After edits: `python3 hardware/gen/gen_fab.py` to refresh the JLCPCB files.
 - Never run `build.sh` while `route.py` is running: route.py saves over `rp569.kicad_pcb` at the end, with the
   board it loaded at the start.
 
+- **The In1 GND zone can vanish** (it did in commit 9b067cd, 2026-10-27: 52 "unconnected" GND items, 23 dangling
+  vias). `restore_gnd_zone.py` puts it back, but a pcbnew session opened before the script keeps its zone-less copy
+  and drops the zone again at its next save (happened three times on 2026-11-02): the user must *File > Revert*,
+  or draw the zone in pcbnew. Always check `via_check.py` / `drc_check.py` after the user's save, not before.
+- `ZONE.Duplicate()` and `SetOutline()` from another board segfault or fail in KiCad 10 python; build the zone with
+  `Outline().NewOutline()` + `Append()`.
+- A "Zone to Zone" unconnected item = the plane is in pieces; `via_check.py` lists them. A piece is fine when a GND
+  via inside it reaches the main plane through F/B/In2 copper (DRC then reports 0), otherwise stitch: via inside the
+  piece, short GND track on a free layer, via in the main plane.
 - pcbnew *Cleanup Tracks & Vias*: refill zones (**B**) first, or it deletes the GND fan-out vias (connected only
   through the In1 fill) as "connected on one layer". Check the preview count, DRC afterwards.
 
