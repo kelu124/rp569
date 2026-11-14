@@ -69,3 +69,25 @@ it can be power-cycled and forced into its bootloader during automated tests.
 - [phantomdrive](https://github.com/o7-machinehum/phantomdrive): open-source CH569W encrypted USB3 drive with SD card, KiCad sources.
 - [RP2350 datasheet](https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf) and
   [hardware design guide](https://datasheets.raspberrypi.com/rp2350/hardware-design-with-rp2350.pdf).
+
+## License
+
+This work follows the licensing of the author's previous open-hardware projects
+([rp417](https://github.com/kelu124/rp417), [pic0rick](https://github.com/kelu124/pic0rick),
+[the echOmods project](https://github.com/kelu124/echomods/), the [un0rick project](https://doi.org/10.5281/zenodo.377054)
+and the [lit3rick project](https://doi.org/10.5281/zenodo.5792245)).
+
+Copyright Luc Jonveaux (<kelu124@gmail.com>) 2026
+
+* The hardware is licensed under the TAPR Open Hardware License (<www.tapr.org/OHL>) — see [`LICENSE.txt`](LICENSE.txt).
+* The software components (`firmware/`, `python/`, `hardware/gen/`, `tools/`) are free software: you can redistribute
+  them and/or modify them under the terms of the GNU General Public License as published by the Free Software Foundation,
+  either version 3 of the License, or (at your option) any later version — see [`LICENSE-GPL-3.0.txt`](LICENSE-GPL-3.0.txt).
+* The docs are licensed under a [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)
+  — see [`LICENSE-CC-BY-SA-3.0.txt`](LICENSE-CC-BY-SA-3.0.txt).
+
+Third-party material keeps its own license: datasheets in `datasheet/` and reference projects in `project/`.
+
+## Disclaimer
+
+This project is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A PARTICULAR PURPOSE.

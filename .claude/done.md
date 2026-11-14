@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-11-14 — Licenses added, same as rp417/pic0rick: `LICENSE.txt` (TAPR OHL, hardware), `LICENSE-GPL-3.0.txt` (software), `LICENSE-CC-BY-SA-3.0.txt` (docs); License section in README and docs/index.md.
 - 2026-11-02 — Last 3 vias off passive pads (R9, C28, R48), silkscreen text; via-in-pad list empty for passives; JLCPCB files + renders regenerated.
 - 2026-11-02 — Vias off passive pads (42 → 1 inside + 2 on the edge: R9, C28, R48), last 0.1 mm microvia removed, In1 GND
   zone restored (lost in 9b067cd) and plane pieces stitched; 0 unconnected / 0 DRC errors; JLCPCB files regenerated;

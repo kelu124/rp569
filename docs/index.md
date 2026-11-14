@@ -76,3 +76,10 @@ production files and `hardware/gen/gen_renders.py` the images. Details: [Layout 
 - [RP2350 datasheet](https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf) and
   [hardware design guide](https://datasheets.raspberrypi.com/rp2350/hardware-design-with-rp2350.pdf).
 - [KiCadRoutingTools](https://github.com/drandyhaas/KiCadRoutingTools), [Freerouting](https://github.com/freerouting/freerouting).
+
+## License
+
+Copyright Luc Jonveaux 2026. Hardware: [TAPR Open Hardware License](https://github.com/kelu124/rp569/blob/main/LICENSE.txt);
+software: [GPL v3 or later](https://github.com/kelu124/rp569/blob/main/LICENSE-GPL-3.0.txt);
+docs: [CC BY-SA 3.0](https://github.com/kelu124/rp569/blob/main/LICENSE-CC-BY-SA-3.0.txt) — same terms as
+[rp417](https://github.com/kelu124/rp417) and [pic0rick](https://github.com/kelu124/pic0rick).

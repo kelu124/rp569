@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-02 — Last vias off passive pads, silkscreen text, fab files and renders
+## pending — 2026-11-14 — Add licenses (TAPR OHL, GPLv3, CC BY-SA 3.0)
+What: `LICENSE.txt` (copied verbatim from kelu124/rp417, identical to pic0rick), `LICENSE-GPL-3.0.txt` (gnu.org),
+`LICENSE-CC-BY-SA-3.0.txt` (creativecommons.org legalcode), License + Disclaimer sections in `README.md`, License
+section in `docs/index.md`.
+Why: same licensing as the author's previous open-hardware projects (rp417, pic0rick).
+
+## d93d27b — 2026-11-02 — Last vias off passive pads, silkscreen text, fab files and renders
 What: `hardware/rp569-routed.kicad_pcb` (user's pcbnew edits: R9/C28/R48 vias moved off the pads, Y1 and CH569 pad 34
 cleared, silkscreen text added), `hardware/jlcpcb/*`, `hardware/reports/drc-routed.json`, `docs/images/*` (renders),
 logs.
