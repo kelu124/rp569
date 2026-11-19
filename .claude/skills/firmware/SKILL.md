@@ -67,6 +67,12 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
   test region at the end of the card. After a card swap, `ch cycle` before mounting (no SD_DET handling yet).
 - RST#: works only with RESET_EN (set on board #1 via `firmware/tools/wch-ch56x-isp-resetpin.patch`, `-e=on`); a pin
   reset reloads the firmware, a software reset does not. SD_DET (PA20) low = card in, debounced in `sd_det_poll`.
+- **Variant 1 "stream"** (D-031): CH569 `./build.sh VARIANT=stream` (`src-stream/`, `version-stream.yaml`), RP2350
+  target `rp569_rp2350_stream` (`-DRP569_STREAM=1`, `src/hspi_tx.pio`, `src/stream.c`); `python -m rp569 stream 20 16`.
+  HSPI traps: HRVLD rises with HRCLK low (else 1-byte shift), header TSQN in bits [5:2], CRC-16/USB, keep HRCLK
+  running; RX_LEN reads 0/1, NUM_MIS unusable. Ring slot freed only after its last USB packet completed. No blocking
+  UART prints in the stream loop (ring = 5 ms). Host reader in its own process (GIL), start the source after the
+  first reads. STAT/DATA debug lines: `-DSTREAM_DEBUG_STAT=1`.
 - Never hardcode `/dev/ttyACM0`: the numbering changes with the enumeration order; use `/dev/serial/by-id/`
   (an RP2350 "hang" was the helper talking to the CH569 link port).
 - Both speeds expose the same interfaces: `CH56x_usb20.c` (rewritten 2026-11-19) mirrors `CH56x_usb30.c`; a

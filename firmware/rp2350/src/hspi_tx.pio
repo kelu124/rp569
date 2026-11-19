@@ -1,0 +1,38 @@
+; hspi_tx.pio — RP2350 PIO as the HSPI transmitter ("up" end) towards the CH569 receiver (D-031).
+;
+; Pins (boards/rp569.h, docs/pinmap.md): OUT  GPIO8-15  HD0-7
+;                                         SIDE GPIO16    HRCLK (clock: every instruction toggles it)
+;                                         SET  GPIO17-18 HRACT (bit 0, transmit request), HRVLD (bit 1, data valid)
+;                                         JMP  GPIO19    HTACK (CH569 ready to receive)
+; The clock runs all the time (the CH569 receiver logic is clocked by HRCLK, as by a CH569 transmitter's HTCLK):
+; one period per 2 instructions, side 0 / side 1 strictly alternating on every path. Data changes while the clock
+; is low, the CH569 samples on the rising edge.
+; TX FIFO per packet: word 0 = byte count - 1, then the packet bytes (header, payload, CRC), 4 per word, LSB first;
+; unused bytes of the last word are dropped by the next `pull`. STATUS_SEL = TX level < 1 (all ones when empty).
+
+.program hspi_tx
+.side_set 1
+
+.wrap_target
+idle:
+    mov x, status           side 0      ; x = ~0 while the TX FIFO is empty
+    jmp !x start            side 1      ; a packet is queued (else wrap back to idle)
+.wrap
+start:
+    pull block              side 0      ; byte count - 1
+    mov x, osr              side 1
+    out null, 32            side 0      ; OSR empty: autopull feeds the bytes
+    set pins, 1             side 1      ; HRACT = 1: request
+wait_ack:
+    jmp pin ready           side 0      ; HTACK high: the CH569 can receive
+    jmp wait_ack            side 1
+ready:
+    out pins, 8             side 1      ; byte 0 on the bus, HRVLD still low (this rising edge is not sampled)
+    set pins, 3             side 0      ; HRVLD = 1 while the clock is low: never on a rising edge, or the CH569
+                                        ; samples a stale byte first (seen on board #1: every packet shifted by one)
+    jmp x-- bytes           side 1      ; rising edge: byte 0 sampled (packets are >= 2 bytes)
+bytes:
+    out pins, 8             side 0      ; next byte, clock low
+    jmp x-- bytes           side 1      ; clock high: sampled
+    set pins, 0             side 0      ; HRVLD = HRACT = 0 while the clock is low: packet done
+    jmp idle                side 1

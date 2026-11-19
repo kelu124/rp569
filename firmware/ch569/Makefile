@@ -4,8 +4,18 @@
 # Toolchain: xPack riscv-none-elf-gcc (see Dockerfile). Override PREFIX for a
 # differently-named toolchain, e.g. `make PREFIX=riscv64-unknown-elf-`.
 
+# VARIANT (D-025 major = firmware variant): default = variant 0 (drive/serial modes, src/, version.yaml);
+# VARIANT=stream = variant 1 (HSPI receiver -> USB bulk stream, src-stream/, version-stream.yaml, D-031).
+VARIANT ?=
+ifeq ($(VARIANT),stream)
+TARGET  := rp569_ch569_stream
+BUILD   := build-stream
+VERSION_FILE := version-stream.yaml
+else
 TARGET  := rp569_ch569
 BUILD   := build
+VERSION_FILE := version.yaml
+endif
 
 PREFIX  ?= riscv-none-elf-
 CC      := $(PREFIX)gcc
@@ -18,10 +28,11 @@ SIZE    := $(PREFIX)size
 ARCH    ?= -march=rv32imac_zicsr -mabi=ilp32
 
 # Firmware version from version.yaml (major/minor by the user, patch by the pre-commit hook) + git hash
-FW_VERSION := $(shell sed -n 's/^major: *//p' version.yaml).$(shell sed -n 's/^minor: *//p' version.yaml).$(shell sed -n 's/^patch: *//p' version.yaml)
+FW_VERSION := $(shell sed -n 's/^major: *//p' $(VERSION_FILE)).$(shell sed -n 's/^minor: *//p' $(VERSION_FILE)).$(shell sed -n 's/^patch: *//p' $(VERSION_FILE))
 FW_GIT     := $(shell git describe --always --dirty --abbrev=7 2>/dev/null || echo unknown)
 
 INCLUDES := -I$(BUILD)/generated \
+            $(if $(filter stream,$(VARIANT)),-Isrc-stream) \
             -Isrc \
             -Isdk/Peripheral/inc \
             -Isdk/RVMSIS \
@@ -43,6 +54,19 @@ LDFLAGS := $(ARCH) -nostartfiles -Xlinker --gc-sections \
 
 USB30_LIB := sdk/USB30Lib/libCH56x_USB30_device_lib.a
 
+ifeq ($(VARIANT),stream)
+C_SOURCES := \
+    src-stream/main.c \
+    src-stream/usb_stream.c \
+    src/chip_uid.c \
+    sdk/Peripheral/src/CH56x_clk.c \
+    sdk/Peripheral/src/CH56x_gpio.c \
+    sdk/Peripheral/src/CH56x_pwr.c \
+    sdk/Peripheral/src/CH56x_sys.c \
+    sdk/Peripheral/src/CH56x_uart.c \
+    sdk/RVMSIS/core_riscv.c
+USB30_LIB :=
+else
 C_SOURCES := \
     src/Main.c \
     src/CH56x_usb30.c \
@@ -65,6 +89,7 @@ C_SOURCES := \
     sdk/Peripheral/src/CH56x_timer.c \
     sdk/Peripheral/src/CH56x_uart.c \
     sdk/RVMSIS/core_riscv.c
+endif
 
 S_SOURCES := sdk/Startup/startup_CH56x.S
 
@@ -74,13 +99,13 @@ OBJECTS := $(addprefix $(BUILD)/,$(C_SOURCES:.c=.o)) \
 .PHONY: all clean check check-includes check-mem size FORCE
 
 # fw_version.h is rewritten only when the version or the git hash changes (no needless rebuilds)
-$(BUILD)/generated/fw_version.h: version.yaml FORCE
+$(BUILD)/generated/fw_version.h: $(VERSION_FILE) FORCE
 	@mkdir -p $(dir $@)
 	@printf '/* Generated from version.yaml by the Makefile: do not edit. */\n#define FW_VERSION "%s"\n#define FW_GIT     "%s"\n' \
 	    "$(FW_VERSION)" "$(FW_GIT)" > $@.tmp
 	@cmp -s $@.tmp $@ && rm $@.tmp || mv $@.tmp $@
 
-$(BUILD)/src/console.o $(BUILD)/src/Main.o: $(BUILD)/generated/fw_version.h
+$(BUILD)/src/console.o $(BUILD)/src/Main.o $(BUILD)/src-stream/main.o: $(BUILD)/generated/fw_version.h
 
 all: check-includes $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).bin $(BUILD)/$(TARGET).hex size check-mem
 

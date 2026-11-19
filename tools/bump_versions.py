@@ -3,7 +3,8 @@
     python3 tools/bump_versions.py            # from .githooks/pre-commit, on the staged changes
     python3 tools/bump_versions.py --show     # print the current versions
 
-Components: firmware/rp2350 (version.yaml), firmware/ch569 (version.yaml), python (rp569/_version.py).
+Components: firmware/rp2350 and firmware/ch569 (version.yaml = variant 0, version-stream.yaml = variant 1: both
+bumped, the variants share sources), python (rp569/_version.py).
 Rule (major.minor.patch): if a component has staged changes other than its version file, its staged version must
 be above HEAD's. If major/minor are unchanged and patch was not raised, patch = HEAD patch + 1 (the file is
 rewritten and staged). A changed major or minor is the user's decision and is left as it is.
@@ -16,7 +17,9 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COMPONENTS = [
     ('firmware/rp2350', 'firmware/rp2350/version.yaml'),
+    ('firmware/rp2350', 'firmware/rp2350/version-stream.yaml'),     # variant 1 (D-031): shares the sources
     ('firmware/ch569', 'firmware/ch569/version.yaml'),
+    ('firmware/ch569', 'firmware/ch569/version-stream.yaml'),
     ('python', 'python/rp569/_version.py'),
 ]
 IGNORED = ('/build/', '__pycache__', '.egg-info')
@@ -53,11 +56,12 @@ def show(path):
 def main():
     if '--show' in sys.argv:
         for comp, vf in COMPONENTS:
-            print(f'{comp:16s} {".".join(map(str, parse(open(os.path.join(ROOT, vf)).read())))}')
+            print(f'{vf:38s} {".".join(map(str, parse(open(os.path.join(ROOT, vf)).read())))}')
         return
     staged = git('diff', '--cached', '--name-only').stdout.split()
     for comp, vf in COMPONENTS:
-        touched = [f for f in staged if f.startswith(comp + '/') and f != vf and not any(i in f for i in IGNORED)]
+        own = {v for c, v in COMPONENTS if c == comp}
+        touched = [f for f in staged if f.startswith(comp + '/') and f not in own and not any(i in f for i in IGNORED)]
         if not touched:
             continue
         head, index = parse(show(f'HEAD:{vf}')), parse(show(f':{vf}'))

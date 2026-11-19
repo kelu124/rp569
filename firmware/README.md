@@ -20,6 +20,17 @@ git hash and the chip unique ID. **major/minor are changed by the user only**; t
 touches (`tools/bump_versions.py`, also for `python/`) and refuses a commit where a firmware command and the python
 library disagree (`tools/check_commands.py`).
 
+## Firmware variants (major version = variant, D-025)
+
+| Variant | CH569 | RP2350 | What it does |
+|---|---|---|---|
+| 0 (0.x) | `./build.sh` -> `build/rp569_ch569.bin` | `build/rp569_rp2350.uf2` | drive / serial modes, SD card (D-028..D-030) |
+| 1 (1.x) "stream" | `./build.sh VARIANT=stream` -> `build-stream/rp569_ch569_stream.bin` | `build/rp569_rp2350_stream.uf2` | RP2350 counter stream over the 8-bit HSPI bus -> CH569 -> USB bulk, 16 MB/s (D-031) |
+
+Variant 1 test: flash both, `ch cycle`, then `PYTHONPATH=python python3 -m rp569 stream 20 16` (needs pyusb, numpy
+and USB access to 1a86:fe2c). RP2350 CLI: `stream start [MB/s] [MHz] [crc]` (16, 25, 8 = CRC-16/USB),
+`stream stop`, `stream status`.
+
 ## Bring-up order
 
 1. **RP2350**: hold **RPDFU** (BOOTSEL) and press **RUN** (or plug in with RPDFU held): the RP2350 appears as a

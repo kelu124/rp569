@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — RST# and SD card detect (D-030)
+## pending — 2026-11-19 — Firmware variant 1 "stream": 8-bit HSPI bus at 16 MB/s to the host (D-031)
+What: CH569 `src-stream/` (main, usb_stream), Makefile `VARIANT=stream`, `version-stream.yaml` 1.0.0; RP2350
+`src/hspi_tx.pio`, `src/stream.c/.h`, CMake target `rp569_rp2350_stream`, `version-stream.yaml` 1.0.0, `stream`
+commands; python `rp569/stream.py` (pyusb reader process + numpy check), `RP2350.stream_*`, `-m rp569 stream`;
+hook bumps both variant files; spec R-21 + D-031, firmware README, skill, logs.
+Why: user's test plan step 2 (CH569 reads the 8-bit bus, streams 16 MB/s to the host), as a new major variant.
+
+## d20755f — 2026-11-19 — RST# and SD card detect (D-030)
 What: CH569 `sd_det_poll()` (PA20, debounce, hot swap in drive mode, `\x01SDIN`/`\x01SDOUT`), `tick_10us`, console
 `sd ... det`; RP2350 `ch reset` releases the card, card field in `ch status`, `CH569 card:` lines; python `card`,
 `detect`, `ch569_card_events()`; `firmware/tools/wch-ch56x-isp-resetpin.patch`; docs, spec D-030, skill, logs.

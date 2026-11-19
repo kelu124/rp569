@@ -146,6 +146,34 @@ class RP2350(PromptCLI):
         return {'gpio': int(m.group(1)), 'pull_up': int(m.group(2)), 'pull_down': int(m.group(3)),
                 'state': m.group(4).strip()}
 
+    _STREAM_RE = (r'stream (on|off), packets (\d+), payload (\d+) bytes, ([\d.]+) s, ([\d.]+) MB/s, '
+                  r'target ([\d.]+) MB/s, bus ([\d.]+) MHz(?:, crc (\d))?')
+
+    def _stream(self, line: str) -> dict:
+        text = self.cmd_text(line, timeout=3)
+        if 'not in this firmware variant' in text:
+            raise CommandError('the RP2350 runs firmware variant 0: flash rp569_rp2350_stream.uf2 (variant 1)')
+        m = re.search(self._STREAM_RE, text)
+        if not m:
+            raise CommandError(f'unexpected reply to {line!r}: {text!r}')
+        return {'on': m.group(1) == 'on', 'packets': int(m.group(2)), 'bytes': int(m.group(3)),
+                'seconds': float(m.group(4)), 'mbs': float(m.group(5)), 'target_mbs': float(m.group(6)),
+                'bus_mhz': float(m.group(7)), 'crc': int(m.group(8)) if m.group(8) else 0}
+
+    @command('stream start')
+    def stream_start(self, mbs: float = 16, clk_mhz: float = 25, crc: int = 8) -> dict:
+        """Variant 1: start the counter stream to the CH569 on the 8-bit bus (payload MB/s, 1 MB = 1e6 B; 0 = max;
+        crc = CRC16 variant: 8 = CRC-16/USB, what the CH569 checks; 0 = none; see firmware/rp2350/src/stream.c)."""
+        return self._stream(f'stream start {mbs:g} {clk_mhz:g} {crc}')
+
+    @command('stream stop')
+    def stream_stop(self) -> dict:
+        return self._stream('stream stop')
+
+    @command('stream status')
+    def stream_status(self) -> dict:
+        return self._stream('stream status')
+
     @command('ch send')
     def ch_send(self, text: str, wait_echo: bool = True, timeout: float = 1.0) -> str | None:
         """Send a line to the CH569. With wait_echo, return the line the CH569 echoed back (None if none)."""

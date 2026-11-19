@@ -1,0 +1,6 @@
+# rp569 RP2350B firmware, variant 1 "stream" (major = firmware variant, D-025 / D-031): PIO HSPI sender.
+# major / minor: changed by the user only (major 1 = this variant). patch: bumped by the pre-commit hook on every
+# commit that changes firmware/rp2350/. Read at build time (CMake target rp569_rp2350_stream).
+major: 1
+minor: 0
+patch: 0

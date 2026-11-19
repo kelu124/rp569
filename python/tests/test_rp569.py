@@ -61,6 +61,7 @@ RP_REPLIES = {
     'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud, mode drive, card in',
     'ch send hello': '',
     'ch eject': 'CH569 SD released',
+    'stream status': 'stream off, packets 10, payload 40960 bytes, 0.01 s, 16.00 MB/s, target 16.0 MB/s, bus 25.0 MHz',
     'ch mount': 'CH569 SD mounted (drive mode)',
     'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
@@ -159,6 +160,7 @@ class TestRP2350(unittest.TestCase):
         self.assertEqual((rp.ch_status()['mode'], rp.ch_status()['card']), ('drive', 'in'))
         self.assertEqual(rp.ch_pins()['state'], 'driven high (UART idle)')
         self.assertTrue(rp.ch_eject())
+        self.assertEqual(rp.stream_status()['packets'], 10)
         self.assertTrue(rp.ch_mount())
 
     def test_ch_send_echo(self):

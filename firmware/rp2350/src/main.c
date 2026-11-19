@@ -20,6 +20,12 @@
 #include "pico/stdlib.h"
 #include "pico/unique_id.h"
 
+#ifndef RP569_STREAM
+#define RP569_STREAM 0           // 1 = firmware variant 1 (CMake target rp569_rp2350_stream, D-031)
+#endif
+#if RP569_STREAM
+#include "stream.h"
+#endif
 #include "fw_version.h"           // FW_VERSION / FW_GIT, generated from version.yaml
 
 #define LINK_BAUD        115200
@@ -129,6 +135,9 @@ static void ch_sd_release_report(void) {
 }
 
 static void ch_power_off(void) {
+#if RP569_STREAM
+    stream_stop();                        // the bus pins go back to inputs before the CH569 loses power
+#endif
     if (ch_powered)
         ch_sd_release_report();           // never cut the power under a card that is being written
     gpio_put(RP569_CH_PWR_EN_PIN, 0);
@@ -155,6 +164,9 @@ static void ch_power_on(bool bootloader) {
         gpio_pull_up(RP569_HSPI_D0_PIN);
     }
     gpio_put(RP569_CH_PWR_EN_PIN, 1);
+#if RP569_STREAM
+    stream_seq_reset();
+#endif
     sleep_ms(50);                         // AP2171W soft start + both bucks
     gpio_set_function(RP569_LINK_TX_PIN, UART_FUNCSEL_NUM(link_uart, RP569_LINK_TX_PIN));
     gpio_set_function(RP569_LINK_RX_PIN, UART_FUNCSEL_NUM(link_uart, RP569_LINK_RX_PIN));
@@ -177,6 +189,10 @@ static void ch_power_on(bool bootloader) {
 static void ch_reset_pulse(void) {
     if (ch_powered)
         ch_sd_release_report();
+#if RP569_STREAM
+    stream_stop();
+    stream_seq_reset();
+#endif
     gpio_put(RP569_CH_RST_N_PIN, 0);
     gpio_set_dir(RP569_CH_RST_N_PIN, GPIO_OUT);
     sleep_ms(10);
@@ -330,6 +346,41 @@ typedef struct {
     void (*fn)(int argc, char **argv, char *rest);
 } command_t;
 
+// Stream commands (variant 1 only; the variant-0 build answers that they are not available).
+static void cmd_stream_start(int argc, char **argv, char *rest) {
+#if RP569_STREAM
+    float mbs = argc > 0 ? strtof(argv[0], NULL) : 16.0f;
+    float clk = argc > 1 ? strtof(argv[1], NULL) : 25.0f;
+    int crc = argc > 2 ? atoi(argv[2]) : 8;      // 8 = CRC-16/USB, what the CH569 checks
+    if (!ch_powered) {
+        printf("CH569 is off ('ch on' first)\n");
+        return;
+    }
+    if (!stream_start(mbs, clk, crc))
+        printf("stream already on\n");
+    stream_print_status();
+#else
+    printf("stream: not in this firmware variant (build rp569_rp2350_stream)\n");
+#endif
+}
+
+static void cmd_stream_stop(int argc, char **argv, char *rest) {
+#if RP569_STREAM
+    stream_stop();
+    stream_print_status();
+#else
+    printf("stream: not in this firmware variant (build rp569_rp2350_stream)\n");
+#endif
+}
+
+static void cmd_stream_status(int argc, char **argv, char *rest) {
+#if RP569_STREAM
+    stream_print_status();
+#else
+    printf("stream: not in this firmware variant (build rp569_rp2350_stream)\n");
+#endif
+}
+
 // COMMANDS-BEGIN (keep in sync with python/rp569/rp2350.py: tools/check_commands.py)
 static const command_t commands[] = {
     {"help",      "",                "this list",                                                       cmd_help},
@@ -349,6 +400,9 @@ static const command_t commands[] = {
     {"ch reset",  "",                "pulse RST# (needs RESET_EN; releases the card first)",            cmd_ch_reset},
     {"ch status", "",                "CH569 power, fault flag, rails",                                  cmd_ch_status},
     {"ch pins",   "",                "probe the CH569 -> RP2350 UART line (driven / open)",             cmd_ch_pins},
+    {"stream start", "[MB/s] [MHz] [crc]", "counter stream on the 8-bit bus (variant 1; 16, 25, crc 8)", cmd_stream_start},
+    {"stream stop",  "",             "stop the stream, give the bus pins back",                     cmd_stream_stop},
+    {"stream status", "",            "stream packets, bytes, rate",                                 cmd_stream_status},
     {"ch send",   "<text>",          "send a line to the CH569 over the link UART (it echoes it back)", cmd_ch_send},
 };
 // COMMANDS-END
@@ -441,8 +495,9 @@ static void link_poll(void) {
                 ch_sd_on = 1;
             else if (ch_len == 5 && memcmp(ch_line, "SDERR", 5) == 0)
                 ch_sd_on = -1;
-            else if (ch_len == 4 && (memcmp(ch_line, "MDRV", 4) == 0 || memcmp(ch_line, "MSER", 4) == 0)) {
-                ch_mode = ch_line[1] == 'D' ? "drive" : "serial";
+            else if (ch_len == 4 && (memcmp(ch_line, "MDRV", 4) == 0 || memcmp(ch_line, "MSER", 4) == 0 ||
+                                     memcmp(ch_line, "MSTR", 4) == 0)) {
+                ch_mode = ch_line[1] == 'D' ? "drive" : ch_line[2] == 'E' ? "serial" : "stream";
                 printf("\r\x1b[2KCH569 mode: %s\n", ch_mode);
                 prompt();
             } else if ((ch_len == 4 && memcmp(ch_line, "SDIN", 4) == 0) || (ch_len == 5 && memcmp(ch_line, "SDOUT", 5) == 0)) {

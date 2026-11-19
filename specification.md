@@ -31,10 +31,30 @@ All requested by the user, 2026-10-23.
 | R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | met (v1.0 files) | D-014, D-016, D-022; `hardware/jlcpcb/` (gerbers, BOM, CPL); 2 parts must be consigned |
 | R-19 | CH569 exposes the SD card (FAT32) as a USB drive **and** a serial port to the host; the RP2350 keeps its own USB identity so the host (and Claude) can tell the two apart | met at USB2 on board #1 (USB3 not reached yet) | D-026; RP2350 `2e8a:0009` "rp569 RP2350B", CH569 `1a86:fe2c` "rp569 CH569" (D-025) |
 | R-20 | The SD card at its maximum speed while mounted; when it is unmounted the CH569 serial ports appear, and a serial command switches back (ports gone, card mounted) | met at USB2 on board #1: 5.0 MB/s write, 17.6 MB/s read in drive mode; modes + flags | D-028, D-029 |
+| R-21 | Firmware variant: the CH569 reads the RP2350-CH569 8-bit bus and streams 16 MB/s to the host | met at USB2 on board #1 (16.05 MB/s, every word checked) | D-031 |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
+
+## D-031 — Firmware variant 1 "stream": RP2350 -> 8-bit HSPI -> CH569 -> USB bulk at 16 MB/s (status: accepted, 2026-11-19)
+Requested by user (test plan step 2), major = variant (D-025): variant 1 = CH569 `firmware/ch569` `VARIANT=stream`
+(`src-stream/`, `version-stream.yaml` 1.0.x) + RP2350 target `rp569_rp2350_stream` (`version-stream.yaml` 1.0.x).
+RP2350: PIO `src/hspi_tx.pio` is the HSPI "up" end (HD0-7 GPIO8-15, HRCLK GPIO16 side-set, HRACT/HRVLD GPIO17/18, HTACK
+GPIO19 jmp pin), clock running continuously, 2 instructions per byte (25 MHz byte clock, 25 MB/s raw); core 1 builds
+4096-byte counter packets, paces them (default 16 MB/s) and computes the CRC; DMA feeds the PIO. CH569: HSPI "down"
+end, 8-bit, dual RX registers re-armed per packet into a 20 x 4 KB RAMX ring (trash slot when full), USB2 high-speed
+vendor device (`rp569 CH569 stream`, bulk IN 0x82, statistics on vendor request 0x60), polled. Host: `python -m rp569
+stream [s] [MB/s]` (pyusb, reader in its own process, numpy check of every word).
+Protocol facts found on board #1 (CH569DS1 10.2 is silent on them): HRVLD must rise while HRCLK is low, never on a
+rising edge (else a stale first byte shifts the packet); header = TLL2B [1:0], TSQN [5:2], USDF [31:6], sent LSB
+first; the CRC is **CRC-16/USB** (poly 0x8005 reflected, init and final XOR 0xFFFF) over header + payload, low byte
+first (32-variant sweep); with it the CRC check is clean (1 bad packet right after a CH569 power-up, dropped).
+Open: RX_LEN0/1 read 0/1 (payload length taken as the fixed 4096); RB_HSPI_NUM_MIS stays set on most packets whatever
+RX_SC is set to (counted, unused); the host sees an occasional start-up gap (<= 8 packets) from the pyusb reader.
+Result: 20 s runs at 16.00 MB/s sent, 16.05 MB/s at the host, 322 MB checked, 0 gaps in steady state.
+Alternatives: third mode in firmware 0.x (rejected by the user: a variant); CDC serial (tty layer); logic-analyser data
+(later, on top of this path). Sources: CH569DS1 chapter 10, CH56xSFR.h HSPI registers, HydraUSB3 BSP CH56x_hspi.c.
 
 ## D-030 — CH569 RST# and card detect behaviour (status: accepted, 2026-11-19)
 Tested on board #1. RST# (pin 30 PB15, CH569DS1 config bit 4 RESET_EN): with the factory RESET_EN = 0 the RP2350's
