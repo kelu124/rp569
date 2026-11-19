@@ -93,6 +93,31 @@ def list_ports_rp569(strict: bool = True, infos=None) -> list[Port]:
     return out
 
 
+def ch569_usb_mode(sysfs: str = '/sys/bus/usb/devices') -> str | None:
+    """Mode of the CH569 read from its USB enumeration (Linux sysfs): 'drive' / 'serial' from the product string
+    ("rp569 CH569 drive|serial"), 'bootloader' for the WCH ISP device, None if no CH569 is on USB. Works in drive
+    mode too, where the CH569 has no serial port."""
+    import glob
+    import os
+
+    def read(d, name):
+        try:
+            with open(os.path.join(d, name)) as f:
+                return f.read().strip()
+        except OSError:
+            return ''
+    for d in glob.glob(os.path.join(sysfs, '*')):
+        ids = (read(d, 'idVendor').lower(), read(d, 'idProduct').lower())
+        if ids == ('1a86', 'fe2c'):
+            product = read(d, 'product')
+            if product.startswith(CH569_PRODUCT):
+                rest = product[len(CH569_PRODUCT):].strip()
+                return rest or 'composite'        # firmware before the two modes: drive + serial at once
+        if ids == ('4348', '55e0'):
+            return 'bootloader'
+    return None
+
+
 def find(role: str, serial: str | None = None, strict: bool = True, infos=None) -> Port:
     """The one port with this role (and chip UID if given). Raises PortNotFound if none or ambiguous."""
     if role not in ROLES:

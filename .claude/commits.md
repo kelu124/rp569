@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — CH569 drive / serial modes (D-028)
+## pending — 2026-11-19 — Drive mode at full speed (D-029), mode flags for host software
+What: `firmware/ch569/src/msc_fast.c/.h` (fast READ10/WRITE10 on USB2, hooked in `UDISK_onePack_Deal`), product
+string per mode (`usb_product_string()`), `mode_announce()` (`\x01MDRV`/`\x01MSER`); RP2350 mode tracking (unsolicited
+`CH569 mode:` line, `ch status ... mode`); python `ch569_usb_mode()`, `ch569_mode_events()`, `ch_status()['mode']`,
+`-m rp569 ports` shows the USB mode; README, skill, spec D-029 + R-20 met, todo/done.
+Why: user's design (drive at max speed) and request for a flag (USB enumeration / serial signal) for host software.
+
+## 8e7eb52 — 2026-11-19 — CH569 drive / serial modes (D-028)
 What: `firmware/ch569/src/mode.c/.h` (in-place switch, usb_start), per-mode descriptors in `CH56x_usb20.c` /
 `CH56x_usb30.c`, SCSI eject trigger, link `SDMNT`/`SDON`/`SDERR`, console `mount`, card CMD0 + clock off on release,
 descriptor checker per mode; RP2350 `ch mount`; python `ch_mount`, console `mount()`, `-m rp569 mount`, ports

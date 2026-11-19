@@ -30,6 +30,13 @@ void mode_request(UINT8 mode, UINT8 announce)
     req_pending = 1;
 }
 
+/* Tell the RP2350 the mode on the link ("\x01MDRV" / "\x01MSER"): it prints "CH569 mode: ..." on its own serial
+ * port and reports it in `ch status`, so host software always has a serial-port signal of the CH569 state. */
+void mode_announce(void)
+{
+    Link_Ctrl_Send(bridge_mode == MODE_DRIVE ? "MDRV" : "MSER");
+}
+
 /* USB start, SuperSpeed first, TMR0 times out into the USB2 fallback (CH56x_usb30.c TMR0_IRQHandler). */
 void usb_start(void)
 {
@@ -123,4 +130,5 @@ void mode_poll(void)
         Link_Ctrl_Send(bridge_mode == MODE_DRIVE ? "SDON" : "SDERR");
 
     usb_start();
+    mode_announce();
 }

@@ -17,7 +17,8 @@ class RP2350(PromptCLI):
     COLOURS = 'RGB'
 
     def _filter(self, line):
-        return line.startswith('CH> ') or line.startswith('CH569 power switch fault')
+        return (line.startswith('CH> ') or line.startswith('CH569 power switch fault')
+                or line.startswith('CH569 mode: '))
 
     def ch_lines(self) -> list[str]:
         """Lines received from the CH569 so far (without the 'CH> ' prefix), then forget them."""
@@ -25,6 +26,15 @@ class RP2350(PromptCLI):
         lines = [l[4:] for l in self.async_lines if l.startswith('CH> ')]
         self.async_lines = [l for l in self.async_lines if not l.startswith('CH> ')]
         return lines
+
+    def ch569_mode_events(self) -> list[str]:
+        """CH569 mode changes reported since the last call ('drive' / 'serial', oldest first), then forget them.
+        The CH569 announces its mode on the link at boot and after every switch; the RP2350 prints it as an
+        unsolicited 'CH569 mode: <mode>' line (see also ch_status()['mode'] and ports.ch569_usb_mode())."""
+        self.cmd_text('')
+        events = [l.split(': ', 1)[1] for l in self.async_lines if l.startswith('CH569 mode: ')]
+        self.async_lines = [l for l in self.async_lines if not l.startswith('CH569 mode: ')]
+        return events
 
     # -- board
     @command('help')
@@ -115,9 +125,11 @@ class RP2350(PromptCLI):
 
     @command('ch status')
     def ch_status(self) -> dict:
-        m = self._match(r'CH569 power (on|off), FLG# (ok|FAULT), 3V3_CH ([\d.]+) V, VBUS3 ([\d.]+) V', 'ch status')
+        m = self._match(r'CH569 power (on|off), FLG# (ok|FAULT), 3V3_CH ([\d.]+) V, VBUS3 ([\d.]+) V'
+                        r'(?:.*, mode (\w+))?', 'ch status')
         return {'power': m.group(1) == 'on', 'fault': m.group(2) == 'FAULT',
-                '3V3_CH': float(m.group(3)), 'VBUS3': float(m.group(4))}
+                '3V3_CH': float(m.group(3)), 'VBUS3': float(m.group(4)),
+                'mode': m.group(5)}   # drive / serial / unknown (not reported yet) / bootloader / off
 
     @command('ch pins')
     def ch_pins(self) -> dict:

@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-11-19 — Drive mode at full speed (D-029, `msc_fast.c`, phantomdrive port): 5.0 MB/s write, 17.6 MB/s read on USB2, 32 MB of numbered sectors verified (an OUT-flag race corrupting 28/512 sectors found and fixed). Mode flags: USB product "rp569 CH569 drive|serial", link `\x01MDRV`/`\x01MSER` -> RP2350 "CH569 mode: ..." + `ch status` mode; python `ports.ch569_usb_mode()`, `ch569_mode_events()`, `ch_status()['mode']`.
 - 2026-11-19 — CH569 drive / serial modes (D-028): drive = MSC only, serial = link + console CDC; switch on host eject / `ch eject` and console `mount` / `ch mount` (`\x01SDON`), in place (no reset). RP2350 `ch mount`, python `ch_mount`, console `mount`, `python -m rp569 mount`, ports on if0/if2. Tested on board #1: eject, console mount, ch eject, ch mount, ch cycle.
 - 2026-11-19 — CH569 drive speed: 0.25 → 3.8 MB/s write, 1.06 → 8.4 MB/s read (USB2, 32 MB verified): multi-block SD read/write in 64-sector chunks, CMD6 high-speed 48 MHz (24 MHz fallback), CSW queued after a bulk-OUT stall, 1024-byte SuperSpeed MSC packets, `sd clock` in console `status` (+ python).
 - 2026-11-19 — Clean SD release before every CH569 power-off: link control lines (`\x01SDREL` / `\x01SDOFF`), RP2350 `ch eject` + release in `ch off/cycle/boot`, CH569 waits for the MSC engine and the card (DAT0); host `python -m rp569 eject` (udisksctl unmount, then release). Tested on board #1: eject → host sees 0 B and drops the mount, cycle → card back.

@@ -56,6 +56,7 @@ C_SOURCES := \
     src/console.c \
     src/chip_uid.c \
     src/mode.c \
+    src/msc_fast.c \
     sdk/Peripheral/src/CH56x_clk.c \
     sdk/Peripheral/src/CH56x_emmc.c \
     sdk/Peripheral/src/CH56x_gpio.c \

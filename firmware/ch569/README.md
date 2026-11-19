@@ -21,6 +21,12 @@ released (flushed, CMD0, clock stopped; it stays powered, no switch on its suppl
 USB restarted with the other mode's descriptors. `udisksctl power-off` also disables the host port, so the
 serial ports do not appear after it: use the desktop eject / `udisksctl unmount` + `python -m rp569 eject`.
 
+**Mode flags for host software**: the USB product string names the mode ("rp569 CH569 drive" / "rp569 CH569
+serial", readable from `lsusb`, udev or sysfs even in drive mode; python `ports.ch569_usb_mode()`), and the CH569
+sends `\x01MDRV` / `\x01MSER` on the link at boot and after every switch: the RP2350 prints an unsolicited
+`CH569 mode: drive|serial` line on its own serial port and shows the mode in `ch status` (python
+`RP2350.ch569_mode_events()`, `ch_status()['mode']`).
+
 **Link control lines**: a line starting with byte `0x01` (`LINK_CTRL_CHAR`) is for the CH569 itself, neither echoed
 nor forwarded to the host. `\x01SDREL\n` from the RP2350 releases the SD card: the CH569 waits for any MSC transfer to
 finish, waits until the card is idle (DAT0 high, 500 ms max), reports "medium not present" to the host, then answers
@@ -83,7 +89,11 @@ flash bootloader 2.70; a new chip first needs `-d=off` and `-b=off` (`docs/toolc
 ## Limits
 
 - Serial mode has no drive and drive mode no serial port: the RP2350 link UART and its echo work in both.
-- **Drive speed** (USB2, board #1, 32 MB file, verified): ~3.8 MB/s write, ~8.4 MB/s read (was 0.25 / 1.06 MB/s).
+- **Drive speed** (drive mode, USB2, board #1, 32 MB of numbered sectors verified): ~5.0 MB/s write, ~17.6 MB/s read
+  with `msc_fast.c` (D-029: USB interrupt off for one READ10/WRITE10, CMD18 into an 80-sector ring with AUTOGAPSTOP,
+  80-sector CMD25 chunks double-buffered against the card's programming time; ported from phantomdrive). The USB3
+  path still uses the per-packet loop below (not testable yet). Before msc_fast: ~3.8 MB/s write, ~8.4 MB/s read
+  (was 0.25 / 1.06 MB/s).
   One CMD18 / CMD25 per 64 sectors (`MSC_CHUNK_SECTORS`, 32 KB in `UDisk_In_Buf` / `UDisk_Out_Buf`), card in
   high-speed mode at 48 MHz (CMD6; 24 MHz if the card refuses). The limit now is one USB packet per main-loop pass
   with SD and USB never overlapping; phantomdrive's pipelined, USB-IRQ-masked loop would go further at the cost of

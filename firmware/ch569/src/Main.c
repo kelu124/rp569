@@ -122,6 +122,7 @@ int main(void)
 
     /* USB: try SuperSpeed first; TMR0 times out into the USB2 fallback. */
     usb_start();
+    mode_announce();
     PRINT("USB init done\n");
 
     while(1)

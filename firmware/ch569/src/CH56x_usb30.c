@@ -132,14 +132,24 @@ const UINT8 StringVendor[] =
     'W', 0x00, 'C', 0x00, 'H', 0x00
 };
 
-/*String Descriptor Product: "rp569 CH569" (11 chars). The host library
- * (python/rp569) finds the ports by VID/PID 1a86:fe2c + this product string. */
-const UINT8 StringProduct[] =
+/*String Descriptor Product, one per mode (mode.h): "rp569 CH569 drive" / "rp569 CH569 serial". The host library (python/rp569)
+ * finds the CH569 by VID/PID 1a86:fe2c + "rp569 CH569", and reads the mode from the rest: software can tell the
+ * mode from the USB enumeration alone (lsusb, udev, sysfs), even in drive mode where there is no serial port. */
+const UINT8 StringProductDrive[] =
 {
-    24, 0x03,
-    'r', 0x00, 'p', 0x00, '5', 0x00, '6', 0x00, '9', 0x00, ' ', 0x00,
-    'C', 0x00, 'H', 0x00, '5', 0x00, '6', 0x00, '9', 0x00
+    36, 0x03,
+    'r', 0x00, 'p', 0x00, '5', 0x00, '6', 0x00, '9', 0x00, ' ', 0x00, 'C', 0x00, 'H', 0x00, '5', 0x00, '6', 0x00, '9', 0x00, ' ', 0x00, 'd', 0x00, 'r', 0x00, 'i', 0x00, 'v', 0x00, 'e', 0x00
 };
+const UINT8 StringProductSerial[] =
+{
+    38, 0x03,
+    'r', 0x00, 'p', 0x00, '5', 0x00, '6', 0x00, '9', 0x00, ' ', 0x00, 'C', 0x00, 'H', 0x00, '5', 0x00, '6', 0x00, '9', 0x00, ' ', 0x00, 's', 0x00, 'e', 0x00, 'r', 0x00, 'i', 0x00, 'a', 0x00, 'l', 0x00
+};
+
+const UINT8 *usb_product_string(void)
+{
+    return bridge_mode == MODE_SERIAL ? StringProductSerial : StringProductDrive;
+}
 
 /*String Descriptor Serial: the chip unique ID as 16 hex digits, filled in by
  * USB30_SetSerialFromUID() before USB init (same UID as the 'version' command). */
@@ -411,9 +421,9 @@ UINT16 USB30_StandardReq()
                                 pDescr = (PUINT8)StringVendor;
                                 break;
                             case USB_DESCR_PRODUCT_STRING:
-                                if(SetupLen > SIZE_STRING_PRODUCT)
-                                    SetupLen = SIZE_STRING_PRODUCT;
-                                pDescr = (PUINT8)StringProduct;
+                                pDescr = (PUINT8)usb_product_string();
+                                if(SetupLen > pDescr[0])
+                                    SetupLen = pDescr[0];
                                 break;
                             case USB_DESCR_SERIAL_STRING:
                                 if(SetupLen > SIZE_STRING_SERIAL)

@@ -12,6 +12,9 @@
  *                    (ch mount); the CH569 answers "\x01SDON" (or "\x01SDERR")
  *                    on the link once the card is mounted again.
  * Power-up starts in drive mode; no card -> serial mode.
+ * Flags for host software: the USB product string ("rp569 CH569 drive" /
+ * "rp569 CH569 serial") and the link line "\x01MDRV" / "\x01MSER", which the
+ * RP2350 turns into "CH569 mode: drive|serial" on its own serial port.
  *******************************************************************************/
 #ifndef MODE_H_
 #define MODE_H_
@@ -32,6 +35,9 @@ UINT8 mode_enter_drive(void);
 
 /* Start the USB stack (SuperSpeed first, USB2 fallback) with bridge_mode's descriptors. */
 void usb_start(void);
+
+/* Send the mode to the RP2350 ("\x01MDRV" / "\x01MSER" on the link): at boot and after every switch. */
+void mode_announce(void);
 
 /* Request a switch; it runs from mode_poll() in the main loop once the MSC engine is idle. */
 void mode_request(UINT8 mode, UINT8 announce);

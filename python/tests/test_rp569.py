@@ -58,7 +58,7 @@ RP_REPLIES = {
     'version': f'rp569 RP2350B firmware 0.1.3 git v1.0-9-g0727cb0 built Oct 24 2026 uid {UID_RP}',
     'set R 1': 'R on', 'set rgb 101': 'R 1 G 0 B 1', 'led': 'R 1 G 0 B 1',
     'btn': 'BTN1 up, BTN2 down', 'adc': 'VBUS3 5.02 V, 3V3_CH 3.31 V',
-    'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud',
+    'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud, mode drive',
     'ch send hello': '',
     'ch eject': 'CH569 SD released',
     'ch mount': 'CH569 SD mounted (drive mode)',
@@ -88,6 +88,21 @@ class TestPortsOldLayout(unittest.TestCase):
         old = [info('/dev/ttyACM1', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.1'),
                info('/dev/ttyACM2', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.3')]
         self.assertEqual([p.role for p in ports.list_ports_rp569(infos=old)], ['ch569-link', 'ch569-console'])
+
+
+class TestUsbMode(unittest.TestCase):
+    def test_sysfs(self):
+        import os
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            def dev(name, vid, pid, product):
+                os.mkdir(os.path.join(d, name))
+                for k, v in (('idVendor', vid), ('idProduct', pid), ('product', product)):
+                    with open(os.path.join(d, name, k), 'w') as f:
+                        f.write(v + '\n')
+            self.assertIsNone(ports.ch569_usb_mode(d))
+            dev('1-1', '1a86', 'fe2c', 'rp569 CH569 serial')
+            self.assertEqual(ports.ch569_usb_mode(d), 'serial')
 
 
 class TestPorts(unittest.TestCase):
@@ -132,6 +147,7 @@ class TestRP2350(unittest.TestCase):
         self.assertEqual(rp.buttons(), {'BTN1': False, 'BTN2': True})
         self.assertEqual(rp.adc(), {'VBUS3': 5.02, '3V3_CH': 3.31})
         self.assertTrue(rp.ch_status()['power'])
+        self.assertEqual(rp.ch_status()['mode'], 'drive')
         self.assertEqual(rp.ch_pins()['state'], 'driven high (UART idle)')
         self.assertTrue(rp.ch_eject())
         self.assertTrue(rp.ch_mount())

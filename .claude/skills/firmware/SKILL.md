@@ -53,6 +53,13 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
   `mount`. Desktop eject over D-Bus: `gdbus call --system --dest org.freedesktop.UDisks2 --object-path
   /org/freedesktop/UDisks2/drives/EMMC_... --method org.freedesktop.UDisks2.Drive.Eject "{}"` (`eject` needs root,
   `udisksctl power-off` disables the host port). Test script pattern: scratchpad `modes.sh`.
+- Drive-mode fast path (`msc_fast.c`, D-029, USB2 only): USB IRQ off, EP0 NAKed, polling. Trap: on an OUT packet
+  NAK the endpoint **before** clearing `RB_USB_IF_TRANSFER` (the controller only auto-NAKs while the flag is set:
+  clearing first let the next packet overwrite the same slot, 28/512 sectors wrong); check `RB_USB_ST_TOGOK`. Keep
+  `EMMC_IRQn` off during the CMD18 stream (its handler clears BKGAP). Verify with numbered sectors (scratchpad
+  `pattest.sh`), not just a checksum: the pattern tells which sector went where.
+- Mode flags: product string "rp569 CH569 drive|serial" (`usb_product_string()`), link `\x01MDRV`/`\x01MSER` ->
+  RP2350 "CH569 mode: ..." + `ch status ... mode X`; python `ports.ch569_usb_mode()`, `ch569_mode_events()`.
 - Never hardcode `/dev/ttyACM0`: the numbering changes with the enumeration order; use `/dev/serial/by-id/`
   (an RP2350 "hang" was the helper talking to the CH569 link port).
 - Both speeds expose the same interfaces: `CH56x_usb20.c` (rewritten 2026-11-19) mirrors `CH56x_usb30.c`; a

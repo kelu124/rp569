@@ -30,11 +30,23 @@ All requested by the user, 2026-10-23.
 | R-17 | The RP2350 can put the CH569 in its bootloader the same way as the BOOT button | met | Checked on the netlist, sequence in D-004 |
 | R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | met (v1.0 files) | D-014, D-016, D-022; `hardware/jlcpcb/` (gerbers, BOM, CPL); 2 parts must be consigned |
 | R-19 | CH569 exposes the SD card (FAT32) as a USB drive **and** a serial port to the host; the RP2350 keeps its own USB identity so the host (and Claude) can tell the two apart | met at USB2 on board #1 (USB3 not reached yet) | D-026; RP2350 `2e8a:0009` "rp569 RP2350B", CH569 `1a86:fe2c` "rp569 CH569" (D-025) |
-| R-20 | The SD card at its maximum speed while mounted; when it is unmounted the CH569 serial ports appear, and a serial command switches back (ports gone, card mounted) | partial: modes met (board #1, USB2); max-speed drive loop in progress | D-028 |
+| R-20 | The SD card at its maximum speed while mounted; when it is unmounted the CH569 serial ports appear, and a serial command switches back (ports gone, card mounted) | met at USB2 on board #1: 5.0 MB/s write, 17.6 MB/s read in drive mode; modes + flags | D-028, D-029 |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
+
+## D-029 — CH569 drive mode: full-speed MSC data phases, mode flags (status: accepted, 2026-11-19)
+Context: in drive mode (D-028) nothing else shares USB, so one MSC command may own the bus. Choice (USB2 high-speed
+path, `msc_fast.c`, ported from phantomdrive): USB interrupt off and EP0 NAKed for the data phase; READ10 = one
+CMD18 into an 80-sector ring with AUTOGAPSTOP, USB one sector behind; WRITE10 = 80-sector chunks received by polling,
+one CMD25 each, the next chunk received while the card programs. Board #1: 5.0 MB/s write, 17.6 MB/s read (32 MB
+of numbered sectors, 0 wrong), from 3.8 / 8.4 MB/s. The USB3 path keeps the per-packet loop until a SuperSpeed link
+can be tested. Mode flags for host software (user request): USB product string "rp569 CH569 drive|serial", and a
+link line `\x01MDRV`/`\x01MSER` that the RP2350 turns into `CH569 mode: ...` on its serial port and `ch status`.
+Alternatives: different PID per mode (breaks VID/PID discovery and udev rules); CDC serial-state notification (no
+serial port in drive mode). Sources: phantomdrive src/msc_read.c, msc_write.c, emmc_ops.h; CH569DS1 EMMC + USBHS
+registers (RB_USB_INT_BUSY, RB_USB_ST_TOGOK, RB_EMMC_AUTOGAPSTOP).
 
 ## D-028 — CH569 drive mode / serial mode, switched in place (status: accepted, 2026-11-19)
 Requested by user: the drive at full speed while it is mounted; once it is unmounted the serial ports appear, and a

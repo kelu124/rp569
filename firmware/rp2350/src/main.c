@@ -33,6 +33,9 @@ static uart_inst_t *const link_uart = UART_INSTANCE(RP569_LINK_UART);
 static bool ch_powered;
 static bool ch_sd_off;            // the CH569 acknowledged an SD release (link control line)
 static int ch_sd_on;              // answer to a mount request: 0 none yet, 1 "SDON" (mounted), -1 "SDERR"
+// CH569 USB mode as it last reported it on the link ("\x01MDRV" / "\x01MSER"): printed as an unsolicited
+// "CH569 mode: drive|serial" line on every change and shown by `ch status`, so host software has a serial-port flag.
+static const char *ch_mode = "off";
 static bool ch_fault_seen;
 static const uint led_pins[3] = {RP569_LED_R_PIN, RP569_LED_G_PIN, RP569_LED_B_PIN};
 static bool led_on[3];
@@ -130,6 +133,7 @@ static void ch_power_off(void) {
     gpio_put(RP569_CH_PWR_EN_PIN, 0);
     ch_lines_release();
     ch_powered = false;
+    ch_mode = "off";
     absolute_time_t until = make_timeout_time_ms(500);
     while (ch3v3_volts() > 0.5f && !time_reached(until))
         sleep_ms(5);
@@ -154,6 +158,7 @@ static void ch_power_on(bool bootloader) {
     gpio_set_function(RP569_LINK_RX_PIN, UART_FUNCSEL_NUM(link_uart, RP569_LINK_RX_PIN));
     gpio_pull_up(RP569_LINK_RX_PIN);
     ch_powered = true;
+    ch_mode = bootloader ? "bootloader" : "unknown";   // until the CH569 firmware reports its mode
     if (bootloader) {
         sleep_ms(200);                    // PA5 is sampled at power-up
         gpio_set_dir(RP569_HSPI_D0_PIN, GPIO_IN);
@@ -185,9 +190,9 @@ static void ch_init(void) {
 }
 
 static void ch_status(void) {
-    printf("CH569 power %s, FLG# %s, 3V3_CH %.2f V, VBUS3 %.2f V, link UART%d %d baud\n",
+    printf("CH569 power %s, FLG# %s, 3V3_CH %.2f V, VBUS3 %.2f V, link UART%d %d baud, mode %s\n",
            ch_powered ? "on" : "off", gpio_get(RP569_CH_FAULT_N_PIN) ? "ok" : "FAULT", ch3v3_volts(), vbus3_volts(),
-           RP569_LINK_UART, LINK_BAUD);
+           RP569_LINK_UART, LINK_BAUD, ch_mode);
 }
 
 static void ch_send(const char *text) {
@@ -429,6 +434,11 @@ static void link_poll(void) {
                 ch_sd_on = 1;
             else if (ch_len == 5 && memcmp(ch_line, "SDERR", 5) == 0)
                 ch_sd_on = -1;
+            else if (ch_len == 4 && (memcmp(ch_line, "MDRV", 4) == 0 || memcmp(ch_line, "MSER", 4) == 0)) {
+                ch_mode = ch_line[1] == 'D' ? "drive" : "serial";
+                printf("\r\x1b[2KCH569 mode: %s\n", ch_mode);
+                prompt();
+            }
             ch_len = 0;
             continue;
         }

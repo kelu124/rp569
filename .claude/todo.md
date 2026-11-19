@@ -53,7 +53,7 @@
 - [ ] Hardware check of the python library (`python3 -m rp569 ports` / `versions`, `link_test.py`): port roles, CH569 UID read at 0x77FE4.
 - [ ] CH569 USB3: board #1 only enumerates at high-speed (bus 001), never SuperSpeed: check the cable/port, then the SS lanes. Then confirm the composite (and the MSC write fix) on USB3; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).
 - [ ] CH569 UID: `chip_uid.c` reads `0xF7F9BF11` at every address of 0x77FE0–0x77FFC (stale ROM data register), so the USB serial is `11BFF9F711BFF9F7` on board #1 instead of the bootloader's UID 8A-82-48-26-3B-38-0D-E1. Same sequence/registers as HydraUSB3 `FLASH_ROMA_READ`; `R8_GLOB_ROM_CFG` reads 0x00 and a safe-mode write does not stick. Try: read before `SystemInit`/clock change, interrupts off, compare with WCH's EVT `GetUniqueID`/ISP library.
-- [ ] CH569 drive speed beyond ~3.8 MB/s write / ~8.4 MB/s read: overlap SD and USB (phantomdrive's pipelined loop with the USB IRQ masked, serial ports paused during copies), or re-arm EP2/EP3 from the USB IRQ instead of the main loop. Decide with the user.
+- [ ] CH569 drive speed on USB3: port `msc_fast.c` to the SuperSpeed endpoints (1024 B packets, ERDY) once a SuperSpeed link works; USB2 is at 5.0 / 17.6 MB/s.
 - [ ] Card 573B-9367: FAT dirty flag from the early unclean power cuts, and FAT writes lost at 20:07:15 (2026-11-19, reflash under a stuck write): `sudo fsck.vfat -a /dev/sdb1` once (user, needs root).
 - [ ] Add the ModemManager-ignore lines to `/etc/udev/rules.d/60-rp569.rules` (`docs/toolchain.md`, needs sudo).
 - [ ] Install wch-ch56x-isp permanently (built in the scratchpad 2026-11-19: `git clone --recursive https://github.com/hydrausb3/wch-ch56x-isp`, `make`, copy to `~/.local/bin`).

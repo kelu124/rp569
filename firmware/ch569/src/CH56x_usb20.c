@@ -507,9 +507,9 @@ UINT16 U20_Standard_Request_Deal()
                         pDescr = (UINT8 *)hs_string_descriptor1;
                         SetupLen = ( SetupReqLen > sizeof(hs_string_descriptor1) )? sizeof(hs_string_descriptor1):SetupReqLen;
                         break;
-                    case USB_DESCR_PRODUCT_STRING:      /* "rp569 CH569", shared with USB3 */
-                        pDescr = (UINT8 *)StringProduct;
-                        SetupLen = ( SetupReqLen > StringProduct[0] )? StringProduct[0]:SetupReqLen;
+                    case USB_DESCR_PRODUCT_STRING:      /* "rp569 CH569 drive|serial", shared with USB3 */
+                        pDescr = (UINT8 *)usb_product_string();
+                        SetupLen = ( SetupReqLen > pDescr[0] )? pDescr[0]:SetupReqLen;
                         break;
                     case USB_DESCR_SERIAL_STRING:       /* chip UID, shared with USB3 */
                         pDescr = (UINT8 *)StringSerial;

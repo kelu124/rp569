@@ -19,6 +19,7 @@
 #include "SD.h"
 #include "bridge_config.h"
 #include "mode.h"
+#include "msc_fast.h"
 
 /* Sectors per SD command on the MSC read/write path (one CMD18 / CMD25 per chunk, 2026-11-19; was one CMD17 /
  * CMD25 per sector: ~1 MB/s read, ~0.25 MB/s write). The chunk sits in UDisk_In_Buf / UDisk_Out_Buf (UDISKSIZE =
@@ -717,12 +718,28 @@ void UDISK_onePack_Deal( void )
     if( UDISK_InPackflag == 1 )
     {
         UDISK_InPackflag = 0;
+        /* Drive mode on USB2: the whole READ10 data phase at full speed (msc_fast.c) */
+        if( msc_fast_active() && mBOC.mCBW.mCBW_CB_Buf[ 0 ] == CMD_U_READ10 &&
+            ( Udisk_Transfer_Status & DEF_UDISK_BLUCK_UP_FLAG ) && UDISK_Transfer_DataLen &&
+            msc_rd_count == 0 )
+        {
+            msc_fast_read();
+            return;
+        }
         UDISK_Up_OnePack();
     }
 
     if( UDISK_OutPackflag == 1 )
     {
         UDISK_OutPackflag = 0;
+        /* Drive mode on USB2: the whole WRITE10 data phase at full speed (msc_fast.c) */
+        if( msc_fast_active() && ( Udisk_Transfer_Status & DEF_UDISK_BLUCK_DOWN_FLAG ) && msc_wr_count == 0 &&
+            UDISK_Transfer_DataLen && ( mBOC.mCBW.mCBW_CB_Buf[ 0 ] == CMD_U_WRITE10 ||
+                                        mBOC.mCBW.mCBW_CB_Buf[ 0 ] == CMD_U_WR_VERIFY10 ) )
+        {
+            msc_fast_write();
+            return;
+        }
 
         /* Re-arm EP3 after every packet: for the next write-data packet while the transfer runs, and after the
          * final one (CSW queued) for the host's next CBW. Leaving it NAKed after the CSW made every WRITE10 end

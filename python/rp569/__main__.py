@@ -17,6 +17,7 @@ def main(argv=None):
             print(f'{p.role:14s} {p.device:16s} serial {p.serial_number}  product {p.product!r}  if {p.interface}')
         if not found:
             print('no rp569 port found')
+        print(f'ch569 USB mode: {ports.ch569_usb_mode() or "not on USB"}')
     elif args[0] == 'versions':
         for p in found:
             cls = {'rp2350': RP2350, 'ch569-console': CH569Console}.get(p.role)
