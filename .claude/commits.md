@@ -6,7 +6,11 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — CH569 drive speed: multi-block SD, high-speed mode
+## pending — 2026-11-19 — Restore CRLF line endings in CH569 SD.c / SD.h
+What: `firmware/ch569/src/SD.c`, `SD.h` back to CRLF (2ae30b8 converted them to LF while editing).
+Why: keep the vendor files' line endings so diffs show only real changes.
+
+## 2ae30b8 — 2026-11-19 — CH569 drive speed: multi-block SD, high-speed mode
 What: `SD.c` (`SDCardReadMulSec`, `SDCardWriteMulSec`, `SD_SwitchHighSpeed`, ready wait, per-block guards, CMD12 on
 failure, diagnostics), `SW_UDISK.c` (64-sector chunks, buffered write, CSW after OUT stall, 1024 B SS packets),
 `sd_storage.c` (CMD6 then 48/24 MHz), console `status` + python `sd_clock_mhz`; README/skill/spec D-027/logs.
