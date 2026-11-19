@@ -38,10 +38,20 @@
 - [ ] Confirm the 90 Ω width/gap (0.24/0.13 mm, D-016) with JLCPCB's impedance calculator.
 - [ ] Hand-review v0.3 placement (RP2350 VREG loop, buck loops, USB3 caps/ESD, crystals). See `docs/layout.md`.
 - [ ] In1 GND plane in 3 pieces at the bottom left (DRC-clean, stitched): move SD_D1 / CH_PB11 (and CH_PB8, CH_PB3) off In1 to get one plane.
-- [ ] USB pairs: re-route USB3_SSTX, USB3_SSRX, USB3_D, USBC_D, RP_USB_D as coupled pairs (skew now 5–9 mm), fewer vias on SSRX.
+- [ ] **Board v1.1, USB3 SuperSpeed (blocks USB3, D-032)**: board #1 never trains SuperSpeed (CH569 link counters:
+  termination detect + LFPS + TX EQ on every attempt, LINK_RDY never; two USB3 cables, 4 PHY settings; pins, AC
+  caps, crystal checked). Measured on `rp569-routed.kicad_pcb` (`board_metrics.py`): USB3_SSRX P/N 44.5/37.9 mm,
+  skew 6.5 mm, 3 vias on N only, 4.7 % of N off the In1 plane; USB3_SSTX 15.4/10.1 mm, skew 5.3 mm (CH_SSTX 0.0 mm).
+  To do: re-route USB3_SSRX and USB3_SSTX as coupled 90 Ω pairs (D-016 width/gap), intra-pair skew <= ~1 mm
+  (5 Gb/s bit = 200 ps ~ 30 mm), no vias or the same vias on both legs, continuous GND reference under the whole
+  pair, ESD (TPD2EUSB30) and SSTX AC caps placed in line so the pair stays coupled, short stubs. Check with
+  `board_metrics.py` (skew, vias, plane coverage) before ordering; on the new board, console `usb3` must show
+  `ready` > 0 and `lsusb -t` 5000M.
+- [ ] USB2 pairs in the same pass (they work, but are out of spec): USB3_D skew 5.8 mm (0/5 vias), USBC_D 5.2 mm,
+  RP_USB_D 8.9 mm (0/4 vias): coupled, matched, symmetric vias.
 - [ ] HSPI lengths: 19.9–32.6 mm vs RCLK 20.6 mm; tune outliers only if the bus runs near its limit (target ~±10 mm).
 - [ ] Silkscreen: ~68 labels over copper, connector/button labels (header pin labels on B.SilkS and RPDFU/BOOT done).
-- [ ] Place the USB3 ESD (TPD2EUSB30) in line with each pair so the pairs can stay coupled.
+- [ ] Place the USB3 ESD (TPD2EUSB30) in line with each pair so the pairs can stay coupled (part of the v1.1 USB3 item above).
 - [ ] Silkscreen cleanup.
 - [ ] Consigned parts: CH569W and GSB343K33HR (LM66100 replaced by TPS2121, D-015).
 - [ ] Check JLCPCB rotations in the placement preview; recheck stock before ordering.
