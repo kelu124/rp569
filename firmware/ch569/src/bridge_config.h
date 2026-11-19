@@ -67,6 +67,13 @@
 /* Bounded spin-guard for every EMMC command/data completion wait. Finite so an
  * unanswered / unreachable card fails the mount cleanly instead of hanging the
  * whole device (and starving USB) forever. */
+/* Drive-mode WRITE10 on USB2 (msc_fast.c): 1 = one streamed CMD25 per command (USB and SD overlap),
+ * 0 = 80-sector chunks (receive, then write). */
+#define MSC_WRITE_STREAM            0   /* streamed version broken (2026-11-19): see msc_fast.c */
+
+/* 1 = ACMD23 (pre-erase count) before every multi-block write (D-029 benchmarks). */
+#define SD_PRE_ERASE                0   /* card MSSD0: 6.7 vs 7.1 MB/s with it (sd_benchmarks.csv) */
+
 #define MSC_EMMC_GUARD              2000000UL
 
 /* 1 = also expose the debug log as a SECOND, read-only USB CDC port. The

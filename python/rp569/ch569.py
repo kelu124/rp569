@@ -9,7 +9,7 @@ import time
 import serial
 
 from . import ports
-from ._cli import FirmwareVersion, PromptCLI, command
+from ._cli import CommandError, FirmwareVersion, PromptCLI, command
 
 
 class CH569Console(PromptCLI):
@@ -37,11 +37,40 @@ class CH569Console(PromptCLI):
                 'link_baud': int(m.group(4)), 'link_lines': int(m.group(5)), 'echo': m.group(6) == 'on',
                 'sd_clock_mhz': int(m.group(7)) if m.group(7) else None, 'mode': m.group(8)}
 
+    @command('sd')
+    def sd_info(self) -> dict | None:
+        """SD card identity and bus: the CID fields (SD Physical Layer spec 5.2), size, clock; None before any mount.
+        In serial mode it describes the card last mounted (state 'released')."""
+        text = self.cmd_text('sd')
+        if 'sd none' in text:
+            return None
+        m = re.search(r'sd cid ([0-9a-fA-F]{32}) size (\d+) MB clock (\d+) MHz (\w+)', text)
+        if not m:
+            raise CommandError(f'unexpected reply to sd: {text!r}')
+        info = decode_cid(m.group(1))
+        info.update(size_mb=int(m.group(2)), clock_mhz=int(m.group(3)), state=m.group(4))
+        return info
+
     @command('mount')
     def mount(self) -> None:
         """Switch to drive mode: the CH569 mounts the card and re-enumerates as the drive; this port disappears,
         so the reply is not waited for (close the port afterwards; RP2350.ch_mount() reports the result)."""
         self.cmd('mount', expect_prompt=False)
+
+
+def decode_cid(hex32: str) -> dict:
+    """SD CID register (128 bits, hex, bit 127 first) -> fields. SD Physical Layer spec 5.2:
+    MID [127:120], OID [119:104], PNM [103:64], PRV [63:56], PSN [55:24], MDT [19:8] (year 2000 + [19:12], month [11:8])."""
+    v = int(hex32, 16)
+    def bits(hi, lo):
+        return (v >> lo) & ((1 << (hi - lo + 1)) - 1)
+    def text(n, nbytes):
+        return bytes((n >> (8 * (nbytes - 1 - i))) & 0xFF for i in range(nbytes)).decode('ascii', 'replace').strip()
+    prv = bits(63, 56)
+    mdt = bits(19, 8)
+    return {'cid': hex32.lower(), 'mid': bits(127, 120), 'oid': text(bits(119, 104), 2), 'name': text(bits(103, 64), 5),
+            'rev': f'{prv >> 4}.{prv & 0xF}', 'serial': f'{bits(55, 24):08x}',
+            'date': f'{2000 + (mdt >> 4)}-{mdt & 0xF:02d}'}
 
 
 class CH569Link:

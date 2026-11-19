@@ -460,7 +460,22 @@ UINT8 SDCardWriteONESec( PSD_PARAMETER pEMMCPara,  PUINT8 pWdatbuf, UINT32 Lbaad
     return SDCardWriteMulSec(pEMMCPara, pWdatbuf, Lbaaddr, 1);
 }
 
-/* n consecutive sectors: CMD25, n blocks of DMA, CMD12 (HydraUSB3 BSP EMMCCardWriteMulSec, bounded waits). */
+/* ACMD23 SET_WR_BLK_ERASE_COUNT: tell the card how many blocks the next CMD25 writes, so it can pre-erase them
+ * (SD Physical Layer spec 4.3.4; phantomdrive does it too). Best effort: a card that refuses still takes the CMD25. */
+static void SD_PreErase(PSD_PARAMETER p, UINT16 n)
+{
+    p->EMMCOpErr = 0;
+    EMMCSendCmd((p->EMMC_RCA) << 16, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_48 | 55);
+    if(SD_WaitCmd(p) != CMD_SUCCESS)
+        return;
+    EMMCSendCmd(n, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_48 | 23);
+    SD_WaitCmd(p);
+    R16_EMMC_INT_FG = 0xffff;
+    p->EMMCOpErr = 0;
+}
+
+/* n consecutive sectors: [ACMD23], CMD25, n blocks of DMA, CMD12 (HydraUSB3 BSP EMMCCardWriteMulSec, bounded
+ * waits). */
 UINT8 SDCardWriteMulSec( PSD_PARAMETER pEMMCPara,  PUINT8 pWdatbuf, UINT32 Lbaaddr, UINT16 n )
 {
 	UINT32 cmd_arg_val;
@@ -472,6 +487,8 @@ UINT8 SDCardWriteMulSec( PSD_PARAMETER pEMMCPara,  PUINT8 pWdatbuf, UINT32 Lbaad
 
     if(SD_WaitReady() != OP_SUCCESS)               /* previous write still programming */
         return OP_FAILED;
+    if(n > 1 && SD_PRE_ERASE)
+        SD_PreErase(pEMMCPara, n);
 
     pEMMCPara->EMMCOpErr = 0;
 

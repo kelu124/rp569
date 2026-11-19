@@ -60,6 +60,11 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
   `pattest.sh`), not just a checksum: the pattern tells which sector went where.
 - Mode flags: product string "rp569 CH569 drive|serial" (`usb_product_string()`), link `\x01MDRV`/`\x01MSER` ->
   RP2350 "CH569 mode: ..." + `ch status ... mode X`; python `ports.ch569_usb_mode()`, `ch569_mode_events()`.
+- SD benchmark: `PYTHONPATH=python python3 firmware/tools/sd_bench.py --mb 64 --runs 2 --note "..."` logs to
+  `firmware/ch569/sd_benchmarks.csv` (firmware x.y.z, card CID); `--show` prints it. Console `sd` gives the CID.
+- **Never test a new write path through the mounted volume**: the host writes the boot sector / FSINFO first
+  (single-sector writes), a broken path destroys the filesystem (card MSSD0, 2026-11-19). Use raw writes to a
+  test region at the end of the card. After a card swap, `ch cycle` before mounting (no SD_DET handling yet).
 - Never hardcode `/dev/ttyACM0`: the numbering changes with the enumeration order; use `/dev/serial/by-id/`
   (an RP2350 "hang" was the helper talking to the CH569 link port).
 - Both speeds expose the same interfaces: `CH56x_usb20.c` (rewritten 2026-11-19) mirrors `CH56x_usb30.c`; a
@@ -97,7 +102,7 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
   (`USB30_SetSerial`), link CDC = interface 1, console = interface 3.
 - Versions: `firmware/*/version.yaml` + `python/rp569/_version.py`. Hook `.githooks/pre-commit` (enabled by
   `tools/install_hooks.sh`, `core.hooksPath`) runs the command check and `tools/bump_versions.py` (patch +1 per
-  touched component, staged automatically). **Never edit major/minor**: user only. `bump_versions.py --show`.
+  touched component, staged automatically). **Never edit major/minor**: user only (minor = user releases, major = firmware variant, the same on both chips). `bump_versions.py --show`.
 - Python tests: `cd python && python3 -m unittest discover -s tests -v` (no hardware, fake firmware). pytest is not
   installed; pyserial 3.5 is.
 

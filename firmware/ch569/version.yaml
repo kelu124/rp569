@@ -3,4 +3,4 @@
 # on every commit that changes firmware/ch569/. Read at build time and printed by the 'version' command.
 major: 0
 minor: 1
-patch: 6
+patch: 7

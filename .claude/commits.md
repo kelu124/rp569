@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — Drive mode at full speed (D-029), mode flags for host software
+## pending — 2026-11-19 — SD benchmark log vs firmware version and card CID
+What: CH569 console `sd` (CID/size/clock), python `sd_info()` + `decode_cid()`, `firmware/tools/sd_bench.py`,
+`firmware/ch569/sd_benchmarks.csv` (first rows: card MSSD0); `SD_PRE_ERASE` (ACMD23, off: slower on MSSD0);
+streamed write (`MSC_WRITE_STREAM`, off: broken); versioning roles in spec/skill; todo/done.
+Why: user asked to benchmark the new card and log speeds against firmware version and card ID, then improve them.
+
+## 4ec7f4a — 2026-11-19 — Drive mode at full speed (D-029), mode flags for host software
 What: `firmware/ch569/src/msc_fast.c/.h` (fast READ10/WRITE10 on USB2, hooked in `UDISK_onePack_Deal`), product
 string per mode (`usb_product_string()`), `mode_announce()` (`\x01MDRV`/`\x01MSER`); RP2350 mode tracking (unsolicited
 `CH569 mode:` line, `ch status ... mode`); python `ch569_usb_mode()`, `ch569_mode_events()`, `ch_status()['mode']`,

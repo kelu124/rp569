@@ -231,6 +231,7 @@ timeout:
 /*******************************************************************************
  * WRITE10
  ******************************************************************************/
+#if !MSC_WRITE_STREAM
 /* Receive n sectors into buf by polling EP3 (the first `have` are already there). 0 = ok. */
 static UINT8 receive_chunk(UINT8 *buf, UINT16 have, UINT16 n)
 {
@@ -260,6 +261,157 @@ static UINT8 receive_chunk(UINT8 *buf, UINT16 have, UINT16 n)
     return 0;
 }
 
+#endif
+
+#if MSC_WRITE_STREAM
+/* WRITE10 streamed: one CMD25 for the whole command through the 80-sector ring (UDisk_Out_Buf) with AUTOGAPSTOP.
+ * USB fills slots ahead of the card; the card pauses at a block gap whenever it catches up, so the USB transfer and
+ * the SD transfer overlap (the chunked version below does them one after the other). */
+void msc_fast_write(void)
+{
+    UINT32 lba = UDISK_Cur_Sec_Lba;
+    UINT16 total = (UINT16)(UDISK_Transfer_DataLen / SEC);
+    UINT16 usb_rx = 0, sd_done = 0, sd_slot = 0;
+    UINT8  usb_armed = 0, sd_paused = 0, started = 0;
+    UINT32 idle = 0;
+
+    if(total == 0 || lba + total > TF_EMMCParam.EMMCSecNum)
+        goto fail_early;
+    if(UDISK_Out_Pack_Len >= SEC)
+        usb_rx = 1;                               /* first packet already in slot 0 (USB interrupt path) */
+
+    usb_quiet_begin();
+    R8_USB_INT_FG = RB_USB_IF_TRANSFER;
+
+    {   /* card ready, then CMD25 */
+        UINT32 us;
+        for(us = 0; us < 500000 && !(R32_EMMC_STATUS & (1<<17)); us += 10)
+            mDelayuS(10);
+    }
+    PFIC_DisableIRQ(EMMC_IRQn);                   /* its handler clears BKGAP */
+    TF_EMMCParam.EMMCOpErr = 0;
+    R16_EMMC_INT_FG = 0xffff;
+    EMMCSendCmd(lba, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_48 | EMMC_CMD25);
+    {
+        UINT32 g = MSC_EMMC_GUARD;
+        UINT8 st;
+        while((st = CheckCMDComp(&TF_EMMCParam)) == CMD_NULL && --g)
+            ;
+        if(st != CMD_SUCCESS)
+            goto sd_error;
+    }
+
+    while(1)
+    {
+        UINT8 progress = 0;
+
+        /* USB: keep one OUT armed on the next free slot */
+        if(!usb_armed && usb_rx < total && (UINT16)(usb_rx - sd_done) < RING_SECTORS)
+        {
+            R32_UEP3_RX_DMA = (UINT32)(UDisk_Out_Buf + (UINT32)(usb_rx % RING_SECTORS) * SEC);
+            __asm__ volatile("fence" ::: "memory");
+            R8_UEP3_RX_CTRL = (R8_UEP3_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+            usb_armed = 1;
+        }
+        if(usb_armed && (R8_USB_INT_FG & RB_USB_IF_TRANSFER))
+        {
+            UINT8 tog_ok;
+            R8_UEP3_RX_CTRL = (R8_UEP3_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_NAK;   /* NAK before clearing */
+            tog_ok = (R8_USB_INT_ST & RB_USB_ST_TOGOK) != 0;
+            R8_USB_INT_FG = RB_USB_IF_TRANSFER;
+            usb_armed = 0;
+            if(tog_ok)
+                usb_rx++;
+            progress = 1;
+        }
+        drop_setup();
+
+        /* SD: start the data phase once slot 0 is in, then follow USB block by block */
+        if(!started && usb_rx > 0)
+        {
+            R32_EMMC_DMA_BEG1 = (UINT32)UDisk_Out_Buf;
+            R32_EMMC_TRAN_MODE = RB_EMMC_DMA_DIR | RB_EMMC_AUTOGAPSTOP;
+            R32_EMMC_BLOCK_CFG = (UINT32)SEC << 16 | total;
+            started = 1;
+            progress = 1;
+        }
+        if(started)
+        {
+            if(R16_EMMC_INT_FG & RB_EMMC_IF_TRANDONE)
+            {
+                R16_EMMC_INT_FG = RB_EMMC_IF_TRANDONE | RB_EMMC_IF_CMDDONE;
+                sd_done = total;
+                break;
+            }
+            if(R16_EMMC_INT_FG & RB_EMMC_IF_BKGAP)
+            {
+                R32_EMMC_RESPONSE3 = 0;
+                R16_EMMC_INT_FG = RB_EMMC_IF_BKGAP;
+                sd_done++;
+                sd_slot = next_slot(sd_slot);
+                R32_EMMC_DMA_BEG1 = (UINT32)(UDisk_Out_Buf + (UINT32)sd_slot * SEC);
+                sd_paused = 1;
+                progress = 1;
+            }
+            if(sd_paused && usb_rx > sd_done)    /* next block is in: release the gap stop */
+            {
+                sd_paused = 0;
+                __asm__ volatile("fence" ::: "memory");
+                R32_EMMC_TRAN_MODE = RB_EMMC_DMA_DIR | RB_EMMC_AUTOGAPSTOP;
+                progress = 1;
+            }
+            if(R16_EMMC_INT_FG & (RB_EMMC_IF_TRANERR | RB_EMMC_IF_DATTMO | RB_EMMC_IF_FIFO_OV))
+                goto sd_error;
+        }
+        if(progress)
+            idle = 0;
+        else
+            IDLE_TICK(idle);
+    }
+
+    /* CMD12, then the card programs: the CSW reports success only once it is done */
+    R32_EMMC_TRAN_MODE = 0;
+    EMMCSendCmd(0, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_R1b | EMMC_CMD12);
+    {
+        UINT32 g = MSC_EMMC_GUARD;
+        while(CheckCMDComp(&TF_EMMCParam) == CMD_NULL && --g)
+            ;
+        UINT32 us;
+        for(us = 0; us < 500000 && !(R32_EMMC_STATUS & (1<<17)); us += 10)
+            mDelayuS(10);
+    }
+    R16_EMMC_INT_FG = 0xffff;
+    TF_EMMCParam.EMMCOpErr = 0;
+    PFIC_EnableIRQ(EMMC_IRQn);
+
+    R32_UEP3_RX_DMA = (UINT32)UDisk_Out_Buf;      /* next CBW */
+    R8_UEP3_RX_CTRL = (R8_UEP3_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+    usb_quiet_end();
+    UDISK_Cur_Sec_Lba = lba + total;
+    UDISK_Transfer_DataLen = 0;
+    Udisk_Transfer_Status &= ~DEF_UDISK_BLUCK_DOWN_FLAG;
+    UDISK_Up_CSW();
+    return;
+
+sd_error:
+timeout:
+    PRINT("MSC: streamed write %lu+%u stopped at usb %u sd %u (flags %04x)\n", (unsigned long)lba, total, usb_rx,
+          sd_done, R16_EMMC_INT_FG);
+    R32_EMMC_TRAN_MODE = 0;
+    EMMCSendCmd(0, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_R1b | EMMC_CMD12);
+    mDelaymS(2);
+    R16_EMMC_INT_FG = 0xffff;
+    TF_EMMCParam.EMMCOpErr = 0;
+    PFIC_EnableIRQ(EMMC_IRQn);
+    R32_UEP3_RX_DMA = (UINT32)UDisk_Out_Buf;
+    usb_quiet_end();
+fail_early:
+    UDISK_CMD_Deal_Status(0x03, 0x0C, 0x00);          /* WRITE ERROR */
+    Udisk_Transfer_Status |= DEF_UDISK_BLUCK_DOWN_FLAG;
+    UDISK_CMD_Deal_Fail();                            /* STALL EP3, CSW queued */
+}
+
+#else /* !MSC_WRITE_STREAM: chunked */
 void msc_fast_write(void)
 {
     UINT32 lba = UDISK_Cur_Sec_Lba;
@@ -312,3 +464,4 @@ fail:
     Udisk_Transfer_Status |= DEF_UDISK_BLUCK_DOWN_FLAG;
     UDISK_CMD_Deal_Fail();                            /* STALL EP3, CSW queued */
 }
+#endif /* MSC_WRITE_STREAM */

@@ -65,6 +65,7 @@ RP_REPLIES = {
     'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
 CH_REPLIES = {
+    'sd': 'sd cid 035344534333324780ab12cd34016a00 size 30436 MB clock 48 MHz mounted',
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
     'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on, sd clock 48 MHz, mode serial',
 }
@@ -88,6 +89,14 @@ class TestPortsOldLayout(unittest.TestCase):
         old = [info('/dev/ttyACM1', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.1'),
                info('/dev/ttyACM2', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.3')]
         self.assertEqual([p.role for p in ports.list_ports_rp569(infos=old)], ['ch569-link', 'ch569-console'])
+
+
+class TestCid(unittest.TestCase):
+    def test_decode(self):
+        from rp569.ch569 import decode_cid
+        c = decode_cid('035344534333324780ab12cd34016a00')
+        self.assertEqual((c['mid'], c['oid'], c['name'], c['rev'], c['serial'], c['date']),
+                         (0x03, 'SD', 'SC32G', '8.0', 'ab12cd34', '2022-10'))
 
 
 class TestUsbMode(unittest.TestCase):
@@ -177,6 +186,7 @@ class TestCH569(unittest.TestCase):
         con = rp569.CH569Console(transport=FakeFirmware('ch569> ', CH_REPLIES))
         self.assertEqual(con.version().uid, UID_CH)
         st = con.status()
+        self.assertEqual(con.sd_info()['name'], 'SC32G')
         self.assertEqual((st['usb'], st['sd_ready'], st['link_lines']), ('usb3', True, 4))
         self.assertEqual((st['sd_clock_mhz'], st['mode']), (48, 'serial'))
 

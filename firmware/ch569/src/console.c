@@ -51,6 +51,21 @@ static void cmd_version(void)
     PRINT("rp569 CH569W firmware " FW_VERSION " git " FW_GIT " built " __DATE__ " uid %s\n", uid);
 }
 
+/* One line, parsed by the host library (python decodes the CID fields):
+ * "sd cid <32 hex, bits 127..0> size <MB> MB clock <MHz> MHz <mounted|released>", or "sd none" before any mount. */
+static void cmd_sd(void)
+{
+    if(!TF_EMMCParam.EMMCSecNum)
+    {
+        PRINT("sd none\n");
+        return;
+    }
+    PRINT("sd cid %08lx%08lx%08lx%08lx size %ld MB clock %d MHz %s\n",
+          (unsigned long)TF_EMMCParam.EMMC_CID[3], (unsigned long)TF_EMMCParam.EMMC_CID[2],
+          (unsigned long)TF_EMMCParam.EMMC_CID[1], (unsigned long)TF_EMMCParam.EMMC_CID[0],
+          (long)(TF_EMMCParam.EMMCSecNum / 2048), sd_high_speed ? 48 : 24, own_card_ready ? "mounted" : "released");
+}
+
 /* Serial mode -> drive mode: the serial ports disconnect, the card is mounted and the drive appears (mode.h). */
 static void cmd_mount(void)
 {
@@ -86,6 +101,7 @@ static const command_t commands[] =
     {"version", "firmware version, git hash and chip unique ID", cmd_version},
     {"status",  "USB link, SD card, RP2350 link counters",       cmd_status},
     {"mount",   "mount the SD card and switch to drive mode",    cmd_mount},
+    {"sd",      "SD card CID (128 bits), size, bus clock",       cmd_sd},
 };
 /* COMMANDS-END */
 #define N_COMMANDS (sizeof(commands) / sizeof(commands[0]))

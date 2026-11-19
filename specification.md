@@ -92,6 +92,10 @@ version, git hash, build date and chip UID (RP2350 `pico_get_unique_board_id`; C
 0x77FE4, CH569DS1 §2.2.3, read as in HydraUSB3). Git pre-commit hook (`.githooks/`, `tools/install_hooks.sh`):
 `tools/check_commands.py` refuses a commit whose firmware tables and library disagree; `tools/bump_versions.py`
 bumps the patch of each touched component. **Major/minor are changed by the user only.**
+Roles (user, 2026-11-19): **patch** = every change, bumped by the hook (Claude); **minor** = the user's
+releases; **major** = the main firmware variant, the same major on the CH569 and the RP2350 of one variant
+(set by the user when a new variant starts). The SD benchmark log (`firmware/ch569/sd_benchmarks.csv`)
+records the full x.y.z.
 Alternatives: USB vendor requests for version/UID (no human-usable CLI), libusb matching (more setup on Windows).
 
 ## D-024 — First firmware for both chips (status: accepted, 2026-10-24; not run on hardware yet)
