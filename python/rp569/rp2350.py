@@ -18,7 +18,7 @@ class RP2350(PromptCLI):
 
     def _filter(self, line):
         return (line.startswith('CH> ') or line.startswith('CH569 power switch fault')
-                or line.startswith('CH569 mode: '))
+                or line.startswith('CH569 mode: ') or line.startswith('CH569 card: '))
 
     def ch_lines(self) -> list[str]:
         """Lines received from the CH569 so far (without the 'CH> ' prefix), then forget them."""
@@ -34,6 +34,13 @@ class RP2350(PromptCLI):
         self.cmd_text('')
         events = [l.split(': ', 1)[1] for l in self.async_lines if l.startswith('CH569 mode: ')]
         self.async_lines = [l for l in self.async_lines if not l.startswith('CH569 mode: ')]
+        return events
+
+    def ch569_card_events(self) -> list[str]:
+        """Card-detect changes reported since the last call ('in' / 'out', oldest first), then forget them."""
+        self.cmd_text('')
+        events = [l.split(': ', 1)[1] for l in self.async_lines if l.startswith('CH569 card: ')]
+        self.async_lines = [l for l in self.async_lines if not l.startswith('CH569 card: ')]
         return events
 
     # -- board
@@ -126,10 +133,11 @@ class RP2350(PromptCLI):
     @command('ch status')
     def ch_status(self) -> dict:
         m = self._match(r'CH569 power (on|off), FLG# (ok|FAULT), 3V3_CH ([\d.]+) V, VBUS3 ([\d.]+) V'
-                        r'(?:.*, mode (\w+))?', 'ch status')
+                        r'(?:.*, mode (\w+))?(?:, card (\w+))?', 'ch status')
         return {'power': m.group(1) == 'on', 'fault': m.group(2) == 'FAULT',
                 '3V3_CH': float(m.group(3)), 'VBUS3': float(m.group(4)),
-                'mode': m.group(5)}   # drive / serial / unknown (not reported yet) / bootloader / off
+                'mode': m.group(5),    # drive / serial / unknown (not reported yet) / bootloader / off
+                'card': m.group(6)}    # in / out (card detect, as the CH569 last reported it) / unknown
 
     @command('ch pins')
     def ch_pins(self) -> dict:

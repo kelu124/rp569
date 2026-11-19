@@ -38,6 +38,7 @@ volatile UINT16 USBBufOutPoint = 0;
 volatile UINT8  UploadPoint4_Busy = 0;
 volatile UINT8  DownloadPoint4_Busy = 0;
 volatile UINT16 Uart_Timecount = 0;
+volatile UINT32 tick_10us = 0;              /* free-running 10 us tick (TMR2)  */
 volatile UINT16 Uart_Sendlenth = 0;
 
 /* Function declaration.
@@ -96,6 +97,7 @@ void TMR2_IRQHandler(void)
     {
         R8_TMR2_INT_FLAG = 0x01;
         Uart_Timecount++;
+        tick_10us++;
     }
 }
 

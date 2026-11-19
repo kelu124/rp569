@@ -58,14 +58,14 @@ RP_REPLIES = {
     'version': f'rp569 RP2350B firmware 0.1.3 git v1.0-9-g0727cb0 built Oct 24 2026 uid {UID_RP}',
     'set R 1': 'R on', 'set rgb 101': 'R 1 G 0 B 1', 'led': 'R 1 G 0 B 1',
     'btn': 'BTN1 up, BTN2 down', 'adc': 'VBUS3 5.02 V, 3V3_CH 3.31 V',
-    'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud, mode drive',
+    'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud, mode drive, card in',
     'ch send hello': '',
     'ch eject': 'CH569 SD released',
     'ch mount': 'CH569 SD mounted (drive mode)',
     'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
 CH_REPLIES = {
-    'sd': 'sd cid 035344534333324780ab12cd34016a00 size 30436 MB clock 48 MHz mounted',
+    'sd': 'sd cid 035344534333324780ab12cd34016a00 size 30436 MB clock 48 MHz mounted det in',
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
     'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on, sd clock 48 MHz, mode serial',
 }
@@ -156,7 +156,7 @@ class TestRP2350(unittest.TestCase):
         self.assertEqual(rp.buttons(), {'BTN1': False, 'BTN2': True})
         self.assertEqual(rp.adc(), {'VBUS3': 5.02, '3V3_CH': 3.31})
         self.assertTrue(rp.ch_status()['power'])
-        self.assertEqual(rp.ch_status()['mode'], 'drive')
+        self.assertEqual((rp.ch_status()['mode'], rp.ch_status()['card']), ('drive', 'in'))
         self.assertEqual(rp.ch_pins()['state'], 'driven high (UART idle)')
         self.assertTrue(rp.ch_eject())
         self.assertTrue(rp.ch_mount())
@@ -186,7 +186,7 @@ class TestCH569(unittest.TestCase):
         con = rp569.CH569Console(transport=FakeFirmware('ch569> ', CH_REPLIES))
         self.assertEqual(con.version().uid, UID_CH)
         st = con.status()
-        self.assertEqual(con.sd_info()['name'], 'SC32G')
+        self.assertEqual((con.sd_info()['name'], con.sd_info()['detect']), ('SC32G', 'in'))
         self.assertEqual((st['usb'], st['sd_ready'], st['link_lines']), ('usb3', True, 4))
         self.assertEqual((st['sd_clock_mhz'], st['mode']), (48, 'serial'))
 

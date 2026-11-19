@@ -65,6 +65,8 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
 - **Never test a new write path through the mounted volume**: the host writes the boot sector / FSINFO first
   (single-sector writes), a broken path destroys the filesystem (card MSSD0, 2026-11-19). Use raw writes to a
   test region at the end of the card. After a card swap, `ch cycle` before mounting (no SD_DET handling yet).
+- RST#: works only with RESET_EN (set on board #1 via `firmware/tools/wch-ch56x-isp-resetpin.patch`, `-e=on`); a pin
+  reset reloads the firmware, a software reset does not. SD_DET (PA20) low = card in, debounced in `sd_det_poll`.
 - Never hardcode `/dev/ttyACM0`: the numbering changes with the enumeration order; use `/dev/serial/by-id/`
   (an RP2350 "hang" was the helper talking to the CH569 link port).
 - Both speeds expose the same interfaces: `CH56x_usb20.c` (rewritten 2026-11-19) mirrors `CH56x_usb30.c`; a

@@ -38,6 +38,11 @@
 /* SD ownership request line. 0 = none (rp569: card wired straight to the
  * CH569, PB10 is a free pin on the CH EXT header). */
 #define SD_OWNERSHIP_PIN            0
+
+/* microSD card-detect switch on PA20 (SD_DET, 100k pull-up to 3V3_CH, CH569DS1 pin 35, board.py J microSD pin 9).
+ * Level with a card inserted: 0 = low (switch to GND), checked on board #1 (D-030). */
+#define SD_DET_PIN                  GPIO_Pin_20
+#define SD_DET_INSERTED_LEVEL       0
 #define PB10_SETTLE_MS              0
 
 /* Attempts of the full SD init (each attempt internally tries all 8 EMMC IO

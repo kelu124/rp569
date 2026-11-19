@@ -46,5 +46,6 @@ UINT8 Link_Tx_Pending(void);                /* bytes still queued for the RP2350
 void TMR2_TimerInit1(void);                 /* 10us tick for RX flush timeout */
 void CDC_Uart_Deal(void);                   /* main-loop pump, both ways      */
 void CDC_Variable_Clear(void);
+extern volatile UINT32 tick_10us;           /* free-running 10 us tick (TMR2) */
 
 #endif /* CDC_UART_H_ */

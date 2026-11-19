@@ -44,11 +44,11 @@ class CH569Console(PromptCLI):
         text = self.cmd_text('sd')
         if 'sd none' in text:
             return None
-        m = re.search(r'sd cid ([0-9a-fA-F]{32}) size (\d+) MB clock (\d+) MHz (\w+)', text)
+        m = re.search(r'sd cid ([0-9a-fA-F]{32}) size (\d+) MB clock (\d+) MHz (\w+)(?: det (in|out))?', text)
         if not m:
             raise CommandError(f'unexpected reply to sd: {text!r}')
         info = decode_cid(m.group(1))
-        info.update(size_mb=int(m.group(2)), clock_mhz=int(m.group(3)), state=m.group(4))
+        info.update(size_mb=int(m.group(2)), clock_mhz=int(m.group(3)), state=m.group(4), detect=m.group(5))
         return info
 
     @command('mount')

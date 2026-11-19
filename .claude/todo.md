@@ -58,7 +58,6 @@
   bit 6; multi-block failed with write I/O errors). Next attempt only with raw writes to a test region far from the
   filesystem (e.g. the last 64 MB of the card), never through a mounted volume.
 - [ ] Card MSSD0 (DCFC-DA1E): user to repair (`sudo fsck.vfat`, backup boot sector) or reformat.
-- [ ] CH569: watch SD_DET (card swap): today a swapped card keeps the old card's geometry until `ch cycle`.
 - [ ] CH569 drive speed on USB3: port `msc_fast.c` to the SuperSpeed endpoints (1024 B packets, ERDY) once a SuperSpeed link works; USB2 is at 5.0 / 17.6 MB/s.
 - [ ] Card 573B-9367: FAT dirty flag from the early unclean power cuts, and FAT writes lost at 20:07:15 (2026-11-19, reflash under a stuck write): `sudo fsck.vfat -a /dev/sdb1` once (user, needs root).
 - [ ] Add the ModemManager-ignore lines to `/etc/udev/rules.d/60-rp569.rules` (`docs/toolchain.md`, needs sudo).

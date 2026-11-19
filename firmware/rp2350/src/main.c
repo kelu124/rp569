@@ -36,6 +36,7 @@ static int ch_sd_on;              // answer to a mount request: 0 none yet, 1 "S
 // CH569 USB mode as it last reported it on the link ("\x01MDRV" / "\x01MSER"): printed as an unsolicited
 // "CH569 mode: drive|serial" line on every change and shown by `ch status`, so host software has a serial-port flag.
 static const char *ch_mode = "off";
+static const char *ch_card = "unknown";  // card-detect as the CH569 last reported it ("\x01SDIN" / "\x01SDOUT")
 static bool ch_fault_seen;
 static const uint led_pins[3] = {RP569_LED_R_PIN, RP569_LED_G_PIN, RP569_LED_B_PIN};
 static bool led_on[3];
@@ -134,6 +135,7 @@ static void ch_power_off(void) {
     ch_lines_release();
     ch_powered = false;
     ch_mode = "off";
+    ch_card = "unknown";
     absolute_time_t until = make_timeout_time_ms(500);
     while (ch3v3_volts() > 0.5f && !time_reached(until))
         sleep_ms(5);
@@ -169,13 +171,18 @@ static void ch_power_on(bool bootloader) {
         printf("  warning: no USB3 VBUS, the CH569 is fed from VBUS_3 only (unless the DNP 0R is fitted)\n");
 }
 
-// RST# only acts when the CH569 config bit RESET_EN is set (off on a new chip): power-cycle otherwise.
+// RST# resets the CH569 when its config bit RESET_EN is set (off on a new chip: set it with the patched
+// wch-ch56x-isp --resetpin=on, docs/toolchain.md); a pin reset reloads the firmware like a power-up. The card is
+// released first, as before a power-off.
 static void ch_reset_pulse(void) {
+    if (ch_powered)
+        ch_sd_release_report();
     gpio_put(RP569_CH_RST_N_PIN, 0);
     gpio_set_dir(RP569_CH_RST_N_PIN, GPIO_OUT);
     sleep_ms(10);
     gpio_set_dir(RP569_CH_RST_N_PIN, GPIO_IN);
-    printf("RST# pulsed (needs RESET_EN in the CH569 config; else use 'ch cycle')\n");
+    ch_mode = "unknown";                  // until the CH569 reports its mode again
+    printf("RST# pulsed (resets the CH569 only with RESET_EN set; else use 'ch cycle')\n");
 }
 
 static void ch_init(void) {
@@ -190,9 +197,9 @@ static void ch_init(void) {
 }
 
 static void ch_status(void) {
-    printf("CH569 power %s, FLG# %s, 3V3_CH %.2f V, VBUS3 %.2f V, link UART%d %d baud, mode %s\n",
+    printf("CH569 power %s, FLG# %s, 3V3_CH %.2f V, VBUS3 %.2f V, link UART%d %d baud, mode %s, card %s\n",
            ch_powered ? "on" : "off", gpio_get(RP569_CH_FAULT_N_PIN) ? "ok" : "FAULT", ch3v3_volts(), vbus3_volts(),
-           RP569_LINK_UART, LINK_BAUD, ch_mode);
+           RP569_LINK_UART, LINK_BAUD, ch_mode, ch_card);
 }
 
 static void ch_send(const char *text) {
@@ -339,7 +346,7 @@ static const command_t commands[] = {
     {"ch boot",   "",                "power-cycle the CH569 into its USB bootloader (~10 s)",           cmd_ch_boot},
     {"ch eject",  "",                "release the SD card, CH569 to serial mode (also before power-off)", cmd_ch_eject},
     {"ch mount",  "",                "mount the SD card, CH569 to drive mode (serial ports go away)",   cmd_ch_mount},
-    {"ch reset",  "",                "pulse RST# (only with RESET_EN set in the CH569)",                cmd_ch_reset},
+    {"ch reset",  "",                "pulse RST# (needs RESET_EN; releases the card first)",            cmd_ch_reset},
     {"ch status", "",                "CH569 power, fault flag, rails",                                  cmd_ch_status},
     {"ch pins",   "",                "probe the CH569 -> RP2350 UART line (driven / open)",             cmd_ch_pins},
     {"ch send",   "<text>",          "send a line to the CH569 over the link UART (it echoes it back)", cmd_ch_send},
@@ -437,6 +444,10 @@ static void link_poll(void) {
             else if (ch_len == 4 && (memcmp(ch_line, "MDRV", 4) == 0 || memcmp(ch_line, "MSER", 4) == 0)) {
                 ch_mode = ch_line[1] == 'D' ? "drive" : "serial";
                 printf("\r\x1b[2KCH569 mode: %s\n", ch_mode);
+                prompt();
+            } else if ((ch_len == 4 && memcmp(ch_line, "SDIN", 4) == 0) || (ch_len == 5 && memcmp(ch_line, "SDOUT", 5) == 0)) {
+                ch_card = ch_len == 4 ? "in" : "out";
+                printf("\r\x1b[2KCH569 card: %s\n", ch_card);
                 prompt();
             }
             ch_len = 0;

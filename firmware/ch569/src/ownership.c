@@ -6,6 +6,8 @@
 #include "bridge_config.h"
 #include "sd_storage.h"
 #include "SW_UDISK.h"
+#include "cdc_uart.h"
+#include "mode.h"
 
 /* SD_OWNERSHIP_PIN 0 (rp569): no request line, the CH569 always owns the card. */
 #if SD_OWNERSHIP_PIN
@@ -20,8 +22,47 @@ volatile UINT8 own_card_ready = 0;
 
 static volatile UINT8 own_pending = OWN_REQ_NONE;
 
+UINT8 sd_card_detect(void)
+{
+    UINT8 level = (GPIOA_ReadPort() & SD_DET_PIN) ? 1 : 0;
+    return level == SD_DET_INSERTED_LEVEL;
+}
+
+void sd_det_poll(void)
+{
+    static UINT8  stable = 0xFF, last = 0xFF;
+    static UINT32 since = 0;
+    UINT8 now = sd_card_detect();
+
+    if(stable == 0xFF)                      /* first call: report the state at boot (no swap action) */
+    {
+        stable = last = now;
+        Link_Ctrl_Send(now ? "SDIN" : "SDOUT");
+        return;
+    }
+    if(now != last)
+    {
+        last = now;
+        since = tick_10us;
+        return;
+    }
+    if(now == stable || (UINT32)(tick_10us - since) < 5000)   /* 50 ms stable */
+        return;
+    stable = now;
+    PRINT("SD: card %s\n", now ? "inserted" : "removed");
+    Link_Ctrl_Send(now ? "SDIN" : "SDOUT");
+    if(bridge_mode == MODE_DRIVE)
+    {
+        if(!now && own_ch569_owns)
+            ownership_request(OWN_REQ_RELEASE);  /* host sees "medium not present" */
+        else if(now && !own_ch569_owns)
+            ownership_request(OWN_REQ_CLAIM);    /* new card identified, host told the medium changed */
+    }
+}
+
 void ownership_init(void)
 {
+    GPIOA_ModeCfg(SD_DET_PIN, GPIO_ModeIN_Floating);   /* external 100k pull-up */
 #if SD_OWNERSHIP_PIN
     GPIOB_ResetBits(PB10_PIN);                       /* FPGA owns the card    */
     GPIOB_ModeCfg(PB10_PIN, GPIO_Slowascent_PP_8mA); /* push-pull output, low */

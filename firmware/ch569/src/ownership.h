@@ -35,4 +35,9 @@ void ownership_request(UINT8 req);   /* IRQ-safe: just latches the request   */
 void ownership_poll(void);           /* main-loop: executes a pending request */
 UINT8 ownership_pending(void);       /* 1 while a request waits to run        */
 
+/* Card detect (SD_DET, PA20): present now (raw), and the main-loop poll: 50 ms debounce, "\x01SDIN"/"\x01SDOUT"
+ * on the link, and in drive mode a removal releases the card / an insertion mounts the new one. */
+UINT8 sd_card_detect(void);
+void  sd_det_poll(void);
+
 #endif /* OWNERSHIP_H_ */

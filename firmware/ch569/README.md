@@ -27,6 +27,16 @@ sends `\x01MDRV` / `\x01MSER` on the link at boot and after every switch: the RP
 `CH569 mode: drive|serial` line on its own serial port and shows the mode in `ch status` (python
 `RP2350.ch569_mode_events()`, `ch_status()['mode']`).
 
+**Reset and card detect** (tested on board #1, 2026-11-19, D-030):
+- RST# (PB15) resets the CH569 only with RESET_EN set in its config (factory: off, PB15 is a GPIO; set it with the
+  patched wch-ch56x-isp, `docs/toolchain.md`). A pin reset reloads the firmware like a power-up (USB re-enumerates,
+  the mode and card flags are announced again); RP2350 `ch reset` releases the card first. A *software* reset
+  (`RB_SOFTWARE_RESET`) does not: the chip stays dead (CH569DS1 §3.2), so the mode switch is done in place.
+- SD_DET (PA20, 100k pull-up): low = card in. Polled every main loop, 50 ms debounce. In drive mode a removal releases
+  the card (host: medium not present, red LED off) and an insertion identifies and mounts the new card (host:
+  medium changed, red LED on). `\x01SDIN`/`\x01SDOUT` on the link at boot and on every change: the RP2350 prints
+  `CH569 card: in|out` and shows it in `ch status`; console `sd` ends with `det in|out`.
+
 **Link control lines**: a line starting with byte `0x01` (`LINK_CTRL_CHAR`) is for the CH569 itself, neither echoed
 nor forwarded to the host. `\x01SDREL\n` from the RP2350 releases the SD card: the CH569 waits for any MSC transfer to
 finish, waits until the card is idle (DAT0 high, 500 ms max), reports "medium not present" to the host, then answers

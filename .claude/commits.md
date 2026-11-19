@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — SD benchmark log vs firmware version and card CID
+## pending — 2026-11-19 — RST# and SD card detect (D-030)
+What: CH569 `sd_det_poll()` (PA20, debounce, hot swap in drive mode, `\x01SDIN`/`\x01SDOUT`), `tick_10us`, console
+`sd ... det`; RP2350 `ch reset` releases the card, card field in `ch status`, `CH569 card:` lines; python `card`,
+`detect`, `ch569_card_events()`; `firmware/tools/wch-ch56x-isp-resetpin.patch`; docs, spec D-030, skill, logs.
+Why: user's test plan step 1 (RST line and card detect behaviour), card swap fix.
+
+## 5895b6e — 2026-11-19 — SD benchmark log vs firmware version and card CID
 What: CH569 console `sd` (CID/size/clock), python `sd_info()` + `decode_cid()`, `firmware/tools/sd_bench.py`,
 `firmware/ch569/sd_benchmarks.csv` (first rows: card MSSD0); `SD_PRE_ERASE` (ACMD23, off: slower on MSSD0);
 streamed write (`MSC_WRITE_STREAM`, off: broken); versioning roles in spec/skill; todo/done.

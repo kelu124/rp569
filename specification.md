@@ -36,6 +36,16 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-030 — CH569 RST# and card detect behaviour (status: accepted, 2026-11-19)
+Tested on board #1. RST# (pin 30 PB15, CH569DS1 config bit 4 RESET_EN): with the factory RESET_EN = 0 the RP2350's
+pulse on GPIO28 does nothing (PB15 is a GPIO); with RESET_EN = 1 it resets the CH569, which reloads and runs the
+firmware (unlike a software reset, which left the chip dead). RESET_EN set on board #1 with a patched wch-ch56x-isp
+(`firmware/tools/wch-ch56x-isp-resetpin.patch`); `ch reset` releases the card first. Card detect (pin 35 PA20,
+SD_DET, 100k pull-up to 3V3_CH, Hirose DM3AT detect switch): low = card in. The CH569 debounces it (50 ms) and in
+drive mode releases / re-identifies the card on removal / insertion, so a swapped card is never served with the old
+card's geometry; it reports the state on the link (`\x01SDIN`/`\x01SDOUT` -> RP2350 `CH569 card: in|out`, `ch status`).
+Sources: CH569DS1 pin table (30 PB15, 35 PA20), config register bit 4, §3.2; board.py nets CH569_RST_N, SD_DET.
+
 ## D-029 — CH569 drive mode: full-speed MSC data phases, mode flags (status: accepted, 2026-11-19)
 Context: in drive mode (D-028) nothing else shares USB, so one MSC command may own the bus. Choice (USB2 high-speed
 path, `msc_fast.c`, ported from phantomdrive): USB interrupt off and EP0 NAKed for the data phase; READ10 = one

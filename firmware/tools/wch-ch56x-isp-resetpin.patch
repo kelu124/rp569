@@ -1,0 +1,51 @@
+178a179,185
+> 		.identifier = 'e',
+> 		.access_letters = "e",
+> 		.access_name = "resetpin",
+> 		.value_name = "VALUE",
+> 		.description = "Set RESET_EN (PB15 = RST# input) on or off (rp569 patch)"
+> 	},
+> 	{
+205a213,215
+> 
+> 	int do_reset_pin;
+> 	const char* reset_pin;
+571a582,604
+> /* rp569 patch: RESET_EN is bit 4 of the NV word's low byte (buf[10]; 0x45 = BOOT_EN + reserved, debug off).
+>  * Read-modify-write of that bit only, refused unless the byte is one of the two known states. */
+> u8 cmd_reset_pin(u8 enable)
+> {
+> 	u8 req[] = { CFG_MASK_ALL, 0x00 };
+> 	u8 buf[60];
+> 	size_t got;
+> 
+> 	isp_send_cmd(CMD_READ_CONFIG, sizeof(req), req);
+> 	got = isp_recv_cmd(CMD_READ_CONFIG, sizeof(buf), buf);
+> 	if (got < 11)
+> 		die("read conf fail: not received enough bytes\n");
+> 	printf_timing("NV low byte before: 0x%02X\n", buf[10]);
+> 	if (buf[10] != 0x45 && buf[10] != 0x55)
+> 		die("unexpected NV low byte 0x%02X (want 0x45 or 0x55: debug off, boot on): not writing\n", buf[10]);
+> 	buf[10] = enable ? 0x55 : 0x45;
+> 	isp_send_cmd(CMD_WRITE_CONFIG, 14, buf);
+> 	got = usb_recv(6, buf);
+> 	if (got != 6)
+> 		die("send config command: wrong response length\n");
+> 	return buf[4] == 0;
+> }
+> 
+1036a1070,1073
+> 			case 'e':
+> 				config.do_reset_pin = 1;
+> 				config.reset_pin = cag_option_get_value(&context);
+> 				break;
+1090a1128,1136
+> 	}
+> 
+> 	if(config.do_reset_pin)
+> 	{
+> 		if(config.reset_pin == NULL || (strcmp(config.reset_pin, "on") && strcmp(config.reset_pin, "off")))
+> 			die("Invalid reset pin option (only on or off are supported)\n");
+> 		if (!((dev_id == 0x69) || (dev_id == 0x65)))
+> 			die("reset pin option only for the CH565/569\n");
+> 		printf_timing("%s RESET_EN\n", cmd_reset_pin(strcmp(config.reset_pin, "on") == 0) ? "set" : "FAILED to set");

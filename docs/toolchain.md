@@ -94,6 +94,12 @@ wch-ch56x-isp -v -c -b=off   # download pin PA13 -> PA5 (ours, held low by the R
 wch-ch56x-isp -vr -f=firmware/ch569/build/rp569_ch569.bin   # erase, program, verify, reset
 ```
 
+Optional third change, for `ch reset` (RST# on PB15, RP2350 GPIO28): set RESET_EN. wch-ch56x-isp has no switch
+for it; `firmware/tools/wch-ch56x-isp-resetpin.patch` adds `-e=on|off` (read-modify-write of bit 4 of the NV low
+byte, refused unless it reads 0x45/0x55: debug off, boot on). Apply with `patch -p0 wch-ch56x-isp.c <` the patch,
+`make`, then `ch boot` + `wch-ch56x-isp -v -c -e=on`, and flash the image again. Board #1: done 2026-11-19
+(nv `0xCFFFF255`); it survives reflashing.
+
 As delivered, the chip had `DEBUG_EN 1` and `alt boot pin: PA13` (nv `0xCFFFF265`). With PA13 as the download pin,
 `ch boot` only works while the code flash is empty: once an image is flashed, only the CH569 button on PA13
 (held at power-up) gets back into the bootloader. `-c` prints the config (`DEBUG_EN`, `alt boot pin`, `USER_MEM`) without changing it.

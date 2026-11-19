@@ -57,13 +57,14 @@ static void cmd_sd(void)
 {
     if(!TF_EMMCParam.EMMCSecNum)
     {
-        PRINT("sd none\n");
+        PRINT("sd none det %s\n", sd_card_detect() ? "in" : "out");
         return;
     }
-    PRINT("sd cid %08lx%08lx%08lx%08lx size %ld MB clock %d MHz %s\n",
+    PRINT("sd cid %08lx%08lx%08lx%08lx size %ld MB clock %d MHz %s det %s\n",
           (unsigned long)TF_EMMCParam.EMMC_CID[3], (unsigned long)TF_EMMCParam.EMMC_CID[2],
           (unsigned long)TF_EMMCParam.EMMC_CID[1], (unsigned long)TF_EMMCParam.EMMC_CID[0],
-          (long)(TF_EMMCParam.EMMCSecNum / 2048), sd_high_speed ? 48 : 24, own_card_ready ? "mounted" : "released");
+          (long)(TF_EMMCParam.EMMCSecNum / 2048), sd_high_speed ? 48 : 24, own_card_ready ? "mounted" : "released",
+          sd_card_detect() ? "in" : "out");
 }
 
 /* Serial mode -> drive mode: the serial ports disconnect, the card is mounted and the drive appears (mode.h). */

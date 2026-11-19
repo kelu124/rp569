@@ -141,6 +141,7 @@ int main(void)
         }
         Link_Echo_Deal();       /* echo RP2350 bytes back on UART1           */
         Link_Ctrl_Deal();       /* RP2350 control lines (SD release / mount) */
+        sd_det_poll();          /* card detect: swap handling + link signal   */
         console_poll();         /* commands from the console port / UART0    */
         mode_poll();            /* drive <-> serial switch (re-enumerates)   */
 #if STATUS_LEDS
