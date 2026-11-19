@@ -51,8 +51,10 @@
 ## Firmware (D-024; `firmware/`, skill `firmware`)
 
 - [ ] Hardware check of the python library (`python3 -m rp569 ports` / `versions`, `link_test.py`): port roles, CH569 UID read at 0x77FE4.
-- [ ] Install a CH569 flasher (`wch-ch56x-isp` from HydraUSB3 or `wchisp`) before bring-up.
-- [ ] Bring-up on the first boards: RP2350 CLI (LED, `dfu`, `ch status`), `ch boot` + flash the CH569, `link_test.py`.
-- [ ] CH569: confirm the RP2350-link echo and the CDC bridge on a USB3 port; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).
+- [ ] CH569 USB3: board #1 only enumerates at high-speed (bus 001), never SuperSpeed: check the cable/port, then the SS lanes. Then confirm the composite (and the MSC write fix) on USB3; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).
+- [ ] CH569 UID: `chip_uid.c` reads `0xF7F9BF11` at every address of 0x77FE0–0x77FFC (stale ROM data register), so the USB serial is `11BFF9F711BFF9F7` on board #1 instead of the bootloader's UID 8A-82-48-26-3B-38-0D-E1. Same sequence/registers as HydraUSB3 `FLASH_ROMA_READ`; `R8_GLOB_ROM_CFG` reads 0x00 and a safe-mode write does not stick. Try: read before `SystemInit`/clock change, interrupts off, compare with WCH's EVT `GetUniqueID`/ISP library.
+- [ ] CH569 drive speed: ~0.25 MB/s write, ~1 MB/s read on USB2 (`MSC_CHUNK_SECTORS 1`, single-sector SD commands): multi-sector SD + multi-packet USB.
+- [ ] Add the ModemManager-ignore lines to `/etc/udev/rules.d/60-rp569.rules` (`docs/toolchain.md`, needs sudo).
+- [ ] Install wch-ch56x-isp permanently (built in the scratchpad 2026-11-19: `git clone --recursive https://github.com/hydrausb3/wch-ch56x-isp`, `make`, copy to `~/.local/bin`).
 - [ ] RP2350: PIO HSPI transmitter (GPIO8–23) and CH569 HSPI receiver → USB3 bulk stream; then the logic analyser (GPIO0–7).
 - [ ] RP2350: I2C link and breakout I2C commands; PWM dimming for the LEDs (GPIO34/35/38 are PWM9A/9B/11A).

@@ -704,12 +704,11 @@ void UDISK_onePack_Deal( void )
     if( UDISK_OutPackflag == 1 )
     {
         UDISK_OutPackflag = 0;
-        UDISK_Down_OnePack();
 
-        /* Re-arm EP3 for the next write-data packet only while the transfer is
-         * still running; after the final packet the CSW has been sent and the
-         * host must not be asked for more data. */
-        if( Udisk_Transfer_Status & DEF_UDISK_BLUCK_DOWN_FLAG )
+        /* Re-arm EP3 after every packet: for the next write-data packet while the transfer runs, and after the
+         * final one (CSW queued) for the host's next CBW. Leaving it NAKed after the CSW made every WRITE10 end
+         * in a 30 s host timeout + reset (2026-11-19). A failed write has stalled EP3: leave it stalled. */
+        if( UDISK_Down_OnePack() == 0 )
         {
             if( Link_Sta == LINK_STA_1 )
             {
@@ -792,7 +791,7 @@ void UDISK_Up_OnePack( void )
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void UDISK_Down_OnePack( void )
+uint8_t UDISK_Down_OnePack( void )   /* 0 = ok, 1 = write failed (EP3 stalled) */
 {
     UINT16 nsec, i, len;
 
@@ -809,7 +808,7 @@ void UDISK_Down_OnePack( void )
         {
             UDISK_CMD_Deal_Status( 0x03, 0x0C, 0x00 );   /* WRITE ERROR */
             UDISK_CMD_Deal_Fail( );                      /* STALL EP3, clears DOWN flag */
-            return;
+            return 1;
         }
     }
 
@@ -821,6 +820,7 @@ void UDISK_Down_OnePack( void )
         Udisk_Transfer_Status &= ~DEF_UDISK_BLUCK_DOWN_FLAG;
         UDISK_Up_CSW( );
     }
+    return 0;
 }
 
 /*********************************************************************

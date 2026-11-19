@@ -6,6 +6,7 @@
 #include "CH56x_common.h"
 #include "CH56xusb30_LIB.h"
 #include "CH56x_usb30.h"
+#include "CH56x_usb20.h"
 #include "cdc_uart.h"
 #include "bridge_config.h"
 #include "ownership.h"
@@ -96,6 +97,36 @@ void TMR2_IRQHandler(void)
     }
 }
 
+/* The CDC endpoints exist at both speeds (same numbers); these pick the register set. On the USB2 fallback
+ * (Link_Sta == LINK_STA_1) a bulk packet is at most 512 bytes, and UART_REV_LEN / 2 = 512 already caps it. */
+static void link_in_start(UINT16 n)             /* EP4 IN: send n bytes of endp4Txbuff */
+{
+    if(Link_Sta == LINK_STA_1)
+    {
+        R32_UEP4_TX_DMA = (UINT32)(UINT8 *)endp4Txbuff;
+        R16_UEP4_T_LEN = n;
+        R8_UEP4_TX_CTRL = (R8_UEP4_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        return;
+    }
+    USB30_IN_ClearIT(ENDP_4);
+    USB30_IN_Set(ENDP_4, ENABLE, ACK, 1, n);
+    USB30_Send_ERDY(ENDP_4 | IN, 1);
+}
+
+static void link_out_arm(void)                  /* EP4 OUT: accept the next packet into endp4Rxbuff */
+{
+    if(Link_Sta == LINK_STA_1)
+    {
+        R32_UEP4_RX_DMA = (UINT32)(UINT8 *)endp4Rxbuff;
+        R8_UEP4_RX_CTRL = (R8_UEP4_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+        return;
+    }
+    USBSS->UEP4_RX_DMA = (UINT32)(UINT8 *)endp4Rxbuff;
+    USB30_OUT_ClearIT(ENDP_4);
+    USB30_OUT_Set(ENDP_4, ACK, 1);
+    USB30_Send_ERDY(ENDP_4 | OUT, 1);
+}
+
 /*******************************************************************************
  * @fn        U30_CDC_UartRx_Deal
  *
@@ -123,9 +154,7 @@ static void U30_CDC_UartRx_Deal(void)
                     Uart_Output_Point = 0;
 
                 UploadPoint4_Busy = 1;
-                USB30_IN_ClearIT(ENDP_4);
-                USB30_IN_Set(ENDP_4, ENABLE, ACK, 1, Uart_Sendlenth);
-                USB30_Send_ERDY(ENDP_4 | IN, 1);
+                link_in_start(Uart_Sendlenth);
 
                 Uart_Timecount = 0;
             }
@@ -159,10 +188,7 @@ static void U30_CDC_UartTx_Deal(void)
         {
             USBBufOutPoint = 0;
             DownloadPoint4_Busy = 1;
-            USBSS->UEP4_RX_DMA = (UINT32)(UINT8 *)endp4Rxbuff;
-            USB30_OUT_ClearIT(ENDP_4);
-            USB30_OUT_Set(ENDP_4, ACK, 1);
-            USB30_Send_ERDY(ENDP_4 | OUT, 1);
+            link_out_arm();
         }
     }
 }
@@ -185,16 +211,15 @@ void Link_Echo_Deal(void)
 /*******************************************************************************
  * @fn        CDC_Uart_Deal
  *
- * @brief     Main-loop pump. Only active on the USB3 link: the USB2 fallback
- *            is MSC-only (no CDC function), see README.
+ * @brief     Main-loop pump, at both speeds. On the USB2 fallback it waits
+ *            until the host has set the configuration (endpoints live).
  ******************************************************************************/
 void CDC_Uart_Deal(void)
 {
-    if(Link_Sta != LINK_STA_1)
-    {
-        U30_CDC_UartTx_Deal();
-        U30_CDC_UartRx_Deal();
-    }
+    if(Link_Sta == LINK_STA_1 && !g_devInfo.dev_enum_status)
+        return;
+    U30_CDC_UartTx_Deal();
+    U30_CDC_UartRx_Deal();
 }
 
 void CDC_Variable_Clear(void)

@@ -155,7 +155,7 @@ extern void UDISK_Up_CSW( void );
 extern void UDISK_Up_OnePack( void );
 extern void UDISK_Out_EP_Deal( uint8_t *pbuf, uint16_t packlen );
 extern void UDISK_In_EP_Deal( void );
-extern void UDISK_Down_OnePack( void );
+extern uint8_t UDISK_Down_OnePack( void );
 extern void UDISK_onePack_Deal( void );
 
 #ifdef __cplusplus

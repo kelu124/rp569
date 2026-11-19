@@ -29,10 +29,22 @@ All requested by the user, 2026-10-23.
 | R-16 | USB3 Micro-B with through-hole legs, for a firm mechanical hold | met | Amphenol GSB343K33HR, project footprint (D-013) |
 | R-17 | The RP2350 can put the CH569 in its bootloader the same way as the BOOT button | met | Checked on the netlist, sequence in D-004 |
 | R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | met (v1.0 files) | D-014, D-016, D-022; `hardware/jlcpcb/` (gerbers, BOM, CPL); 2 parts must be consigned |
+| R-19 | CH569 exposes the SD card (FAT32) as a USB drive **and** a serial port to the host; the RP2350 keeps its own USB identity so the host (and Claude) can tell the two apart | met at USB2 on board #1 (USB3 not reached yet) | D-026; RP2350 `2e8a:0009` "rp569 RP2350B", CH569 `1a86:fe2c` "rp569 CH569" (D-025) |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
+
+## D-026 — CH569 USB2 fallback = the same composite as USB3; link UART rate fixed (status: accepted, 2026-11-19)
+Context: board #1 only reaches high-speed, where the vendor USB2 stack was drive-only ("WCH USB2.0 DEVICE", no
+serial number), so no serial port and no python discovery (R-19). Choice: `CH56x_usb20.c` rewritten with the
+SuperSpeed layout: IF0 MSC (EP 0x82/0x03), IAD IF1/IF2 link CDC (0x81, 0x84/0x04), IAD IF3/IF4 console CDC (0x85,
+0x86/0x06), class EF/02/01, same product string and serial; CDC pumps shared, register set chosen by `Link_Sta`.
+UART1 stays at 115200 whatever line coding the host sets (`LINK_FOLLOW_HOST_BAUD 0`): cdc_acm/ModemManager set
+9600 on open and the RP2350 side is fixed (`LINK_BAUD`). Alternatives: wch-ch56x-lib USB2 stack (new dependency,
+bigger change); drive-only USB2 and serial on USB3 only (no serial port with a USB2 cable or port, which is what we
+have today). Sources: CH56xSFR.h USB device registers (`R8_UEPn_*`, `R32_UEPn_*_DMA`), USB CDC 1.10 / IAD ECN,
+`CH56x_usb30.c` for the layout.
 
 ## D-025 — Host python library, version scheme, sync hooks (status: accepted, 2026-10-24)
 Requested by user. `python/rp569` (pyserial): ports found by role from VID/PID + product string ("rp569 RP2350B" on

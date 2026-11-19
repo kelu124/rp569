@@ -43,6 +43,7 @@ JLCPCB production files generated. Not fabricated yet. First firmware for both c
 | [Layout and routing](layout.md) | How the KiCad files are generated, placement, net classes, routing (Freerouting / KiCadRoutingTools) |
 | [Bill of materials](bom.md) | JLCPCB parts with LCSC numbers, stock, consigned parts |
 | [Production](production.md) | Ordering at JLCPCB: files, settings, checklist |
+| [Toolchain and setup](toolchain.md) | Build/flash tools, udev rules, CH569 bootloader quirks, how to update each tool |
 | [Images](images/) | 3D renders, layer plots, assembly views |
 | [CH569 hardware notes](ch569-hardware-notes.md) | Notes from the CH569 datasheet and reference designs |
 | [Hackaday drafts](hadposts/) | Project-log drafts |

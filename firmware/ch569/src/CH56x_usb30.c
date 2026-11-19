@@ -628,8 +628,8 @@ UINT16 EP0_OUT_Callback(void)
 {
     if(SetupReqCode == CDC_SET_LINE_CODING && SetupReqIface == 1)
     {
-        /* Bridge port only: apply the host's baud to the real FPGA UART.
-         * The debug port (IF3) accepts line coding but drives no UART. */
+        /* Link port only (the debug port IF3 drives no UART). Applied only with
+         * LINK_FOLLOW_HOST_BAUD; otherwise UART1 keeps the RP2350's fixed rate. */
         UINT32 baudrate;
 
         baudrate = endp0RTbuff[0];
@@ -637,14 +637,17 @@ UINT16 EP0_OUT_Callback(void)
         baudrate += ((UINT32)endp0RTbuff[2] << 16);
         baudrate += ((UINT32)endp0RTbuff[3] << 24);
 
-        cdc_line_coding.dwDTERate   = baudrate;
+#if LINK_FOLLOW_HOST_BAUD
         cdc_line_coding.bCharFormat = endp0RTbuff[4];
         cdc_line_coding.bParityType = endp0RTbuff[5];
         cdc_line_coding.bDataBits   = endp0RTbuff[6];
 
-        CDC_Uart_Init(baudrate);
+        CDC_Uart_Init(baudrate);                 /* sets cdc_line_coding.dwDTERate */
         PRINT("CDC: line coding %ld baud\n", baudrate);
         while(!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
+#else
+        (void)baudrate;                          /* UART1 stays at LINK_UART_DEFAULT_BAUD (bridge_config.h) */
+#endif
     }
     return 0;
 }
@@ -676,7 +679,7 @@ void USBSS_IRQHandler(void)
  * @fn      TMR0_IRQHandler
  *
  * @brief   USB3 link-training timeout -> fall back to the USB2 device stack.
- *          NOTE: the USB2 fallback exposes the MSC function only (no CDC).
+ *          The USB2 fallback has the same composite layout (CH56x_usb20.c).
  ******************************************************************************/
 void TMR0_IRQHandler()
 {
@@ -699,7 +702,7 @@ void TMR0_IRQHandler()
         R32_USB_CONTROL = 0;
         PFIC_EnableIRQ(USBHS_IRQn);
         USB20_Device_Init(ENABLE);
-        PRINT("USB2.0 fallback (MSC only)\n");
+        PRINT("USB2.0 fallback (drive + serial ports)\n");
     }
     Link_Sta = LINK_STA_1;
     R8_TMR0_INTER_EN = 0;

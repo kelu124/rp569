@@ -69,7 +69,7 @@ S_SOURCES := sdk/Startup/startup_CH56x.S
 OBJECTS := $(addprefix $(BUILD)/,$(C_SOURCES:.c=.o)) \
            $(addprefix $(BUILD)/,$(S_SOURCES:.S=.o))
 
-.PHONY: all clean check check-includes size FORCE
+.PHONY: all clean check check-includes check-mem size FORCE
 
 # fw_version.h is rewritten only when the version or the git hash changes (no needless rebuilds)
 $(BUILD)/generated/fw_version.h: version.yaml FORCE
@@ -80,7 +80,7 @@ $(BUILD)/generated/fw_version.h: version.yaml FORCE
 
 $(BUILD)/src/console.o $(BUILD)/src/Main.o: $(BUILD)/generated/fw_version.h
 
-all: check-includes $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).bin $(BUILD)/$(TARGET).hex size
+all: check-includes $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).bin $(BUILD)/$(TARGET).hex size check-mem
 
 # Always run first: catches case-mismatched #includes that a case-insensitive
 # host FS (Windows/macOS) would hide but a Linux build would choke on.
@@ -107,9 +107,13 @@ $(BUILD)/$(TARGET).hex: $(BUILD)/$(TARGET).elf
 size: $(BUILD)/$(TARGET).elf
 	$(SIZE) $<
 
+# RAMX use vs the RAMX the flasher leaves for this image size (USER_MEM, see tools/check_mem.py).
+check-mem: $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).bin
+	python3 tools/check_mem.py $^
+
 # Static checks (no hardware needed): include-case (catches case-sensitive-FS
 # build breaks) + USB-descriptor consistency.
-check: check-includes
+check: check-includes check-mem
 	python3 tools/check_descriptors.py src/CH56x_usb30.c src/CH56x_usb20.c
 
 clean:

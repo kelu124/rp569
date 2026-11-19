@@ -221,6 +221,26 @@ static void cmd_ch_boot(int argc, char **argv, char *rest) { ch_power_on(true); 
 static void cmd_ch_reset(int argc, char **argv, char *rest) { ch_reset_pulse(); }
 static void cmd_ch_status(int argc, char **argv, char *rest) { ch_status(); }
 
+// Bring-up probe of the CH569 -> RP2350 UART line (GPIO25 <- PA8 TXD1): read it with the pull-up, then with the
+// pull-down. A pin the CH569 drives keeps its level; an open line follows the pull.
+static int link_rx_level(bool pull_up) {
+    gpio_set_pulls(RP569_LINK_RX_PIN, pull_up, !pull_up);
+    sleep_ms(2);
+    return gpio_get(RP569_LINK_RX_PIN);
+}
+
+static void cmd_ch_pins(int argc, char **argv, char *rest) {
+    gpio_init(RP569_LINK_RX_PIN);         // SIO input for the probe
+    int pu = link_rx_level(true), pd = link_rx_level(false);
+    const char *what = pu && pd ? "driven high (UART idle)" : !pu && !pd ? "driven low" : "open (follows the pull)";
+    printf("UART_CH2RP GPIO%d pull-up %d pull-down %d: %s\n", RP569_LINK_RX_PIN, pu, pd, what);
+    gpio_disable_pulls(RP569_LINK_RX_PIN);
+    if (ch_powered) {
+        gpio_set_function(RP569_LINK_RX_PIN, UART_FUNCSEL_NUM(link_uart, RP569_LINK_RX_PIN));
+        gpio_pull_up(RP569_LINK_RX_PIN);
+    }
+}
+
 static void cmd_ch_send(int argc, char **argv, char *rest) {
     if (rest && *rest)
         ch_send(rest);
@@ -251,6 +271,7 @@ static const command_t commands[] = {
     {"ch boot",   "",                "power-cycle the CH569 into its USB bootloader (~10 s)",           cmd_ch_boot},
     {"ch reset",  "",                "pulse RST# (only with RESET_EN set in the CH569)",                cmd_ch_reset},
     {"ch status", "",                "CH569 power, fault flag, rails",                                  cmd_ch_status},
+    {"ch pins",   "",                "probe the CH569 -> RP2350 UART line (driven / open)",             cmd_ch_pins},
     {"ch send",   "<text>",          "send a line to the CH569 over the link UART (it echoes it back)", cmd_ch_send},
 };
 // COMMANDS-END
@@ -322,7 +343,9 @@ static void cli_poll(void) {
 static void link_poll(void) {
     while (ch_powered && uart_is_readable(link_uart)) {
         char c = uart_getc(link_uart);
-        if (c == '\r')
+        // Skip '\r' and anything non-printable: the line glitches while the CH569 boots and the UART reads that as
+        // a 0x00 byte, which would truncate the printf below and blank the first echoed line.
+        if (c != '\n' && !isprint((unsigned char)c))
             continue;
         if (c != '\n' && ch_len < LINE_MAX - 1) {
             ch_line[ch_len++] = c;

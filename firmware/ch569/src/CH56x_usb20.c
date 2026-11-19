@@ -14,6 +14,10 @@
 #include "CH56xusb30_LIB.h"   /* exact case: Linux/GCC builds are case-sensitive */
 #include "SW_UDISK.h"
 #include "bridge_config.h"
+#include "cdc_uart.h"
+#include "console.h"
+#include "debug_cdc.h"
+#include "ownership.h"
 
 /* Global Variable */
 UINT16V  U20_EndpnMaxSize = 512;
@@ -23,22 +27,28 @@ UINT32V seq_num = 0;
 DevInfo_Typedef  g_devInfo;
 static UINT8V SetupReqType = 0;    //Host request descriptor type
 static UINT8V SetupReq = 0;        //Host request descriptor type
+static UINT8V SetupIface = 0;      //Interface of the pending CDC SET_LINE_CODING
 static PUINT8 pDescr;
 
 __attribute__ ((aligned(16))) UINT8 vendor_buff[16]  __attribute__((section(".DMADATA")));
+/* CDC notification endpoints (EP1, EP5): never sent, NAKed; DMA needs a buffer. */
+__attribute__ ((aligned(16))) static UINT8 u20_notify_buff[16]  __attribute__((section(".DMADATA")));
 /* Function declaration.
  * Plain interrupt attribute: upstream GCC ignores "WCH-Interrupt-fast". */
 void USBHS_IRQHandler(void) __attribute__((interrupt));
 
+/* High-speed composite, same layout as the SuperSpeed one (CH56x_usb30.c) so the host library finds the same
+ * interfaces at either speed: IF0 = MSC (SD card), IAD(IF1 + IF2) = CDC bridged to the RP2350 link UART,
+ * IAD(IF3 + IF4) = CDC debug console (DEBUG_OVER_USB). Same VID/PID, product string and UID serial. */
 const UINT8 hs_device_descriptor[] =
 {
     0x12,   // bLength
     0x01,   // DEVICE descriptor type
-    0x00,   // 2.00
+    0x00,   // bcdUSB 2.00
     0x02,
-    0x00,   // device class
-    0x00,   // device sub-class
-    0x00,   // vendor specific protocol
+    0xEF,   // bDeviceClass: Miscellaneous
+    0x02,   // bDeviceSubClass: Common Class
+    0x01,   // bDeviceProtocol: Interface Association Descriptor
     0x40,   // max packet size 64B
     BRIDGE_USB_VID_L, BRIDGE_USB_VID_H,
     BRIDGE_USB_PID_L, BRIDGE_USB_PID_H,
@@ -46,49 +56,56 @@ const UINT8 hs_device_descriptor[] =
     0x11,
     0x01,   // manufacturer index string
     0x02,   // product index string
-    0x00,   // serial number index string
+    0x03,   // serial number index string (chip UID)
     0x01    // number of configurations
 };
 
 const UINT8 hs_config_descriptor[] =
 {
-        /* Configuration Descriptor */
-        0x09,                                                                        // bLength
-        0x02,                                                                        // bDescriptorType (Configuration)
-        0x20, 0x00,                                                                  // wTotalLength 32
-        0x01,                                                                        // bNumInterfaces 1
-        0x01,                                                                        // bConfigurationValue
-        0x00,                                                                        // iConfiguration (String Index)
-        0xC0,                                                                        // bmAttributes Self Powered
-        0x32,                                                                        // bMaxPower 100mA
+    /* Configuration Descriptor */
+    0x09,                  // bLength
+    0x02,                  // bDescriptorType (Configuration)
+    HS_SIZE_CONFIG_DESC & 0xFF, (HS_SIZE_CONFIG_DESC >> 8) & 0xFF,   // wTotalLength
+    BRIDGE_NUM_INTERFACES, // bNumInterfaces (3, or 5 with the debug CDC)
+    0x01,                  // bConfigurationValue
+    0x00,                  // iConfiguration (String Index)
+    0xC0,                  // bmAttributes Self Powered
+    0x32,                  // bMaxPower 100mA
 
-        /*****************************************************************/
-        /* Interface Descriptor(UDisk) */
-        0x09,                                                                        // bLength
-        0x04,                                                                        // bDescriptorType (Interface)
-        0x00,                                                                        // bInterfaceNumber 0
-        0x00,                                                                        // bAlternateSetting
-        0x02,                                                                        // bNumEndpoints 2
-        0x08,                                                                        // bInterfaceClass
-        0x06,                                                                        // bInterfaceSubClass
-        0x50,                                                                        // bInterfaceProtocol
-        0x00,                                                                        // iInterface (String Index)
+    /* ---------------- Interface 0: Mass Storage (SD card) --------------- */
+    0x09, 0x04, 0x00, 0x00, 0x02, 0x08, 0x06, 0x50, 0x00,
+    0x07, 0x05, 0x82, 0x02, 0x00, 0x02, 0x00,   // EP2 IN  bulk 512
+    0x07, 0x05, 0x03, 0x02, 0x00, 0x02, 0x00,   // EP3 OUT bulk 512
 
-        /* Endpoint Descriptor */
-        0x07,                                                                        // bLength
-        0x05,                                                                        // bDescriptorType (Endpoint)
-        0x82,                                                                        // bEndpointAddress (IN/D2H)
-        0x02,                                                                        // bmAttributes (Bulk)
-        0x00, 0x02,                                                                  // wMaxPacketSize 512
-        0x00,                                                                        // bInterval 0 (unit depends on device speed)
+    /* ------------- Interface Association: CDC (IF1 + IF2) --------------- */
+    0x08, 0x0B, 0x01, 0x02, 0x02, 0x02, 0x01, 0x00,
+    /* Interface 1: CDC Communications (control) */
+    0x09, 0x04, 0x01, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
+    0x05, 0x24, 0x00, 0x10, 0x01,               // Header, bcdCDC 1.10
+    0x05, 0x24, 0x01, 0x00, 0x02,               // Call Mgmt, data IF 2
+    0x04, 0x24, 0x02, 0x02,                     // ACM, line coding + serial state
+    0x05, 0x24, 0x06, 0x01, 0x02,               // Union, master IF1, slave IF2
+    0x07, 0x05, 0x81, 0x03, 0x10, 0x00, 0x08,   // EP1 IN interrupt 16B, 16 ms
+    /* Interface 2: CDC Data */
+    0x09, 0x04, 0x02, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
+    0x07, 0x05, 0x84, 0x02, 0x00, 0x02, 0x00,   // EP4 IN  bulk 512
+    0x07, 0x05, 0x04, 0x02, 0x00, 0x02, 0x00,   // EP4 OUT bulk 512
 
-        /* Endpoint Descriptor */
-        0x07,                                                                        // bLength
-        0x05,                                                                        // bDescriptorType (Endpoint)
-        0x03,                                                                        // bEndpointAddress (OUT/H2D)
-        0x02,                                                                        // bmAttributes (Bulk)
-        0x00, 0x02,                                                                  // wMaxPacketSize 512
-        0x00,                                                                        // bInterval 0 (unit depends on device speed)
+#if DEBUG_OVER_USB
+    /* ------------- Interface Association: CDC debug console (IF3 + IF4) - */
+    0x08, 0x0B, 0x03, 0x02, 0x02, 0x02, 0x01, 0x00,
+    /* Interface 3: CDC Communications (debug control) */
+    0x09, 0x04, 0x03, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
+    0x05, 0x24, 0x00, 0x10, 0x01,               // Header
+    0x05, 0x24, 0x01, 0x00, 0x04,               // Call Mgmt, data IF 4
+    0x04, 0x24, 0x02, 0x02,                     // ACM
+    0x05, 0x24, 0x06, 0x03, 0x04,               // Union, master IF3, slave IF4
+    0x07, 0x05, 0x85, 0x03, 0x10, 0x00, 0x08,   // EP5 IN interrupt 16B, 16 ms
+    /* Interface 4: CDC Data (debug) */
+    0x09, 0x04, 0x04, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
+    0x07, 0x05, 0x86, 0x02, 0x00, 0x02, 0x00,   // EP6 IN  bulk 512 (log + console replies)
+    0x07, 0x05, 0x06, 0x02, 0x00, 0x02, 0x00    // EP6 OUT bulk 512 (console input)
+#endif
 };
 
 /* Language Descriptor */
@@ -111,31 +128,6 @@ const UINT8 hs_string_descriptor1[] =
     0x00,
     'H',
     0x00
-};
-
-/* Product Descriptor */
-const UINT8 hs_string_descriptor2[]=
-{
-    38,         //38 bytes
-    0x03,       //0x03
-    0x57, 0x00, //W
-    0x43, 0x00, //C
-    0x48, 0x00, //H
-    0x20, 0x00, //
-    0x55, 0x00, //U
-    0x53, 0x00, //S
-    0x42, 0x00, //B
-    0x32, 0x00, //2
-    0x2e, 0x00, //.
-    0x30, 0x00, //0
-    0x20, 0x00, //
-    0x44, 0x00, //D
-    0x45, 0x00, //E
-    0x56, 0x00, //V
-    0x49, 0x00, //I
-    0x43, 0x00, //C
-    0x45, 0x00, //E
-    0x20, 0x00  //
 };
 
 const UINT8 hs_bos_descriptor[] =
@@ -166,7 +158,111 @@ const UINT8 hs_bos_descriptor[] =
     0x07
 };
 
+/* CDC interfaces that take line-coding requests: IF1 (RP2350 link), IF3 (debug console). */
+static UINT8 u20_cdc_iface(UINT8 iface)
+{
+    return iface == 1 || (DEBUG_OVER_USB && iface == 3);
+}
 
+/* Endpoint control registers by number (only the endpoints this device uses). */
+static volatile UINT8 *u20_tx_ctrl(UINT8 n)
+{
+    switch(n)
+    {
+        case 1: return &R8_UEP1_TX_CTRL;
+        case 2: return &R8_UEP2_TX_CTRL;
+        case 4: return &R8_UEP4_TX_CTRL;
+#if DEBUG_OVER_USB
+        case 5: return &R8_UEP5_TX_CTRL;
+        case 6: return &R8_UEP6_TX_CTRL;
+#endif
+    }
+    return 0;
+}
+
+static volatile UINT8 *u20_rx_ctrl(UINT8 n)
+{
+    switch(n)
+    {
+        case 3: return &R8_UEP3_RX_CTRL;
+        case 4: return &R8_UEP4_RX_CTRL;
+#if DEBUG_OVER_USB
+        case 6: return &R8_UEP6_RX_CTRL;
+#endif
+    }
+    return 0;
+}
+
+/* CLEAR_FEATURE(ENDPOINT_HALT): reset the toggle to DATA0, keep auto-toggle, and restart the function's state on
+ * that endpoint (MSC: send a pending CSW, the host expects it after clearing a bulk-IN stall). 0 = ok. */
+static UINT8 u20_clear_halt(UINT8 ep)
+{
+    UINT8 n = ep & 0x0F;
+    volatile UINT8 *ctrl = (ep & 0x80) ? u20_tx_ctrl(n) : u20_rx_ctrl(n);
+    if(!ctrl)
+        return 1;
+    if(ep & 0x80)
+    {
+        *ctrl = UEP_T_RES_NAK | RB_UEP_T_TOG_0 | RB_UEP_T_AUTOTOG;
+        if(n == 2)
+        {
+            R16_UEP2_T_LEN = 0;
+            if(Udisk_Transfer_Status & DEF_UDISK_CSW_UP_FLAG)
+                UDISK_Up_CSW();
+        }
+        else if(n == 4)
+            UploadPoint4_Busy = 0;
+#if DEBUG_OVER_USB
+        else if(n == 6)
+            DebugUpload_Busy = 0;
+#endif
+    }
+    else
+    {
+        if(n == 3)
+            R32_UEP3_RX_DMA = (UINT32)(UINT8 *)UDisk_Out_Buf;
+        else if(n == 4)
+        {
+            R32_UEP4_RX_DMA = (UINT32)(UINT8 *)endp4Rxbuff;
+            USBByteCount = 0;
+            USBBufOutPoint = 0;
+            DownloadPoint4_Busy = 1;
+        }
+#if DEBUG_OVER_USB
+        else if(n == 6)
+            R32_UEP6_RX_DMA = (UINT32)(UINT8 *)endp6Rxbuff;
+#endif
+        *ctrl = UEP_R_RES_ACK | RB_UEP_R_TOG_0 | RB_UEP_R_AUTOTOG;
+    }
+    return 0;
+}
+
+static UINT8 u20_set_halt(UINT8 ep)
+{
+    UINT8 n = ep & 0x0F;
+    volatile UINT8 *ctrl = (ep & 0x80) ? u20_tx_ctrl(n) : u20_rx_ctrl(n);
+    if(!ctrl)
+        return 1;
+    if(ep & 0x80)
+        *ctrl = (*ctrl & ~RB_UEP_TRES_MASK) | UEP_T_RES_STALL;
+    else
+        *ctrl = (*ctrl & ~RB_UEP_RRES_MASK) | UEP_R_RES_STALL;
+    return 0;
+}
+
+/* 1 = halted, 0 = not, 0xFF = no such endpoint */
+static UINT8 u20_halted(UINT8 ep)
+{
+    UINT8 n = ep & 0x0F;
+    if(n == 0)
+        return 0;
+    volatile UINT8 *ctrl = (ep & 0x80) ? u20_tx_ctrl(n) : u20_rx_ctrl(n);
+    if(!ctrl)
+        return 0xFF;
+    if(ep & 0x80)
+        return (*ctrl & RB_UEP_TRES_MASK) == UEP_T_RES_STALL;
+    return (*ctrl & RB_UEP_RRES_MASK) == UEP_R_RES_STALL;
+}
 
 /*******************************************************************************
  * @fn     USB20_Endp_Init
@@ -177,11 +273,17 @@ const UINT8 hs_bos_descriptor[] =
  */
 void USB20_Endp_Init ( )	// USBHS device endpoint initial
 {
+    R8_UEP4_1_MOD = RB_UEP1_TX_EN | RB_UEP4_TX_EN | RB_UEP4_RX_EN;
     R8_UEP2_3_MOD = RB_UEP2_TX_EN | RB_UEP3_RX_EN;
+#if DEBUG_OVER_USB
+    R8_UEP5_6_MOD = RB_UEP5_TX_EN | RB_UEP6_TX_EN | RB_UEP6_RX_EN;
+#endif
 
     R16_UEP0_MAX_LEN = 64;
+    R16_UEP1_MAX_LEN = 16;
     R16_UEP2_MAX_LEN = 512;
     R16_UEP3_MAX_LEN = 512;
+    R16_UEP4_MAX_LEN = 512;
 
     R32_UEP0_RT_DMA = (UINT32)(UINT8 *)endp0RTbuff;
 
@@ -195,6 +297,33 @@ void USB20_Endp_Init ( )	// USBHS device endpoint initial
     R16_UEP2_T_LEN = U20_MAXPACKET_LEN;
     R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_AUTOTOG;
     R8_UEP3_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_AUTOTOG;
+
+    /* CDC #1 (RP2350 link): EP1 notify never sends, EP4 IN idle, EP4 OUT armed */
+    CDC_Variable_Clear();
+    R32_UEP1_TX_DMA = (UINT32)(UINT8 *)u20_notify_buff;
+    R16_UEP1_T_LEN = 0;
+    R8_UEP1_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_AUTOTOG;
+    R32_UEP4_TX_DMA = (UINT32)(UINT8 *)endp4Txbuff;
+    R32_UEP4_RX_DMA = (UINT32)(UINT8 *)endp4Rxbuff;
+    R16_UEP4_T_LEN = 0;
+    R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_AUTOTOG;
+    R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_AUTOTOG;
+    DownloadPoint4_Busy = 1;
+
+#if DEBUG_OVER_USB
+    /* CDC #2 (debug console): EP5 notify never sends, EP6 IN idle, EP6 OUT armed */
+    R16_UEP5_MAX_LEN = 16;
+    R16_UEP6_MAX_LEN = 512;
+    R32_UEP5_TX_DMA = (UINT32)(UINT8 *)u20_notify_buff;
+    R16_UEP5_T_LEN = 0;
+    R8_UEP5_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_AUTOTOG;
+    R32_UEP6_TX_DMA = (UINT32)(UINT8 *)endp6Txbuff;
+    R32_UEP6_RX_DMA = (UINT32)(UINT8 *)endp6Rxbuff;
+    R16_UEP6_T_LEN = 0;
+    R8_UEP6_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_AUTOTOG;
+    R8_UEP6_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_AUTOTOG;
+    debug_cdc_clear();
+#endif
 }
 
 /*******************************************************************************
@@ -247,26 +376,89 @@ void USB20_Device_Setaddress( UINT32 address )
 UINT16 U20_NonStandard_Request_Deal()
 {
   UINT16 len = 0;
+  UINT8 iface = UsbSetupBuf->wIndexL;
 
-  /* MSC class requests (the USB2 fallback exposes the MSC function only) */
+  SetupLen = 0;
+  if((SetupReqType & USB_REQ_TYP_MASK) == USB_REQ_TYP_VENDOR)
+  {
+      /* Out-of-band SD ownership control, as on USB3 (bridge_config.h) */
+      switch(SetupReq)
+      {
+        case BRIDGE_REQ_SD_OWNER:
+            switch(UsbSetupBuf->wValueL)
+            {
+                case 0:  ownership_request(OWN_REQ_RELEASE); break;
+                case 1:  ownership_request(OWN_REQ_CLAIM);   break;
+                default: ownership_request(OWN_REQ_TOGGLE);  break;
+            }
+            return 0;
+        case BRIDGE_REQ_SD_STATUS:
+            endp0RTbuff[0] = (own_ch569_owns ? 0x01 : 0x00) | (own_card_ready ? 0x02 : 0x00);
+            return 1;
+        default:
+            return USB_DESCR_UNSUPPORTED;
+      }
+  }
+
+  /* Class requests: MSC on IF0, CDC-ACM on IF1 (link) and IF3 (console) */
   switch( SetupReq )
   {
     case CMD_UDISK_GET_MAX_LUN:
+        if(iface != 0)
+            return USB_DESCR_UNSUPPORTED;
         endp0RTbuff[ 0 ] = 0;                     /* single LUN */
         len = 1;
         break;
     case CMD_UDISK_RESET:
+        if(iface != 0)
+            return USB_DESCR_UNSUPPORTED;
         Udisk_Sense_Key = 0x00;
         Udisk_Sense_ASC = 0x00;
         Udisk_CSW_Status = 0x00;
         Udisk_Transfer_Status = 0x00;
         UDISK_Transfer_DataLen = 0x00;
         break;
+    case CDC_SET_LINE_CODING:                     /* 7 bytes follow on EP0 OUT */
+        if(!u20_cdc_iface(iface))
+            return USB_DESCR_UNSUPPORTED;
+        SetupIface = iface;
+        SetupLen = SetupReqLen;
+        break;
+    case CDC_GET_LINE_CODING:
+        if(!u20_cdc_iface(iface))
+            return USB_DESCR_UNSUPPORTED;
+        memcpy(endp0RTbuff, &cdc_line_coding, 7);
+        len = SetupReqLen < 7 ? SetupReqLen : 7;
+        break;
+    case CDC_SET_CONTROL_LINE_STATE:              /* DTR/RTS: accept */
+        if(!u20_cdc_iface(iface))
+            return USB_DESCR_UNSUPPORTED;
+        break;
     default:
         len = USB_DESCR_UNSUPPORTED;              /* stall unknown requests */
         break;
   }
   return len;
+}
+
+/* EP0 OUT data stage complete: CDC line coding. Only the link port (IF1) has a real UART behind it, and only
+ * LINK_FOLLOW_HOST_BAUD lets the host change its rate (bridge_config.h). */
+static void u20_ep0_out_done(void)
+{
+    if(SetupReq == CDC_SET_LINE_CODING && SetupIface == 1)
+    {
+        UINT32 baudrate = endp0RTbuff[0] | ((UINT32)endp0RTbuff[1] << 8) |
+                          ((UINT32)endp0RTbuff[2] << 16) | ((UINT32)endp0RTbuff[3] << 24);
+#if LINK_FOLLOW_HOST_BAUD
+        cdc_line_coding.bCharFormat = endp0RTbuff[4];
+        cdc_line_coding.bParityType = endp0RTbuff[5];
+        cdc_line_coding.bDataBits   = endp0RTbuff[6];
+        if(baudrate)
+            CDC_Uart_Init(baudrate);              /* sets cdc_line_coding.dwDTERate */
+#else
+        (void)baudrate;                           /* UART1 stays at LINK_UART_DEFAULT_BAUD */
+#endif
+    }
 }
 
 /*******************************************************************************
@@ -308,11 +500,13 @@ UINT16 U20_Standard_Request_Deal()
                         pDescr = (UINT8 *)hs_string_descriptor1;
                         SetupLen = ( SetupReqLen > sizeof(hs_string_descriptor1) )? sizeof(hs_string_descriptor1):SetupReqLen;
                         break;
-                    case USB_DESCR_PRODUCT_STRING:
-                        pDescr =(UINT8 *) hs_string_descriptor2;
-                        SetupLen = ( SetupReqLen > sizeof(hs_string_descriptor2) )? sizeof(hs_string_descriptor2):SetupReqLen;;
+                    case USB_DESCR_PRODUCT_STRING:      /* "rp569 CH569", shared with USB3 */
+                        pDescr = (UINT8 *)StringProduct;
+                        SetupLen = ( SetupReqLen > StringProduct[0] )? StringProduct[0]:SetupReqLen;
                         break;
-                    case USB_DESCR_SERIAL_STRING:
+                    case USB_DESCR_SERIAL_STRING:       /* chip UID, shared with USB3 */
+                        pDescr = (UINT8 *)StringSerial;
+                        SetupLen = ( SetupReqLen > StringSerial[0] )? StringSerial[0]:SetupReqLen;
                         break;
                     default:
                         SetupLen = USB_DESCR_UNSUPPORTED;
@@ -352,26 +546,8 @@ UINT16 U20_Standard_Request_Deal()
     case USB_CLEAR_FEATURE:
         if( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )
         {
-            switch( UsbSetupBuf->wIndexL )
-            {
-                case 0x82:
-                    R16_UEP2_T_LEN= 0;
-                    R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
-                    break;
-                case 0x02:
-                    R8_UEP2_TX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
-                    break;
-                case 0x81:
-                    R16_UEP1_T_LEN = 0;
-                    R8_UEP1_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
-                    break;
-                case 0x01:
-                    R8_UEP1_RX_CTRL = UEP_T_RES_ACK | RB_UEP_R_TOG_0;
-                    break;
-                default:
-                    SetupLen = USB_DESCR_UNSUPPORTED;
-                    break;
-            }
+            if( u20_clear_halt( UsbSetupBuf->wIndexL ) )
+                SetupLen = USB_DESCR_UNSUPPORTED;
         }
         else if( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_DEVICE )
         {
@@ -388,53 +564,15 @@ UINT16 U20_Standard_Request_Deal()
     case USB_SET_FEATURE:
         if( ( UsbSetupBuf->bRequestType & 0x1F ) == 0x00 )
         {
-            if( UsbSetupBuf->wValueL == 0x01 )
-            {
-                if( hs_config_descriptor[ 7 ] & 0x20 )
-                {
-                    g_devInfo.dev_sleep_status = 0x01;
-                }
-                else
-                {
-                    SetupLen = USB_DESCR_UNSUPPORTED;
-                }
-            }
+            if( UsbSetupBuf->wValueL == 0x01 && ( hs_config_descriptor[ 7 ] & 0x20 ) )
+                g_devInfo.dev_sleep_status = 0x01;
             else
-            {
                 SetupLen = USB_DESCR_UNSUPPORTED;
-            }
         }
-        else if( ( UsbSetupBuf->bRequestType & 0x1F ) == 0x02 )
+        else if( ( UsbSetupBuf->bRequestType & 0x1F ) == 0x02 && UsbSetupBuf->wValueL == 0x00 )
         {
-            if( UsbSetupBuf->wValueL == 0x00 )
-            {
-                switch( UsbSetupBuf->wIndexL )
-                {
-                    case 0x82:
-                        R8_UEP2_TX_CTRL = ( R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK ) | UEP_T_RES_STALL;
-                        break;
-
-                    case 0x02:
-                        R8_UEP2_RX_CTRL = ( R8_UEP2_RX_CTRL & ~RB_UEP_RRES_MASK ) | UEP_R_RES_STALL;
-                        break;
-
-                    case 0x81:
-                        R8_UEP1_TX_CTRL = ( R8_UEP1_TX_CTRL & ~RB_UEP_TRES_MASK ) | UEP_T_RES_STALL;
-                        break;
-
-                    case 0x01:
-                        R8_UEP1_RX_CTRL = ( R8_UEP1_RX_CTRL & ~RB_UEP_RRES_MASK ) | UEP_R_RES_STALL;
-                        break;
-
-                    default:
-                        SetupLen = USB_DESCR_UNSUPPORTED;
-                        break;
-                }
-            }
-            else
-            {
+            if( u20_set_halt( UsbSetupBuf->wIndexL ) )
                 SetupLen = USB_DESCR_UNSUPPORTED;
-            }
         }
         else
         {
@@ -449,37 +587,13 @@ UINT16 U20_Standard_Request_Deal()
         endp0RTbuff[ 0 ] = 0x00;
         endp0RTbuff[ 1 ] = 0x00;
         SetupLen = 2;
-        if( UsbSetupBuf->wIndexL == 0x81 )
+        if( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )
         {
-            if( ( R8_UEP1_TX_CTRL & RB_UEP_TRES_MASK ) == UEP_T_RES_STALL )
-            {
-                endp0RTbuff[ 0 ] = 0x01;
-                SetupLen = 1;
-            }
-        }
-        else if( UsbSetupBuf->wIndexL == 0x01 )
-        {
-            if( ( R8_UEP1_RX_CTRL & RB_UEP_RRES_MASK ) == UEP_R_RES_STALL )
-            {
-                endp0RTbuff[ 0 ] = 0x01;
-                SetupLen = 1;
-            }
-        }
-        else if( UsbSetupBuf->wIndexL == 0x82 )
-        {
-            if( ( R8_UEP2_TX_CTRL & RB_UEP_TRES_MASK ) == UEP_T_RES_STALL )
-            {
-                endp0RTbuff[ 0 ] = 0x01;
-                SetupLen = 1;
-            }
-        }
-        else if( UsbSetupBuf->wIndexL == 0x02 )
-        {
-            if( ( R8_UEP2_RX_CTRL & RB_UEP_RRES_MASK ) == UEP_R_RES_STALL )
-            {
-                endp0RTbuff[ 0 ] = 0x01;
-                SetupLen = 1;
-            }
+            UINT8 h = u20_halted( UsbSetupBuf->wIndexL );
+            if( h == 0xFF )
+                SetupLen = USB_DESCR_UNSUPPORTED;
+            else
+                endp0RTbuff[ 0 ] = h;
         }
         break;
     default:
@@ -592,6 +706,7 @@ void USBHS_IRQHandler(void)			                                //USBHS interrupt 
                     }
                     else
                     {
+                        u20_ep0_out_done();
                         R16_UEP0_T_LEN = 0;
                         R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
                         R8_UEP0_RX_CTRL = 0 ;
@@ -623,11 +738,40 @@ void USBHS_IRQHandler(void)			                                //USBHS interrupt 
                    }
                }
 		       break;
-           case 4:
+           case 4:                                       /* CDC #1: RP2350 link */
+                if( rx_token == PID_IN )
+                {
+                    R8_UEP4_TX_CTRL = (R8_UEP4_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
+                    UploadPoint4_Busy = 0;
+                }
+                else if( rx_token == PID_OUT )
+                {
+                    if( R8_USB_INT_ST & RB_USB_ST_TOGOK )   /* else a resent packet: drop it, stay armed */
+                    {
+                        R8_UEP4_RX_CTRL = (R8_UEP4_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_NAK;
+                        USBByteCount = R16_USB_RX_LEN;
+                        USBBufOutPoint = 0;
+                        DownloadPoint4_Busy = 0;         /* cdc_uart.c drains it, then re-arms */
+                    }
+                }
                 break;
            case 5:
                 break;
-           case 6:
+           case 6:                                       /* CDC #2: debug console */
+#if DEBUG_OVER_USB
+                if( rx_token == PID_IN )
+                {
+                    R8_UEP6_TX_CTRL = (R8_UEP6_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
+                    DebugUpload_Busy = 0;
+                }
+                else if( rx_token == PID_OUT )
+                {
+                    if( R8_USB_INT_ST & RB_USB_ST_TOGOK )
+                        console_rx( endp6Rxbuff, R16_USB_RX_LEN );
+                    R32_UEP6_RX_DMA = (UINT32)(UINT8 *)endp6Rxbuff;
+                    R8_UEP6_RX_CTRL = (R8_UEP6_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
+                }
+#endif
                 break;
            case 7:
                 break;
@@ -641,6 +785,8 @@ void USBHS_IRQHandler(void)			                                //USBHS interrupt 
 	{
 		USB20_Endp_Init();
 		USB20_Device_Setaddress( 0 );
+		g_devInfo.dev_enum_status = 0;           /* CDC pumps wait for SET_CONFIGURATION */
+		g_devInfo.dev_config_value = 0;
 		R8_USB_INT_FG = RB_USB_IF_BUSRST;
         if( Link_Sta == LINK_STA_1 )
         {

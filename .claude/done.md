@@ -2,6 +2,8 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-11-19 — CH569 USB2 fallback = same composite as USB3 (drive + link CDC + console CDC, product "rp569 CH569", UID serial): rewritten `CH56x_usb20.c`, speed-aware CDC pumps, descriptor checker covers both. Fixed: MSC WRITE10 left EP3 NAKed (30 s timeout + reset per write), console prompt stuck in stdio buffer, host line coding moving UART1 to 9600. Verified on board #1: FAT32 card mounts, 32 MB write/read identical, link echo 20/20, bridge both ways.
+- 2026-11-19 — First firmware on board #1: RP2350 flashed and working (CLI, LEDs, buttons, ADC, `ch boot`/`ch cycle`); CH569 config DEBUG_EN off + download pin PA13 → PA5, flashed with wch-ch56x-isp (wchisp 0.3.0 cannot flash bootloader 2.70), unattended reflash checked; UART link echo 20/20, `ch pins` probe, 0x00 power-up glitch filtered; `check_mem.py` RAMX/USER_MEM guard in the CH569 build; udev rules; `docs/toolchain.md`. Open: CH569 enumerates at USB2 only.
 - 2026-11-14 — Licenses added, same as rp417/pic0rick: `LICENSE.txt` (TAPR OHL, hardware), `LICENSE-GPL-3.0.txt` (software), `LICENSE-CC-BY-SA-3.0.txt` (docs); License section in README and docs/index.md.
 - 2026-11-02 — Last 3 vias off passive pads (R9, C28, R48), silkscreen text; via-in-pad list empty for passives; JLCPCB files + renders regenerated.
 - 2026-11-02 — Vias off passive pads (42 → 1 inside + 2 on the edge: R9, C28, R48), last 0.1 mm microvia removed, In1 GND

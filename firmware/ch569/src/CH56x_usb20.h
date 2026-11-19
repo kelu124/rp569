@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+#include "bridge_config.h"
+
 /* Global define */
 #define U20_MAXPACKET_LEN       512
 #define U20_UEP0_MAXSIZE        64
@@ -33,11 +35,19 @@ typedef struct __attribute__((packed))
 }DevInfo_Typedef;
 
 //#define PID_SETUP	3
+
+/* High-speed composite config descriptor size (CH56x_usb20.c): config 9 + MSC 23 + one CDC function 66 each. */
+#if DEBUG_OVER_USB
+  #define HS_SIZE_CONFIG_DESC   164
+#else
+  #define HS_SIZE_CONFIG_DESC   98
+#endif
+
+extern DevInfo_Typedef g_devInfo;      /* dev_enum_status = 1 once the host set the configuration */
 extern const UINT8 hs_device_descriptor[];
 extern const UINT8 hs_config_descriptor[];
 extern const UINT8 hs_string_descriptor0[];
 extern const UINT8 hs_string_descriptor1[];
-extern const UINT8 hs_string_descriptor2[];
 extern const UINT8 hs_bos_descriptor[];
 
 void   USB20_Device_Init ( FunctionalState sta );

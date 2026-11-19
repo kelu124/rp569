@@ -17,6 +17,7 @@
  * Forked from CH569_Composite (github.com/kelu124/CH569_Composite), itself
  * derived from the WCH CH569 EVT examples (MSC_U-Disk, SimulateCDC, SD).
  *******************************************************************************/
+#include <stdio.h>
 #include "CH56x_common.h"
 #include "CH56x_usb30.h"
 #include "CH56x_usb20.h"
@@ -92,6 +93,7 @@ int main(void)
     Delay_Init(FREQ_SYS);
 
     DebugInit(DEBUG_UART_BAUD);
+    setvbuf(stdout, NULL, _IONBF, 0);   /* no stdio buffering: the console prompt has no '\n' */
     {
         char uid[2 * CHIP_UID_LEN + 1];
         chip_uid_hex(uid);

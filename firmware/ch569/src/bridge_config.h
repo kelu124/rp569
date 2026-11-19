@@ -44,9 +44,13 @@
  * timing modes, as in the WCH SD example). */
 #define SD_MOUNT_RETRIES            3
 
-/* RP2350 link (UART1) baud rate; must match LINK_BAUD in firmware/rp2350.
- * A CDC SET_LINE_CODING from the host overrides it at run time. 8N1. */
+/* RP2350 link (UART1) baud rate; must match LINK_BAUD in firmware/rp2350. 8N1. */
 #define LINK_UART_DEFAULT_BAUD      115200
+
+/* 0 = UART1 stays at LINK_UART_DEFAULT_BAUD whatever line coding the host sets on the link CDC port (the host
+ * reads the real rate back with GET_LINE_CODING). cdc_acm and ModemManager set 9600 when they open the port,
+ * which would break the link to the RP2350 (fixed at 115200). 1 = follow the host's SET_LINE_CODING. */
+#define LINK_FOLLOW_HOST_BAUD       0
 
 /* 1 = echo every byte received from the RP2350 back to it (link test). */
 #define LINK_ECHO                   1

@@ -105,6 +105,13 @@ class RP2350(PromptCLI):
         return {'power': m.group(1) == 'on', 'fault': m.group(2) == 'FAULT',
                 '3V3_CH': float(m.group(3)), 'VBUS3': float(m.group(4))}
 
+    @command('ch pins')
+    def ch_pins(self) -> dict:
+        """Probe the CH569 -> RP2350 UART line with the RP2350 pull-up then pull-down (bring-up check)."""
+        m = self._match(r'UART_CH2RP GPIO(\d+) pull-up (\d) pull-down (\d): (.+)', 'ch pins')
+        return {'gpio': int(m.group(1)), 'pull_up': int(m.group(2)), 'pull_down': int(m.group(3)),
+                'state': m.group(4).strip()}
+
     @command('ch send')
     def ch_send(self, text: str, wait_echo: bool = True, timeout: float = 1.0) -> str | None:
         """Send a line to the CH569. With wait_echo, return the line the CH569 echoed back (None if none)."""

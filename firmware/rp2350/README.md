@@ -21,6 +21,7 @@ commands:
   ch boot                  power-cycle the CH569 into its USB bootloader (~10 s)
   ch reset                 pulse RST# (only with RESET_EN set in the CH569)
   ch status                CH569 power, fault flag, rails
+  ch pins                  probe the CH569 -> RP2350 UART line (driven / open)
   ch send <text>           send a line to the CH569 over the link UART (it echoes it back)
 ```
 

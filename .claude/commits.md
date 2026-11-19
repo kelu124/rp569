@@ -6,7 +6,16 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-14 — Add licenses (TAPR OHL, GPLv3, CC BY-SA 3.0)
+## pending — 2026-11-19 — First firmware on board #1: RP2350 + CH569 bring-up, CH569 USB2 composite
+What: RP2350 `ch pins` probe (+ python `ch_pins`, test), drop non-printable link bytes (0x00 at CH569 power-up);
+CH569 `CH56x_usb20.c` rewritten as MSC + 2× CDC (D-026), speed-aware pumps in `cdc_uart.c`/`debug_cdc.c`, MSC
+WRITE10 EP3 re-arm fix (`SW_UDISK.c`), unbuffered stdout, link UART rate fixed (`bridge_config.h`),
+`tools/check_mem.py` (RAMX vs USER_MEM) and USB2 checks in `tools/check_descriptors.py`; `docs/toolchain.md`
+(tools, udev rules, flashing, CH569 DEBUG_EN/boot-pin config, updates), README/skill/spec R-19 + D-026, logs.
+Why: first hardware bring-up; R-19 (drive + serial at the speed board #1 reaches); user asked for toolchain docs
+and a RAMX guard. Open: SuperSpeed, CH569 UID read, drive speed (todo).
+
+## 03d2c0b — 2026-11-14 — Add licenses (TAPR OHL, GPLv3, CC BY-SA 3.0)
 What: `LICENSE.txt` (copied verbatim from kelu124/rp417, identical to pic0rick), `LICENSE-GPL-3.0.txt` (gnu.org),
 `LICENSE-CC-BY-SA-3.0.txt` (creativecommons.org legalcode), License + Disclaimer sections in `README.md`, License
 section in `docs/index.md`.

@@ -11,6 +11,8 @@ structure without any hardware:
     EP4 CDC), with sane wMaxPacketSize per speed
   - IAD groups the two CDC interfaces
 
+  - the USB2 (high-speed) fallback has the same interface/endpoint map
+
 Usage: check_descriptors.py <CH56x_usb30.c> <CH56x_usb20.c>
 """
 import re
@@ -133,20 +135,7 @@ def walk_config(cfg, superspeed, expected_eps):
     return interfaces, iads
 
 
-def main():
-    usb30_c, usb20_c = sys.argv[1], sys.argv[2]
-    here = usb30_c.rsplit("/", 1)[0] if "/" in usb30_c else "."
-    defines = read_defines(f"{here}/CH56x_usb30.h", f"{here}/bridge_config.h")
-    # CH56x_usb30.h defines SIZE_CONFIG_DESC / BRIDGE_NUM_INTERFACES twice under
-    # #if DEBUG_OVER_USB; pin them to the active branch so the parser is right.
-    debug_usb = defines.get("DEBUG_OVER_USB", 0)
-    defines["SIZE_CONFIG_DESC"] = 212 if debug_usb else 128
-    defines["BRIDGE_NUM_INTERFACES"] = 5 if debug_usb else 3
-    t30 = open(usb30_c, encoding="utf-8", errors="replace").read()
-    t20 = open(usb20_c, encoding="utf-8", errors="replace").read()
-
-    print("== SuperSpeed device descriptor ==")
-    dev = extract_array(t30, "SS_DeviceDescriptor", defines)
+def check_device(dev, ep0_byte, ep0_desc):
     if len(dev) != 18 or dev[0] != 18:
         err(f"device descriptor length {len(dev)}/bLength {dev[0]}")
     else:
@@ -155,19 +144,18 @@ def main():
         err(f"device class triplet {dev[4]:02X}/{dev[5]:02X}/{dev[6]:02X}, want EF/02/01 (IAD)")
     else:
         ok("class EF/02/01 (composite with IAD)")
-    if dev[7] != 9:
-        err(f"bMaxPacketSize0 {dev[7]}, want 9 (2^9=512) at SuperSpeed")
+    if dev[7] != ep0_byte:
+        err(f"bMaxPacketSize0 {dev[7]}, want {ep0_byte} ({ep0_desc})")
     else:
-        ok("bMaxPacketSize0 = 512")
+        ok(f"bMaxPacketSize0 = {ep0_desc}")
+    if dev[14:17] != bytes([1, 2, 3]):
+        err(f"string indexes manufacturer/product/serial {list(dev[14:17])}, want [1, 2, 3]")
+    else:
+        ok("iManufacturer/iProduct/iSerialNumber = 1/2/3 (serial = chip UID)")
 
-    print("== SuperSpeed configuration descriptor ==")
-    cfg = extract_array(t30, "SS_ConfigDescriptor", defines)
-    eps = [(0x82, 2), (0x03, 2), (0x81, 3), (0x84, 2), (0x04, 2)]
-    if debug_usb:
-        eps += [(0x85, 3), (0x86, 2), (0x06, 2)]   # 2nd CDC: notify + data in/out
-    interfaces, iads = walk_config(cfg, superspeed=True, expected_eps=eps)
 
-    # walk_config stores (bInterfaceNumber, bNumEndpoints, bInterfaceClass)
+def check_layout(interfaces, iads, debug_usb):
+    """Same interface map at both speeds: the host library looks the ports up by interface number."""
     by_num = {i[0]: i for i in interfaces}
     if by_num[0][2] != 0x08:
         err(f"IF0 class 0x{by_num[0][2]:02X}, want 0x08 (MSC)")
@@ -193,6 +181,33 @@ def main():
     else:
         ok(f"IAD grouping correct: {iads}")
 
+
+
+def main():
+    usb30_c, usb20_c = sys.argv[1], sys.argv[2]
+    here = usb30_c.rsplit("/", 1)[0] if "/" in usb30_c else "."
+    defines = read_defines(f"{here}/CH56x_usb30.h", f"{here}/bridge_config.h")
+    # CH56x_usb30.h defines SIZE_CONFIG_DESC / BRIDGE_NUM_INTERFACES twice under
+    # #if DEBUG_OVER_USB; pin them to the active branch so the parser is right.
+    debug_usb = defines.get("DEBUG_OVER_USB", 0)
+    defines["SIZE_CONFIG_DESC"] = 212 if debug_usb else 128
+    defines["BRIDGE_NUM_INTERFACES"] = 5 if debug_usb else 3
+    defines["HS_SIZE_CONFIG_DESC"] = 164 if debug_usb else 98
+    t30 = open(usb30_c, encoding="utf-8", errors="replace").read()
+    t20 = open(usb20_c, encoding="utf-8", errors="replace").read()
+
+    print("== SuperSpeed device descriptor ==")
+    check_device(extract_array(t30, "SS_DeviceDescriptor", defines), 9, "512 (2^9) at SuperSpeed")
+
+    print("== SuperSpeed configuration descriptor ==")
+    cfg = extract_array(t30, "SS_ConfigDescriptor", defines)
+    eps = [(0x82, 2), (0x03, 2), (0x81, 3), (0x84, 2), (0x04, 2)]
+    if debug_usb:
+        eps += [(0x85, 3), (0x86, 2), (0x06, 2)]   # 2nd CDC: notify + data in/out
+    interfaces, iads = walk_config(cfg, superspeed=True, expected_eps=eps)
+
+    check_layout(interfaces, iads, debug_usb)
+
     print("== BOS descriptor ==")
     bos = extract_array(t30, "BOSDescriptor", defines)
     bos_total = bos[2] | (bos[3] << 8)
@@ -201,9 +216,13 @@ def main():
     else:
         ok(f"BOS length {bos_total}")
 
-    print("== USB2 (high-speed fallback, MSC-only) configuration ==")
+    print("== USB2 (high-speed fallback) device descriptor ==")
+    check_device(extract_array(t20, "hs_device_descriptor", defines), 64, "64 at high speed")
+
+    print("== USB2 (high-speed fallback) configuration descriptor: same composite ==")
     cfg20 = extract_array(t20, "hs_config_descriptor", defines)
-    walk_config(cfg20, superspeed=False, expected_eps=[(0x82, 2), (0x03, 2)])
+    interfaces, iads = walk_config(cfg20, superspeed=False, expected_eps=eps)
+    check_layout(interfaces, iads, debug_usb)
 
     print()
     if FAIL:

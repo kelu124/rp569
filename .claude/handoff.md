@@ -33,9 +33,15 @@ Read this first when resuming. Details live in `specification.md` (D-xxx), `docs
 - How v1.0 was made: generator (`board.py` → `build.sh`) → KiCadRoutingTools chain (`hardware/gen/route_krt.sh`,
   16 links left) → hand finishing in pcbnew by the user, checked with `.claude/skills/kicad-board/drc_check.py`.
 
+## Bring-up (2026-11-19, board #1)
+
+Both firmwares run. CH569 flashing: wch-ch56x-isp (scratchpad build, not installed yet), after `-d=off` and `-b=off`
+(see `docs/toolchain.md`). Link echo 20/20. The CH569 only links at USB2, where it is now the full composite (drive + 2 serial ports,
+same identity as USB3). Open: SuperSpeed (cable/port, then SS lanes), wrong UID serial (`chip_uid.c`), slow drive.
+
 ## Next steps
 
-Firmware/host (no board yet): see `.claude/todo.md` § Firmware. On the first board: flash the RP2350 (RPDFU + RUN,
+Firmware/host (before board #1): see `.claude/todo.md` § Firmware. On the first board: flash the RP2350 (RPDFU + RUN,
 uf2), `python3 -m rp569 ports` / `versions` (PYTHONPATH=python), `ch boot` + flash the CH569 (install
 `wch-ch56x-isp` or `wchisp` first), `firmware/tools/link_test.py`. Skill `firmware` has the details.
 

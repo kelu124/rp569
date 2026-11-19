@@ -5,6 +5,7 @@
 #include "CH56x_common.h"
 #include "CH56xusb30_LIB.h"
 #include "CH56x_usb30.h"
+#include "CH56x_usb20.h"
 #include "debug_cdc.h"
 #include "bridge_config.h"
 
@@ -47,27 +48,36 @@ void debug_cdc_clear(void)
 
 /*******************************************************************************
  * debug_cdc_poll — main loop: send any buffered log bytes out of EP6 IN.
- * Only runs on the USB3 link (the USB2 fallback is MSC-only).
+ * Runs at both speeds (USB3 EP6 1024 B packets, USB2 fallback 512 B).
  ******************************************************************************/
 void debug_cdc_poll(void)
 {
-    UINT16 n;
+    UINT16 n, max;
+    UINT8 usb2 = (Link_Sta == LINK_STA_1);
 
-    if(Link_Sta == LINK_STA_1)          /* USB2 fallback: no debug CDC */
+    if(usb2 && !g_devInfo.dev_enum_status)  /* USB2 fallback, not configured yet */
         return;
     if(DebugUpload_Busy)
         return;
     if(dbg_tail == dbg_head)
         return;
 
+    max = usb2 ? 512 : 1024;                /* one bulk packet */
     n = 0;
-    while(dbg_tail != dbg_head && n < 1024)
+    while(dbg_tail != dbg_head && n < max)
     {
         endp6Txbuff[n++] = dbg_ring[dbg_tail];
         dbg_tail = (dbg_tail + 1) & DBG_RING_MASK;
     }
 
     DebugUpload_Busy = 1;
+    if(usb2)
+    {
+        R32_UEP6_TX_DMA = (UINT32)(UINT8 *)endp6Txbuff;
+        R16_UEP6_T_LEN = n;
+        R8_UEP6_TX_CTRL = (R8_UEP6_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+        return;
+    }
     USB30_IN_ClearIT(ENDP_6);
     USB30_IN_Set(ENDP_6, ENABLE, ACK, 1, n);
     USB30_Send_ERDY(ENDP_6 | IN, 1);

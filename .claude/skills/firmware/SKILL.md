@@ -5,18 +5,30 @@ description: Use when building, changing or flashing the rp569 firmware (firmwar
 
 # rp569 firmware
 
-Two independent builds; both work on this machine (2026-10-24). Neither has run on hardware yet.
+Two independent builds; both work on this machine. RP2350 firmware runs on the first board (2026-11-19: CDC, `version`,
+`adc` 5.02 V / 3.16 V, LEDs, `ch boot` → CH569 bootloader `4348:55e0` appears). CH569 flashed (DEBUG_EN off, boot pin PA5); it only links at USB2 (no SuperSpeed yet), where it is now the same
+composite as on USB3: drive (FAT32 card OK, ~0.25 MB/s write, ~1 MB/s read) + link CDC (if1) + console CDC (if3).
+Link echo 20/20, CDC bridge both ways.
+`ch pins` probes the CH569 → RP2350 line. The first byte after a CH569 power-up is a 0x00 glitch: `link_poll` drops non-printables.
+Machine setup, udev rules and tool updates: `docs/toolchain.md`.
 
 | | RP2350B (`firmware/rp2350`) | CH569W (`firmware/ch569`) |
 |---|---|---|
 | Build | `firmware/rp2350/build.sh` | `firmware/ch569/build.sh` (`build.sh check` = static checks) |
 | Toolchain | Pico SDK 2.2.0 `~/.pico-sdk/sdk/2.2.0` (has TinyUSB), `/usr/bin/arm-none-eabi-gcc` 10.3, cmake 3.25, ninja | xPack `riscv-none-elf-gcc` 15.2 in `~/.local/xPacks/@xpack-dev-tools/riscv-none-elf-gcc/15.2.0-1.1/.content/bin` (build.sh adds it to PATH) |
 | Output | `build/rp569_rp2350.uf2` (~76 KB) | `build/rp569_ch569.bin` (~21 KB) / `.hex` |
-| Flash | RPDFU (BOOTSEL) + RUN → copy uf2, or `picotool load -x` (`/usr/local/bin/picotool` 2.3); running fw: `dfu` command or `picotool load -f -x` | `ch boot` in the RP2350 CLI → `wch-ch56x-isp -v -f build/rp569_ch569.bin` or `wchisp flash` within ~10 s (neither tool installed yet: ask the user) |
+| Flash | RPDFU (BOOTSEL) + RUN → copy uf2, or `picotool load -x` (`/usr/local/bin/picotool` 2.3); running fw: `dfu` command or `picotool load -f -x` | `ch boot` in the RP2350 CLI → flasher within ~10 s. `wch-ch56x-isp -vr -f=build/rp569_ch569.bin` (wchisp 0.3.0 cannot flash bootloader 2.70). New chip: first `-d=off` (DEBUG_EN blocks programming, `e0 00`) and `-b=off` (download pin PA13 → PA5), one `ch boot` each. `docs/toolchain.md` |
 | Pins | `boards/rp569.h` (`RP569_*`), from `hardware/gen/board.py` | `src/bridge_config.h` |
 
 The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `build.sh` ignores it and uses 2.2
 (override: `RP569_PICO_SDK=...`). `~/pico/pico-sdk` is 1.5 (no RP2350): never use it.
+
+## Bring-up traps (first board, 2026-11-19)
+
+- picotool needs `/etc/udev/rules.d/60-rp569.rules` (in place now), else "unable to connect". Without it, copying the
+  uf2 to `/media/$USER/RP2350/` works.
+- Quick CLI driver: pyserial on `/dev/ttyACM0`, send `cmd\r\n`, read until `rp569> `.
+- System Rust is apt 1.75: `cargo install` needs `--locked` (otherwise `feature edition2024 is required`).
 
 ## RP2350 firmware
 
@@ -34,7 +46,17 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
 - UART1 PA7/PA8 = RP2350 link (CDC #1 bridge + echo, `Link_Echo_Deal` in the main loop). UART0 PB5/PB6 = debug,
   `-DDEBUG=0`. Never set `RB_PIN_UART0` (moves UART0 to PA5/PA6 = boot strap / HSPI).
 - The SDK `PRINT` macro was patched (CH56xSFR.h) to wait on the UART chosen by `DEBUG`.
-- CDC ports exist only on a USB3 link (vendor USB2 stack is MSC-only).
+- Both speeds expose the same interfaces: `CH56x_usb20.c` (rewritten 2026-11-19) mirrors `CH56x_usb30.c`; a
+  descriptor change goes in both, `build.sh check` compares them. CDC pumps (`cdc_uart.c`, `debug_cdc.c`) switch on
+  `Link_Sta == LINK_STA_1` (USB2) and wait for `g_devInfo.dev_enum_status` there.
+- UART1 stays at 115200 whatever the host sets (`LINK_FOLLOW_HOST_BAUD 0`): cdc_acm/ModemManager set 9600 on open.
+- Flash script pattern: unmount the drive, `ch boot`, `wch-ch56x-isp -vr -f=...`; console replies on the console
+  port (the boot log is dropped at USB reset, `debug_cdc_clear`).
+- Known: `chip_uid.c` ROM read returns stale `0xF7F9BF11` (serial `11BFF9F711BFF9F7`, real UID 8A82…E1); the
+  ROM-access sequence matches HydraUSB3, `R8_GLOB_ROM_CFG` reads 0 and ignores a safe-mode write. Open in todo.
+- Memory: the flasher sets ROM/RAMX from the image size (< 32 KB → RAMX 96 KB, < 64 → 64, < 96 → 32); `.DMADATA` uses
+  86 KB of RAMX, so the image must stay < 32 KB unless the DMA buffers shrink. `tools/check_mem.py` (in `make` and
+  `build.sh check`) enforces it; Link.ld's `RAMX 96K` cannot.
 - IRQ handlers: plain `__attribute__((interrupt))` (upstream GCC ignores MounRiver's "WCH-Interrupt-fast").
 
 ## Commands, python library, versions (D-025)

@@ -60,6 +60,7 @@ RP_REPLIES = {
     'btn': 'BTN1 up, BTN2 down', 'adc': 'VBUS3 5.02 V, 3V3_CH 3.31 V',
     'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud',
     'ch send hello': '',
+    'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
 CH_REPLIES = {
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
@@ -109,6 +110,7 @@ class TestRP2350(unittest.TestCase):
         self.assertEqual(rp.buttons(), {'BTN1': False, 'BTN2': True})
         self.assertEqual(rp.adc(), {'VBUS3': 5.02, '3V3_CH': 3.31})
         self.assertTrue(rp.ch_status()['power'])
+        self.assertEqual(rp.ch_pins()['state'], 'driven high (UART idle)')
 
     def test_ch_send_echo(self):
         rp = self.rp(async_after={'ch send hello': ['CH> hello']})
