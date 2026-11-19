@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — D-032: what CH569DS1 says about USB3 hardware
+## pending — 2026-11-19 — Document the CH569 behaviours not in the datasheet
+What: `docs/ch569-hardware-notes.md` (boot section corrected, new § Undocumented behaviour found on board #1),
+D-032 second-cable result, firmware skill pointer, done.
+Why: user asked to keep the learnings and document the undocumented points.
+
+## f695660 — 2026-11-19 — D-032: what CH569DS1 says about USB3 hardware
 What: `specification.md` D-032 (datasheet facts on the SS pairs, PHY supplies, clock; no layout guidance),
 `.claude/commits.md` hash for 7112452.
 Why: user asked what the datasheet says; next step is their cable test.

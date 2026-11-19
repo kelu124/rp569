@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-11-19 — Learnings documented: `docs/ch569-hardware-notes.md` § Undocumented behaviour found on board #1 (bootloader/ISP, config, resets, USBHS, USB3, eMMC, HSPI, board); boot section corrected (delivered chips: PA13, DEBUG_EN 1); D-032 second-cable result (identical counters).
 - 2026-11-19 — USB3 investigated (D-032): USB3 cable + 5 Gb/s port confirmed; CH569 link counters (console `usb3`) show termination detect + LFPS + TXEQ on every attempt, LINK_RDY never; 4 PHY settings tried, same; pins, AC caps, crystal load checked; routed SS pairs measured: SSRX skew 6.5 mm with 3 vias on N only, SSTX 5.3 mm -> board v1.1 routing fix.
 - 2026-11-19 — Firmware variant 1 "stream" (D-031): RP2350 PIO HSPI sender + CH569 HSPI receiver -> USB2 bulk -> host checker; 16.00 MB/s sent, 16.05 MB/s received, every word checked, 0 gaps in steady state (20 s runs). Found: HRVLD timing, header layout, CRC-16/USB. Hook bumps both variant version files.
 - 2026-11-19 — RST# and SD_DET tested (D-030): RESET_EN set on board #1 (patched wch-ch56x-isp `-e=on`), `ch reset` now resets the CH569 (re-enumerates, flags announced), releases the card first; card detect low = in, hot swap in drive mode (removal -> release, insertion -> new card mounted; red LED follows), `CH569 card: in|out` on the RP2350 port, `ch status` card field, console `sd` det field.

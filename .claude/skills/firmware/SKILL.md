@@ -10,7 +10,8 @@ Two independent builds; both work on this machine. RP2350 firmware runs on the f
 composite as on USB3: drive (FAT32 card OK, ~3.8 MB/s write, ~8.4 MB/s read, 48 MHz high speed) + link CDC (if1) + console CDC (if3).
 Link echo 20/20, CDC bridge both ways.
 `ch pins` probes the CH569 → RP2350 line. The first byte after a CH569 power-up is a 0x00 glitch: `link_poll` drops non-printables.
-Machine setup, udev rules and tool updates: `docs/toolchain.md`.
+Machine setup, udev rules and tool updates: `docs/toolchain.md`. **CH569 datasheet gaps found on the board:
+`docs/ch569-hardware-notes.md` § Undocumented behaviour** (read before changing USB/SD/HSPI/reset code; add new ones).
 
 | | RP2350B (`firmware/rp2350`) | CH569W (`firmware/ch569`) |
 |---|---|---|
