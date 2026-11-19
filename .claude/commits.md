@@ -1,15 +1,15 @@
 # Commit log
 
 <!-- Newest first. Format:
-
-## pending — 2026-11-19 — Hardware todo: board v1.1 USB3 SuperSpeed pair re-route
-What: `.claude/todo.md` hardware tasks: the USB3 SS item with the measured skew/vias, targets and the check on the
-new board; USB2 pairs in the same pass.
-Why: user asked to keep the USB3 lines as a hardware todo (D-032).
 ## <short-hash> — YYYY-MM-DD — <subject>
 What: ...
 Why: ...
 -->
+
+## fde8ae8 — 2026-11-19 — Hardware todo: board v1.1 USB3 SuperSpeed pair re-route
+What: `.claude/todo.md` hardware tasks: the USB3 SS item with the measured skew/vias, targets and the check on the
+new board; USB2 pairs in the same pass.
+Why: user asked to keep the USB3 lines as a hardware todo (D-032).
 
 ## 9e02d21 — 2026-11-19 — Document the CH569 behaviours not in the datasheet
 What: `docs/ch569-hardware-notes.md` (boot section corrected, new § Undocumented behaviour found on board #1),
