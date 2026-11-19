@@ -73,6 +73,9 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
   running; RX_LEN reads 0/1, NUM_MIS unusable. Ring slot freed only after its last USB packet completed. No blocking
   UART prints in the stream loop (ring = 5 ms). Host reader in its own process (GIL), start the source after the
   first reads. STAT/DATA debug lines: `-DSTREAM_DEBUG_STAT=1`.
+- USB3 (D-032): board #1 never trains SuperSpeed (rx_detect/txeq ok, LINK_RDY never) whatever LINK_CFG: SS pair skew
+  6.5 / 5.3 mm + single-leg vias = board v1.1 fix. Console `usb3` = link counters; test script pattern: scratchpad
+  `usb3try.sh <LINK_CFG>` (build with EXTRA_CFLAGS, flash, cycle, read counters).
 - Never hardcode `/dev/ttyACM0`: the numbering changes with the enumeration order; use `/dev/serial/by-id/`
   (an RP2350 "hang" was the helper talking to the CH569 link port).
 - Both speeds expose the same interfaces: `CH56x_usb20.c` (rewritten 2026-11-19) mirrors `CH56x_usb30.c`; a

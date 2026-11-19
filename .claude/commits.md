@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — Firmware variant 1 "stream": 8-bit HSPI bus at 16 MB/s to the host (D-031)
+## pending — 2026-11-19 — USB3 link diagnostics, SuperSpeed failure analysed (D-032)
+What: CH569 `usb3_diag` counters in LINK_IRQHandler/TMR0, console `usb3` (+ python `usb3_diag()`, test),
+`USB3_LINK_CFG` experiment hook in `usb_start()`, Makefile `EXTRA_CFLAGS`; spec D-032, README, skill, todo/done.
+Why: user's test plan step 3 (USB3 on board): training fails after LFPS on every PHY setting; the SS pairs are
+skewed 6.5 / 5.3 mm on the routed board -> v1.1 routing fix.
+
+## 1c7e6be — 2026-11-19 — Firmware variant 1 "stream": 8-bit HSPI bus at 16 MB/s to the host (D-031)
 What: CH569 `src-stream/` (main, usb_stream), Makefile `VARIANT=stream`, `version-stream.yaml` 1.0.0; RP2350
 `src/hspi_tx.pio`, `src/stream.c/.h`, CMake target `rp569_rp2350_stream`, `version-stream.yaml` 1.0.0, `stream`
 commands; python `rp569/stream.py` (pyusb reader process + numpy check), `RP2350.stream_*`, `-m rp569 stream`;

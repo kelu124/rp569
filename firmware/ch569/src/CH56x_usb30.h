@@ -82,6 +82,14 @@ void USBSS_IRQHandler(void) __attribute__((interrupt));
 }
 #endif
 
+/* USB3 link diagnostics, counted in LINK_IRQHandler / TMR0_IRQHandler, printed by the console `usb3` command. */
+typedef struct
+{
+    UINT32 irqs, rx_detect, term, term_present, txeq, ready, inactive, ux_exit, disabled, timeouts;
+    UINT32 last_flags, last_status;
+} usb3_diag_t;
+extern volatile usb3_diag_t usb3_diag;
+
 void USB30_SetSerial(const char *hex16);   /* USB serial number = chip UID */
 const UINT8 *usb_product_string(void);     /* "rp569 CH569 drive|serial", both speeds */
 extern UINT8 StringSerial[];               /* chip UID, both speeds     */

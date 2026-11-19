@@ -51,6 +51,17 @@ class CH569Console(PromptCLI):
         info.update(size_mb=int(m.group(2)), clock_mhz=int(m.group(3)), state=m.group(4), detect=m.group(5))
         return info
 
+    @command('usb3')
+    def usb3_diag(self) -> dict:
+        """SuperSpeed link diagnostics: counts of the CH569 link interrupts since boot (rx_detect = host termination
+        seen, present = termination present, ready = link up), the TMR0 USB2 fallbacks, last flags / status."""
+        text = self.cmd_text('usb3')
+        m = re.search(r'usb3 (.*)', text)
+        if not m:
+            raise CommandError(f'unexpected reply to usb3: {text!r}')
+        f = m.group(1).split()
+        return {k: int(v, 16) if k in ('flags', 'status') else int(v) for k, v in zip(f[::2], f[1::2])}
+
     @command('mount')
     def mount(self) -> None:
         """Switch to drive mode: the CH569 mounts the card and re-enumerates as the drive; this port disappears,

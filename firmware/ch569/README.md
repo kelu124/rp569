@@ -37,6 +37,11 @@ sends `\x01MDRV` / `\x01MSER` on the link at boot and after every switch: the RP
   medium changed, red LED on). `\x01SDIN`/`\x01SDOUT` on the link at boot and on every change: the RP2350 prints
   `CH569 card: in|out` and shows it in `ch status`; console `sd` ends with `det in|out`.
 
+**USB3 diagnostics**: console `usb3` (python `usb3_diag()`) prints the SuperSpeed link interrupt counts since boot:
+`rx_detect` / `present` / `txeq` (termination and LFPS stages), `ready` (link up), `disabled`, `timeouts` (USB2
+fallbacks). Board #1: rx_detect, present and txeq on every attempt, ready never (D-032, SS pair routing).
+`./build.sh EXTRA_CFLAGS=-DUSB3_LINK_CFG=0x1C2` overrides the PHY config during training (experiments).
+
 **Link control lines**: a line starting with byte `0x01` (`LINK_CTRL_CHAR`) is for the CH569 itself, neither echoed
 nor forwarded to the host. `\x01SDREL\n` from the RP2350 releases the SD card: the CH569 waits for any MSC transfer to
 finish, waits until the card is idle (DAT0 high, 500 ms max), reports "medium not present" to the host, then answers

@@ -43,7 +43,7 @@ CFLAGS  := $(ARCH) -Os -g -std=gnu99 \
            -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-parentheses \
            -Wno-comment -Wno-misleading-indentation \
            -DDEBUG=0 -DFREQ_SYS=80000000 \
-           $(INCLUDES)
+           $(INCLUDES) $(EXTRA_CFLAGS)
 
 ASFLAGS := $(ARCH) -x assembler-with-cpp $(INCLUDES)
 

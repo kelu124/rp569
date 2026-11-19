@@ -51,6 +51,16 @@ static void cmd_version(void)
     PRINT("rp569 CH569W firmware " FW_VERSION " git " FW_GIT " built " __DATE__ " uid %s\n", uid);
 }
 
+/* "usb3 irqs N rx_detect N term N present N txeq N ready N inactive N ux_exit N disabled N timeouts N flags X status X" */
+static void cmd_usb3(void)
+{
+    PRINT("usb3 irqs %lu rx_detect %lu term %lu present %lu txeq %lu ready %lu inactive %lu ux_exit %lu disabled %lu "
+          "timeouts %lu flags %08lx status %08lx\n",
+          usb3_diag.irqs, usb3_diag.rx_detect, usb3_diag.term, usb3_diag.term_present, usb3_diag.txeq,
+          usb3_diag.ready, usb3_diag.inactive, usb3_diag.ux_exit, usb3_diag.disabled, usb3_diag.timeouts,
+          usb3_diag.last_flags, usb3_diag.last_status);
+}
+
 /* One line, parsed by the host library (python decodes the CID fields):
  * "sd cid <32 hex, bits 127..0> size <MB> MB clock <MHz> MHz <mounted|released>", or "sd none" before any mount. */
 static void cmd_sd(void)
@@ -103,6 +113,7 @@ static const command_t commands[] =
     {"status",  "USB link, SD card, RP2350 link counters",       cmd_status},
     {"mount",   "mount the SD card and switch to drive mode",    cmd_mount},
     {"sd",      "SD card CID (128 bits), size, bus clock",       cmd_sd},
+    {"usb3",    "SuperSpeed link diagnostics (link interrupts)",  cmd_usb3},
 };
 /* COMMANDS-END */
 #define N_COMMANDS (sizeof(commands) / sizeof(commands[0]))

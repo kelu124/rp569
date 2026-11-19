@@ -11,6 +11,7 @@
 #include "mode.h"
 #include "CH56x_usb20.h"
 #include "CH56x_usb30.h"
+#include "CH56xusb30_LIB.h"
 #include "SW_UDISK.h"
 #include "cdc_uart.h"
 #include "debug_cdc.h"
@@ -50,6 +51,9 @@ void usb_start(void)
     R8_TMR0_INTER_EN = RB_TMR_IE_CYC_END;
     TMR0_TimerInit(67000000);
     USB30D_init(ENABLE);
+#ifdef USB3_LINK_CFG
+    USBSS->LINK_CFG = USB3_LINK_CFG;       /* PHY experiment (D-032): TX swing / de-emphasis / RX EQ during training */
+#endif
 }
 
 /* Drive mode needs the card: mount it, else stay in (or fall back to) serial mode. */

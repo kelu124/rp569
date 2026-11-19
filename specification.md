@@ -37,6 +37,22 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-032 — USB3 SuperSpeed on board #1: link training fails, cause = SS pair routing (status: open, 2026-11-19)
+Test plan step 3. Facts: USB 3.0 Micro-B cable on a 5 Gb/s laptop port (usb1-port1, SS peer usb2-port1), other USB3
+devices work on this PC. CH569 link counters (console `usb3`, `LINK_IRQHandler`): every attempt gets receiver
+detect (the host's termination on the CH569 TX pair), termination present and LINK_TXEQ (LFPS polling done, host ->
+CH569 RX works at low frequency), then LINK_DISABLE; LINK_RDY never; the CH569 falls back to USB2 (480 Mb/s).
+The host logs nothing on usb2-port1. Same result with LINK_CFG = 0x1C2 / 0x042 / 0x0C2 / 0x182 (TX swing, no
+de-emphasis, no RX EQ; the library trains with 0x140, as HydraUSB3). Pins checked (CH569DS1 pins 4/5 SSTXA/B,
+7/8 SSRXA/B; USB 3.0 Micro-B pins 6/7 SSTX, 9/10 SSRX; AC caps on TX only), 30 MHz crystal load ~11 pF vs CL 12 pF
+(tens of ppm, budget +-300). Routing (`board_metrics.py`): USB3_SSRX P/N 44.5/37.9 mm (skew 6.5 mm, 0/3 vias, 4.7 %
+of N off the In1 plane), USB3_SSTX 15.4/10.1 mm (skew 5.3 mm); a USB3 pair should be matched to about 1 mm (bit =
+200 ps ~ 30 mm). Conclusion: the 5 Gb/s pairs convert to common mode; LFPS (low frequency) survives, the 5 Gb/s
+training does not. Fix: board v1.1, SS pairs routed as coupled, length-matched pairs, symmetric vias (or none),
+continuous reference plane (handoff item "USB pairs as coupled pairs", open before ordering). Cheap test meanwhile:
+short cable / other host port / USB3 hub (host RX equalisation differs). Firmware is ready: the variant-0
+composite and its descriptors were checked, `-DUSB3_LINK_CFG=...` stays as a PHY experiment hook.
+
 ## D-031 — Firmware variant 1 "stream": RP2350 -> 8-bit HSPI -> CH569 -> USB bulk at 16 MB/s (status: accepted, 2026-11-19)
 Requested by user (test plan step 2), major = variant (D-025): variant 1 = CH569 `firmware/ch569` `VARIANT=stream`
 (`src-stream/`, `version-stream.yaml` 1.0.x) + RP2350 target `rp569_rp2350_stream` (`version-stream.yaml` 1.0.x).

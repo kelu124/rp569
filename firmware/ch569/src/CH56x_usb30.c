@@ -654,6 +654,7 @@ void USBSS_IRQHandler(void)
 void TMR0_IRQHandler()
 {
     R8_TMR0_INT_FLAG = RB_TMR_IF_CYC_END;
+    usb3_diag.timeouts++;
 
     if(Link_Sta == LINK_STA_1)
     {
@@ -685,16 +686,24 @@ void TMR0_IRQHandler()
  *
  * @brief   USB3.0 link state machine — byte-for-byte the MSC example's.
  ******************************************************************************/
+/* USB3 link diagnostics (console `usb3`): how far SuperSpeed got. */
+volatile usb3_diag_t usb3_diag;
+
 void LINK_IRQHandler()
 {
+    usb3_diag.irqs++;
+    usb3_diag.last_flags = USBSS->LINK_INT_FLAG;
+    usb3_diag.last_status = USBSS->LINK_STATUS;
     if(USBSS->LINK_INT_FLAG & LINK_Ux_EXIT_FLAG)
     {
+        usb3_diag.ux_exit++;
         USBSS->LINK_CFG = CFG_EQ_EN | TX_SWING | DEEMPH_CFG | TERM_EN;
         USB30_Switch_Powermode(POWER_MODE_0);
         USBSS->LINK_INT_FLAG = LINK_Ux_EXIT_FLAG;
     }
     if(USBSS->LINK_INT_FLAG & LINK_RDY_FLAG)
     {
+        usb3_diag.ready++;
         USBSS->LINK_INT_FLAG = LINK_RDY_FLAG;
         if(Tx_Lmp_Port)
         {
@@ -714,6 +723,7 @@ void LINK_IRQHandler()
 
     if(USBSS->LINK_INT_FLAG & LINK_INACT_FLAG)
     {
+        usb3_diag.inactive++;
         Link_Sta = 0;
         PFIC_EnableIRQ(USBSS_IRQn);
         PFIC_EnableIRQ(LINK_IRQn);
@@ -726,6 +736,7 @@ void LINK_IRQHandler()
     }
     if(USBSS->LINK_INT_FLAG & LINK_DISABLE_FLAG)
     {
+        usb3_diag.disabled++;
         USBSS->LINK_INT_FLAG = LINK_DISABLE_FLAG;
         Link_Sta = LINK_STA_1;
         USB30D_init(DISABLE);
@@ -738,14 +749,17 @@ void LINK_IRQHandler()
     }
     if(USBSS->LINK_INT_FLAG & LINK_RX_DET_FLAG)
     {
+        usb3_diag.rx_detect++;
         USBSS->LINK_INT_FLAG = LINK_RX_DET_FLAG;
         USB30_Switch_Powermode(POWER_MODE_2);
     }
     if(USBSS->LINK_INT_FLAG & TERM_PRESENT_FLAG)
     {
+        usb3_diag.term++;
         USBSS->LINK_INT_FLAG = TERM_PRESENT_FLAG;
         if(USBSS->LINK_STATUS & LINK_PRESENT)
         {
+            usb3_diag.term_present++;
             USB30_Switch_Powermode(POWER_MODE_2);
             USBSS->LINK_CTRL |= POLLING_EN;
         }
@@ -757,6 +771,7 @@ void LINK_IRQHandler()
     }
     if(USBSS->LINK_INT_FLAG & LINK_TXEQ_FLAG)
     {
+        usb3_diag.txeq++;
         Tx_Lmp_Port = 1;
         USBSS->LINK_INT_FLAG = LINK_TXEQ_FLAG;
         USB30_Switch_Powermode(POWER_MODE_0);

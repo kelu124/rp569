@@ -51,7 +51,7 @@
 ## Firmware (D-024; `firmware/`, skill `firmware`)
 
 - [ ] Hardware check of the python library (`python3 -m rp569 ports` / `versions`, `link_test.py`): port roles, CH569 UID read at 0x77FE4.
-- [ ] CH569 USB3: board #1 only enumerates at high-speed (bus 001), never SuperSpeed: check the cable/port, then the SS lanes. Then confirm the composite (and the MSC write fix) on USB3; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).
+- [ ] CH569 USB3 (D-032): link training fails on board #1 (SS pair skew 6.5 / 5.3 mm, single-leg vias on SSRX_N). Board v1.1: re-route USB3_SSRX/USB3_SSTX as coupled, length-matched pairs. Meanwhile try a short cable / other port / USB3 hub. Then confirm the composite (and the MSC write fix) on USB3; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).
 - [ ] CH569 UID: `chip_uid.c` reads `0xF7F9BF11` at every address of 0x77FE0–0x77FFC (stale ROM data register), so the USB serial is `11BFF9F711BFF9F7` on board #1 instead of the bootloader's UID 8A-82-48-26-3B-38-0D-E1. Same sequence/registers as HydraUSB3 `FLASH_ROMA_READ`; `R8_GLOB_ROM_CFG` reads 0x00 and a safe-mode write does not stick. Try: read before `SystemInit`/clock change, interrupts off, compare with WCH's EVT `GetUniqueID`/ISP library.
 - [ ] Streamed WRITE10 (one CMD25 through the ring with AUTOGAPSTOP, `MSC_WRITE_STREAM`): broken, disabled. On
   2026-11-19 it corrupted the FAT32 boot sector of card MSSD0 (single-sector writes: the n = 1 mode needs TRAN_MODE

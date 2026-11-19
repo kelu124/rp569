@@ -66,6 +66,7 @@ RP_REPLIES = {
     'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
 CH_REPLIES = {
+    'usb3': 'usb3 irqs 3 rx_detect 0 term 2 present 0 txeq 0 ready 0 inactive 0 ux_exit 0 disabled 0 timeouts 1 flags 00000000 status 00000010',
     'sd': 'sd cid 035344534333324780ab12cd34016a00 size 30436 MB clock 48 MHz mounted det in',
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
     'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on, sd clock 48 MHz, mode serial',
@@ -189,6 +190,7 @@ class TestCH569(unittest.TestCase):
         self.assertEqual(con.version().uid, UID_CH)
         st = con.status()
         self.assertEqual((con.sd_info()['name'], con.sd_info()['detect']), ('SC32G', 'in'))
+        self.assertEqual((con.usb3_diag()['term'], con.usb3_diag()['status']), (2, 0x10))
         self.assertEqual((st['usb'], st['sd_ready'], st['link_lines']), ('usb3', True, 4))
         self.assertEqual((st['sd_clock_mhz'], st['mode']), (48, 'serial'))
 
