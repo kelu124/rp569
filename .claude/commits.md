@@ -6,7 +6,7 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — Document the CH569 behaviours not in the datasheet
+## 9e02d21 — 2026-11-19 — Document the CH569 behaviours not in the datasheet
 What: `docs/ch569-hardware-notes.md` (boot section corrected, new § Undocumented behaviour found on board #1),
 D-032 second-cable result, firmware skill pointer, done.
 Why: user asked to keep the learnings and document the undocumented points.
