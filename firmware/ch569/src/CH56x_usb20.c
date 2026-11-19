@@ -18,6 +18,7 @@
 #include "console.h"
 #include "debug_cdc.h"
 #include "ownership.h"
+#include "mode.h"
 
 /* Global Variable */
 UINT16V  U20_EndpnMaxSize = 512;
@@ -37,9 +38,9 @@ __attribute__ ((aligned(16))) static UINT8 u20_notify_buff[16]  __attribute__((s
  * Plain interrupt attribute: upstream GCC ignores "WCH-Interrupt-fast". */
 void USBHS_IRQHandler(void) __attribute__((interrupt));
 
-/* High-speed composite, same layout as the SuperSpeed one (CH56x_usb30.c) so the host library finds the same
- * interfaces at either speed: IF0 = MSC (SD card), IAD(IF1 + IF2) = CDC bridged to the RP2350 link UART,
- * IAD(IF3 + IF4) = CDC debug console (DEBUG_OVER_USB). Same VID/PID, product string and UID serial. */
+/* High-speed descriptors, same layouts as the SuperSpeed ones (CH56x_usb30.c) so the host library finds the same
+ * interfaces at either speed: drive mode = MSC only, serial mode = link CDC + console CDC (mode.h). Same VID/PID,
+ * product string and UID serial in both modes. */
 const UINT8 hs_device_descriptor[] =
 {
     0x12,   // bLength
@@ -60,49 +61,47 @@ const UINT8 hs_device_descriptor[] =
     0x01    // number of configurations
 };
 
-const UINT8 hs_config_descriptor[] =
+/* Drive mode: the SD card only (mode.h). */
+const UINT8 hs_config_drive[] =
 {
-    /* Configuration Descriptor */
-    0x09,                  // bLength
-    0x02,                  // bDescriptorType (Configuration)
-    HS_SIZE_CONFIG_DESC & 0xFF, (HS_SIZE_CONFIG_DESC >> 8) & 0xFF,   // wTotalLength
-    BRIDGE_NUM_INTERFACES, // bNumInterfaces (3, or 5 with the debug CDC)
-    0x01,                  // bConfigurationValue
-    0x00,                  // iConfiguration (String Index)
-    0xC0,                  // bmAttributes Self Powered
-    0x32,                  // bMaxPower 100mA
-
+    0x09, 0x02, HS_SIZE_CONFIG_DRIVE & 0xFF, (HS_SIZE_CONFIG_DRIVE >> 8) & 0xFF,
+    0x01,                  // bNumInterfaces
+    0x01, 0x00, 0xC0, 0x32,
     /* ---------------- Interface 0: Mass Storage (SD card) --------------- */
     0x09, 0x04, 0x00, 0x00, 0x02, 0x08, 0x06, 0x50, 0x00,
     0x07, 0x05, 0x82, 0x02, 0x00, 0x02, 0x00,   // EP2 IN  bulk 512
-    0x07, 0x05, 0x03, 0x02, 0x00, 0x02, 0x00,   // EP3 OUT bulk 512
+    0x07, 0x05, 0x03, 0x02, 0x00, 0x02, 0x00    // EP3 OUT bulk 512
+};
 
-    /* ------------- Interface Association: CDC (IF1 + IF2) --------------- */
-    0x08, 0x0B, 0x01, 0x02, 0x02, 0x02, 0x01, 0x00,
-    /* Interface 1: CDC Communications (control) */
-    0x09, 0x04, 0x01, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
+/* Serial mode: IAD(IF0 + IF1) = CDC bridged to the RP2350 link UART, IAD(IF2 + IF3) = CDC debug console. */
+const UINT8 hs_config_serial[] =
+{
+    0x09, 0x02, HS_SIZE_CONFIG_SERIAL & 0xFF, (HS_SIZE_CONFIG_SERIAL >> 8) & 0xFF,
+    SERIAL_NUM_INTERFACES, // bNumInterfaces (4, or 2 without the console)
+    0x01, 0x00, 0xC0, 0x32,
+
+    /* ------------- Interface Association: CDC link (IF0 + IF1) ---------- */
+    0x08, 0x0B, 0x00, 0x02, 0x02, 0x02, 0x01, 0x00,
+    0x09, 0x04, 0x00, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
     0x05, 0x24, 0x00, 0x10, 0x01,               // Header, bcdCDC 1.10
-    0x05, 0x24, 0x01, 0x00, 0x02,               // Call Mgmt, data IF 2
+    0x05, 0x24, 0x01, 0x00, 0x01,               // Call Mgmt, data IF 1
     0x04, 0x24, 0x02, 0x02,                     // ACM, line coding + serial state
-    0x05, 0x24, 0x06, 0x01, 0x02,               // Union, master IF1, slave IF2
+    0x05, 0x24, 0x06, 0x00, 0x01,               // Union, master IF0, slave IF1
     0x07, 0x05, 0x81, 0x03, 0x10, 0x00, 0x08,   // EP1 IN interrupt 16B, 16 ms
-    /* Interface 2: CDC Data */
-    0x09, 0x04, 0x02, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
+    0x09, 0x04, 0x01, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
     0x07, 0x05, 0x84, 0x02, 0x00, 0x02, 0x00,   // EP4 IN  bulk 512
     0x07, 0x05, 0x04, 0x02, 0x00, 0x02, 0x00,   // EP4 OUT bulk 512
 
 #if DEBUG_OVER_USB
-    /* ------------- Interface Association: CDC debug console (IF3 + IF4) - */
-    0x08, 0x0B, 0x03, 0x02, 0x02, 0x02, 0x01, 0x00,
-    /* Interface 3: CDC Communications (debug control) */
-    0x09, 0x04, 0x03, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
+    /* ------------- Interface Association: CDC console (IF2 + IF3) ------- */
+    0x08, 0x0B, 0x02, 0x02, 0x02, 0x02, 0x01, 0x00,
+    0x09, 0x04, 0x02, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
     0x05, 0x24, 0x00, 0x10, 0x01,               // Header
-    0x05, 0x24, 0x01, 0x00, 0x04,               // Call Mgmt, data IF 4
+    0x05, 0x24, 0x01, 0x00, 0x03,               // Call Mgmt, data IF 3
     0x04, 0x24, 0x02, 0x02,                     // ACM
-    0x05, 0x24, 0x06, 0x03, 0x04,               // Union, master IF3, slave IF4
+    0x05, 0x24, 0x06, 0x02, 0x03,               // Union, master IF2, slave IF3
     0x07, 0x05, 0x85, 0x03, 0x10, 0x00, 0x08,   // EP5 IN interrupt 16B, 16 ms
-    /* Interface 4: CDC Data (debug) */
-    0x09, 0x04, 0x04, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
+    0x09, 0x04, 0x03, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
     0x07, 0x05, 0x86, 0x02, 0x00, 0x02, 0x00,   // EP6 IN  bulk 512 (log + console replies)
     0x07, 0x05, 0x06, 0x02, 0x00, 0x02, 0x00    // EP6 OUT bulk 512 (console input)
 #endif
@@ -161,7 +160,7 @@ const UINT8 hs_bos_descriptor[] =
 /* CDC interfaces that take line-coding requests: IF1 (RP2350 link), IF3 (debug console). */
 static UINT8 u20_cdc_iface(UINT8 iface)
 {
-    return iface == 1 || (DEBUG_OVER_USB && iface == 3);
+    return bridge_mode == MODE_SERIAL && (iface == SERIAL_LINK_IF || (DEBUG_OVER_USB && iface == SERIAL_CONSOLE_IF));
 }
 
 /* Endpoint control registers by number (only the endpoints this device uses). */
@@ -404,13 +403,13 @@ UINT16 U20_NonStandard_Request_Deal()
   switch( SetupReq )
   {
     case CMD_UDISK_GET_MAX_LUN:
-        if(iface != 0)
+        if(iface != 0 || bridge_mode != MODE_DRIVE)
             return USB_DESCR_UNSUPPORTED;
         endp0RTbuff[ 0 ] = 0;                     /* single LUN */
         len = 1;
         break;
     case CMD_UDISK_RESET:
-        if(iface != 0)
+        if(iface != 0 || bridge_mode != MODE_DRIVE)
             return USB_DESCR_UNSUPPORTED;
         Udisk_Sense_Key = 0x00;
         Udisk_Sense_ASC = 0x00;
@@ -445,7 +444,7 @@ UINT16 U20_NonStandard_Request_Deal()
  * LINK_FOLLOW_HOST_BAUD lets the host change its rate (bridge_config.h). */
 static void u20_ep0_out_done(void)
 {
-    if(SetupReq == CDC_SET_LINE_CODING && SetupIface == 1)
+    if(SetupReq == CDC_SET_LINE_CODING && SetupIface == SERIAL_LINK_IF)
     {
         UINT32 baudrate = endp0RTbuff[0] | ((UINT32)endp0RTbuff[1] << 8) |
                           ((UINT32)endp0RTbuff[2] << 16) | ((UINT32)endp0RTbuff[3] << 24);
@@ -485,8 +484,16 @@ UINT16 U20_Standard_Request_Deal()
                 SetupLen = ( SetupReqLen > sizeof(hs_device_descriptor) )? sizeof(hs_device_descriptor):SetupReqLen;
                 break;
             case USB_DESCR_TYP_CONFIG:
-                pDescr = (UINT8 *)hs_config_descriptor;
-                SetupLen = ( SetupReqLen > sizeof(hs_config_descriptor) )? sizeof(hs_config_descriptor):SetupReqLen;
+                if( bridge_mode == MODE_SERIAL )
+                {
+                    pDescr = (UINT8 *)hs_config_serial;
+                    SetupLen = ( SetupReqLen > sizeof(hs_config_serial) )? sizeof(hs_config_serial):SetupReqLen;
+                }
+                else
+                {
+                    pDescr = (UINT8 *)hs_config_drive;
+                    SetupLen = ( SetupReqLen > sizeof(hs_config_drive) )? sizeof(hs_config_drive):SetupReqLen;
+                }
                 break;
             case USB_DESCR_TYP_STRING:
                 switch( UsbSetupBuf->wValueL )
@@ -564,7 +571,7 @@ UINT16 U20_Standard_Request_Deal()
     case USB_SET_FEATURE:
         if( ( UsbSetupBuf->bRequestType & 0x1F ) == 0x00 )
         {
-            if( UsbSetupBuf->wValueL == 0x01 && ( hs_config_descriptor[ 7 ] & 0x20 ) )
+            if( UsbSetupBuf->wValueL == 0x01 && ( hs_config_drive[ 7 ] & 0x20 ) )
                 g_devInfo.dev_sleep_status = 0x01;
             else
                 SetupLen = USB_DESCR_UNSUPPORTED;

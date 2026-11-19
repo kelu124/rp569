@@ -27,10 +27,12 @@
 #define LINE_MAX         128
 #define LINK_CTRL        0x01     // link control lines, = LINK_CTRL_CHAR in firmware/ch569/src/bridge_config.h
 #define SD_RELEASE_MS    2000     // wait for the CH569 to finish an MSC transfer and release the card
+#define SD_MOUNT_MS      6000     // the CH569 re-enumerates and re-initialises the card
 
 static uart_inst_t *const link_uart = UART_INSTANCE(RP569_LINK_UART);
 static bool ch_powered;
 static bool ch_sd_off;            // the CH569 acknowledged an SD release (link control line)
+static int ch_sd_on;              // answer to a mount request: 0 none yet, 1 "SDON" (mounted), -1 "SDERR"
 static bool ch_fault_seen;
 static const uint led_pins[3] = {RP569_LED_R_PIN, RP569_LED_G_PIN, RP569_LED_B_PIN};
 static bool led_on[3];
@@ -94,6 +96,25 @@ static bool ch_sd_release(void) {
         sleep_ms(1);
     }
     return ch_sd_off;
+}
+
+// Ask the CH569 (serial mode) to mount the card and switch to drive mode ("\x01SDMNT\n"); it answers "\x01SDON\n"
+// once mounted (or "\x01SDERR\n": no card, it stays in serial mode).
+static void ch_sd_mount_report(void) {
+    ch_sd_on = 0;
+    uart_putc_raw(link_uart, LINK_CTRL);
+    uart_puts(link_uart, "SDMNT\n");
+    absolute_time_t until = make_timeout_time_ms(SD_MOUNT_MS);
+    while (ch_sd_on == 0 && !time_reached(until)) {
+        link_poll();
+        sleep_ms(1);
+    }
+    if (ch_sd_on > 0)
+        printf("CH569 SD mounted (drive mode)\n");
+    else if (ch_sd_on < 0)
+        printf("CH569 SD mount failed (no card?)\n");
+    else
+        printf("CH569 SD mount: no answer\n");
 }
 
 static void ch_sd_release_report(void) {
@@ -252,7 +273,14 @@ static void cmd_ch_eject(int argc, char **argv, char *rest) {
     if (!ch_powered)
         printf("CH569 is off ('ch on' first)\n");
     else
-        ch_sd_release_report();           // the card stays released until the CH569 restarts
+        ch_sd_release_report();           // the CH569 switches to serial mode (drive gone, serial ports appear)
+}
+
+static void cmd_ch_mount(int argc, char **argv, char *rest) {
+    if (!ch_powered)
+        printf("CH569 is off ('ch on' first)\n");
+    else
+        ch_sd_mount_report();             // serial ports gone, drive back
 }
 static void cmd_ch_status(int argc, char **argv, char *rest) { ch_status(); }
 
@@ -304,7 +332,8 @@ static const command_t commands[] = {
     {"ch off",    "",                "CH569 power off",                                                 cmd_ch_off},
     {"ch cycle",  "",                "CH569 power off, then normal boot",                               cmd_ch_cycle},
     {"ch boot",   "",                "power-cycle the CH569 into its USB bootloader (~10 s)",           cmd_ch_boot},
-    {"ch eject",  "",                "release the SD card cleanly (done before every power-off too)",   cmd_ch_eject},
+    {"ch eject",  "",                "release the SD card, CH569 to serial mode (also before power-off)", cmd_ch_eject},
+    {"ch mount",  "",                "mount the SD card, CH569 to drive mode (serial ports go away)",   cmd_ch_mount},
     {"ch reset",  "",                "pulse RST# (only with RESET_EN set in the CH569)",                cmd_ch_reset},
     {"ch status", "",                "CH569 power, fault flag, rails",                                  cmd_ch_status},
     {"ch pins",   "",                "probe the CH569 -> RP2350 UART line (driven / open)",             cmd_ch_pins},
@@ -396,6 +425,10 @@ static void link_poll(void) {
             ch_ctrl = false;
             if (ch_len == 5 && memcmp(ch_line, "SDOFF", 5) == 0)
                 ch_sd_off = true;
+            else if (ch_len == 4 && memcmp(ch_line, "SDON", 4) == 0)
+                ch_sd_on = 1;
+            else if (ch_len == 5 && memcmp(ch_line, "SDERR", 5) == 0)
+                ch_sd_on = -1;
             ch_len = 0;
             continue;
         }

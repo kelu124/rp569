@@ -30,6 +30,7 @@
 #include "fw_version.h"
 #if DEBUG_OVER_USB
 #include "debug_cdc.h"
+#include "mode.h"
 #endif
 
 #if STATUS_LEDS
@@ -115,31 +116,32 @@ int main(void)
     /* The disk starts "not present": no EMMC access happens until a claim. */
     Udisk_Status &= ~DEF_UDISK_EN_FLAG;
 
-    /* USB: try SuperSpeed first; TMR0 times out into the USB2 fallback. */
-    R32_USB_CONTROL = 0;
-    PFIC_EnableIRQ(USBSS_IRQn);
-    PFIC_EnableIRQ(LINK_IRQn);
-    PFIC_EnableIRQ(TMR0_IRQn);
-    R8_TMR0_INTER_EN = RB_TMR_IE_CYC_END;
-    TMR0_TimerInit(67000000);
-    USB30D_init(ENABLE);
-    PRINT("USB init done\n");
+    /* Mode (mode.h), decided before USB comes up: drive mode needs the card mounted, else serial mode. */
+    bridge_mode = mode_enter_drive();
+    PRINT("MODE: %s\n", bridge_mode == MODE_DRIVE ? "drive (SD card on USB)" : "serial (card released)");
 
-#if CLAIM_ON_BOOT
-    ownership_request(OWN_REQ_CLAIM);
-#endif
+    /* USB: try SuperSpeed first; TMR0 times out into the USB2 fallback. */
+    usb_start();
+    PRINT("USB init done\n");
 
     while(1)
     {
-        UDISK_onePack_Deal();   /* MSC multi-sector transfers (EMMC <-> USB) */
-        CDC_Uart_Deal();        /* CDC <-> UART1 (RP2350) pump               */
-        Link_Echo_Deal();       /* echo RP2350 bytes back on UART1           */
-        Link_Ctrl_Deal();       /* RP2350 control lines (SD release)         */
-        ownership_poll();       /* executes pending SD mount/unmount         */
-        console_poll();         /* commands from the debug port / UART0      */
+        if(bridge_mode == MODE_DRIVE)
+        {
+            UDISK_onePack_Deal();   /* MSC multi-sector transfers (EMMC <-> USB) */
+            ownership_poll();       /* executes pending SD mount/unmount         */
+        }
+        else
+        {
+            CDC_Uart_Deal();        /* CDC <-> UART1 (RP2350) pump               */
 #if DEBUG_OVER_USB
-        debug_cdc_poll();       /* stream debug log out the 2nd CDC port     */
+            debug_cdc_poll();       /* stream debug log out the console port     */
 #endif
+        }
+        Link_Echo_Deal();       /* echo RP2350 bytes back on UART1           */
+        Link_Ctrl_Deal();       /* RP2350 control lines (SD release / mount) */
+        console_poll();         /* commands from the console port / UART0    */
+        mode_poll();            /* drive <-> serial switch (re-enumerates)   */
 #if STATUS_LEDS
         status_leds_update();   /* refresh the RGB status LED                */
 #endif

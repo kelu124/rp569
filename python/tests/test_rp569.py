@@ -20,8 +20,8 @@ def info(device, vid, pid, product, serial, location):
 
 BOARD = [
     info('/dev/ttyACM0', 0x2E8A, 0x0009, 'rp569 RP2350B', UID_RP, '1-2:1.0'),
-    info('/dev/ttyACM1', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.1'),
-    info('/dev/ttyACM2', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.3'),
+    info('/dev/ttyACM1', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.0'),
+    info('/dev/ttyACM2', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.2'),
     info('/dev/ttyACM3', 0x2E8A, 0x0009, 'Pico', 'AAAA', '1-3:1.0'),         # some other Pico: not ours
     info('/dev/ttyUSB0', 0x0403, 0x6001, 'FT232R', 'X', '1-4:1.0'),
 ]
@@ -61,11 +61,12 @@ RP_REPLIES = {
     'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud',
     'ch send hello': '',
     'ch eject': 'CH569 SD released',
+    'ch mount': 'CH569 SD mounted (drive mode)',
     'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
 CH_REPLIES = {
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
-    'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on, sd clock 48 MHz',
+    'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on, sd clock 48 MHz, mode serial',
 }
 
 
@@ -80,6 +81,13 @@ class TestDrive(unittest.TestCase):
         with mock.patch('subprocess.run', return_value=mock.Mock(stdout=lsblk)):
             self.assertEqual(drive.partitions(props=lambda d: props.get(d, {})), [('/dev/sdb1', '/media/u/573B 9367')])
             self.assertEqual(drive.partitions('other', props=lambda d: props.get(d, {})), [])
+
+
+class TestPortsOldLayout(unittest.TestCase):
+    def test_composite_interfaces_1_3(self):
+        old = [info('/dev/ttyACM1', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.1'),
+               info('/dev/ttyACM2', 0x1A86, 0xFE2C, 'rp569 CH569', UID_CH, '2-1:1.3')]
+        self.assertEqual([p.role for p in ports.list_ports_rp569(infos=old)], ['ch569-link', 'ch569-console'])
 
 
 class TestPorts(unittest.TestCase):
@@ -126,6 +134,7 @@ class TestRP2350(unittest.TestCase):
         self.assertTrue(rp.ch_status()['power'])
         self.assertEqual(rp.ch_pins()['state'], 'driven high (UART idle)')
         self.assertTrue(rp.ch_eject())
+        self.assertTrue(rp.ch_mount())
 
     def test_ch_send_echo(self):
         rp = self.rp(async_after={'ch send hello': ['CH> hello']})
@@ -153,6 +162,7 @@ class TestCH569(unittest.TestCase):
         self.assertEqual(con.version().uid, UID_CH)
         st = con.status()
         self.assertEqual((st['usb'], st['sd_ready'], st['link_lines']), ('usb3', True, 4))
+        self.assertEqual((st['sd_clock_mhz'], st['mode']), (48, 'serial'))
 
     def test_version_parse(self):
         v = FirmwareVersion.parse('x rp569 CH569W firmware 1.2.30 git abc-dirty built Oct  4 2026 uid ab12')

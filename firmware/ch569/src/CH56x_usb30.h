@@ -36,16 +36,15 @@ extern "C" {
 
 #define SIZE_DEVICE_DESC             18
 
-/* Composite layout. With DEBUG_OVER_USB the device adds a second CDC function
- * (read-only debug log): 5 interfaces instead of 3, config descriptor 212 vs
- * 128 bytes. Keep these in lock-step with SS_ConfigDescriptor. */
+/* Config descriptor sizes per mode (mode.h, CH56x_usb30.c): drive = config 9 + MSC 35; serial = config 9 + 84 per
+ * CDC function (SS companions included). Interface counts: drive 1, serial SERIAL_NUM_INTERFACES (CH56x_usb20.h). */
+#define SS_SIZE_CONFIG_DRIVE         44
 #if DEBUG_OVER_USB
-  #define SIZE_CONFIG_DESC           212
-  #define BRIDGE_NUM_INTERFACES      0x05
+  #define SS_SIZE_CONFIG_SERIAL      177
 #else
-  #define SIZE_CONFIG_DESC           128
-  #define BRIDGE_NUM_INTERFACES      0x03
+  #define SS_SIZE_CONFIG_SERIAL      93
 #endif
+
 #define SIZE_STRING_LANGID           4
 #define SIZE_STRING_VENDOR           8
 #define SIZE_STRING_PRODUCT          42

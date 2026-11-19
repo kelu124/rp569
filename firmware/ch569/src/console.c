@@ -14,6 +14,7 @@
 #include "cdc_uart.h"
 #include "ownership.h"
 #include "bridge_config.h"
+#include "mode.h"
 #include "fw_version.h"           /* FW_VERSION / FW_GIT, generated from version.yaml */
 #include "SW_UDISK.h"
 #include "sd_storage.h"
@@ -50,13 +51,25 @@ static void cmd_version(void)
     PRINT("rp569 CH569W firmware " FW_VERSION " git " FW_GIT " built " __DATE__ " uid %s\n", uid);
 }
 
+/* Serial mode -> drive mode: the serial ports disconnect, the card is mounted and the drive appears (mode.h). */
+static void cmd_mount(void)
+{
+    if(bridge_mode == MODE_DRIVE)
+    {
+        PRINT("already in drive mode\n");
+        return;
+    }
+    PRINT("mounting the SD card: switching to drive mode, this port disconnects\n");
+    mode_request(MODE_DRIVE, 0);
+}
+
 static void cmd_status(void)
 {
-    PRINT("usb %s, sd %s (%ld MB), link UART1 %ld baud, lines from RP2350 %d, echo %s, sd clock %d MHz\n",
+    PRINT("usb %s, sd %s (%ld MB), link UART1 %ld baud, lines from RP2350 %d, echo %s, sd clock %d MHz, mode %s\n",
           Link_Sta == LINK_STA_3 ? "usb3" : (Link_Sta == LINK_STA_1 ? "usb2" : "down"),
           own_card_ready ? "ready" : "none", own_card_ready ? (long)(TF_EMMCParam.EMMCSecNum / 2048) : 0L,
           (long)cdc_line_coding.dwDTERate, link_lines_rx, LINK_ECHO ? "on" : "off",
-          own_card_ready ? (sd_high_speed ? 48 : 24) : 0);
+          own_card_ready ? (sd_high_speed ? 48 : 24) : 0, bridge_mode == MODE_DRIVE ? "drive" : "serial");
 }
 
 typedef struct
@@ -72,6 +85,7 @@ static const command_t commands[] =
     {"help",    "this list",                                     cmd_help},
     {"version", "firmware version, git hash and chip unique ID", cmd_version},
     {"status",  "USB link, SD card, RP2350 link counters",       cmd_status},
+    {"mount",   "mount the SD card and switch to drive mode",    cmd_mount},
 };
 /* COMMANDS-END */
 #define N_COMMANDS (sizeof(commands) / sizeof(commands[0]))

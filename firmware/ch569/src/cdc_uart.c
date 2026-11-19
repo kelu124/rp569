@@ -10,8 +10,8 @@
 #include "cdc_uart.h"
 #include "bridge_config.h"
 #include "ownership.h"
+#include "mode.h"
 #include <string.h>
-#include "ownership.h"
 
 /* Global define */
 #define UART_REV_LEN  1024                  /* uart receive ring size         */
@@ -243,13 +243,15 @@ static UINT8 link_ctrl_on = 0;              /* inside a control line            
 static UINT8 link_ctrl_buf[16];
 static UINT8 link_ctrl_len = 0;
 static volatile UINT8 link_req_sd_release = 0;  /* IRQ -> main loop              */
-static UINT8 link_sd_release_wait = 0;      /* main loop: release in progress    */
+static volatile UINT8 link_req_sd_mount = 0;
 
 static void link_ctrl_line(void)
 {
     link_ctrl_buf[link_ctrl_len] = 0;
     if(strcmp((const char *)link_ctrl_buf, "SDREL") == 0)
         link_req_sd_release = 1;
+    else if(strcmp((const char *)link_ctrl_buf, "SDMNT") == 0)
+        link_req_sd_mount = 1;
 }
 
 /* Queue bytes for the RP2350 on the echo ring (shared with the UART1 IRQ producer). */
@@ -267,28 +269,48 @@ static void link_tx_str(const char *s)
     PFIC_EnableIRQ(UART1_IRQn);
 }
 
+/* Queue the control line "\x01<cmd>\n" for the RP2350. */
+void Link_Ctrl_Send(const char *cmd)
+{
+    static const char ctrl[] = { LINK_CTRL_CHAR, 0 };
+    link_tx_str(ctrl);
+    link_tx_str(cmd);
+    link_tx_str("\n");
+}
+
+UINT8 Link_Tx_Pending(void)
+{
+    return echo_tail != echo_head;
+}
+
 /*******************************************************************************
  * @fn        Link_Ctrl_Deal
  *
- * @brief     Main-loop part of the link control lines: SD release request ->
- *            ownership release (runs once no MSC transfer is in flight) ->
- *            "\x01SDOFF\n" to the RP2350, which may then cut the power.
+ * @brief     Main-loop part of the link control lines (mode.h):
+ *            SDREL: drive mode -> release the card, "\x01SDOFF", serial mode
+ *                   (mode_poll); already in serial mode -> "\x01SDOFF" now.
+ *            SDMNT: serial mode -> drive mode, "\x01SDON" after the mount
+ *                   (Main.c); already in drive mode -> "\x01SDON" now.
  ******************************************************************************/
 void Link_Ctrl_Deal(void)
 {
-    static const char sdoff[] = { LINK_CTRL_CHAR, 'S', 'D', 'O', 'F', 'F', '\n', 0 };
-
     if(link_req_sd_release)
     {
         link_req_sd_release = 0;
         PRINT("LINK: SD release requested by the RP2350\n");
-        ownership_request(OWN_REQ_RELEASE);
-        link_sd_release_wait = 1;
+        if(bridge_mode == MODE_DRIVE)
+            mode_request(MODE_SERIAL, 1);
+        else
+            Link_Ctrl_Send("SDOFF");
     }
-    if(link_sd_release_wait && !ownership_pending() && !own_ch569_owns)
+    if(link_req_sd_mount)
     {
-        link_sd_release_wait = 0;
-        link_tx_str(sdoff);
+        link_req_sd_mount = 0;
+        PRINT("LINK: SD mount requested by the RP2350\n");
+        if(bridge_mode == MODE_SERIAL)
+            mode_request(MODE_DRIVE, 1);
+        else
+            Link_Ctrl_Send(own_card_ready ? "SDON" : "SDERR");
     }
 }
 

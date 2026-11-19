@@ -188,4 +188,10 @@ void sd_storage_unmount(void)
     PFIC_DisableIRQ(EMMC_IRQn);
     R32_EMMC_TRAN_MODE = 0;
     R16_EMMC_INT_FG = 0xffff;
+    /* Card back to idle (CMD0) and its clock stopped: it stays powered (3V3_CH, no switch), a later mount
+     * re-identifies it from scratch. */
+    TF_EMMCParam.EMMCOpErr = 0;
+    EMMCResetIdle(&TF_EMMCParam);
+    R16_EMMC_INT_FG = 0xffff;
+    R16_EMMC_CLK_DIV &= ~RB_EMMC_CLKOE;
 }

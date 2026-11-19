@@ -11,7 +11,8 @@ structure without any hardware:
     EP4 CDC), with sane wMaxPacketSize per speed
   - IAD groups the two CDC interfaces
 
-  - the USB2 (high-speed) fallback has the same interface/endpoint map
+  - two configurations per speed (drive mode: MSC only; serial mode: link + console CDC), the same at both
+    speeds, CDC Union / Call Management interface numbers consistent
 
 Usage: check_descriptors.py <CH56x_usb30.c> <CH56x_usb20.c>
 """
@@ -79,7 +80,12 @@ def read_defines(*paths):
     return defines
 
 
+UNIONS, CALLMGMT = [], []
+
+
 def walk_config(cfg, superspeed, expected_eps):
+    UNIONS.clear()
+    CALLMGMT.clear()
     total = cfg[2] | (cfg[3] << 8)
     if total != len(cfg):
         err(f"wTotalLength {total} != actual {len(cfg)} bytes")
@@ -108,6 +114,10 @@ def walk_config(cfg, superspeed, expected_eps):
                 pending_companion = True
         elif btype == 0x0B:
             iads.append((cfg[pos + 2], cfg[pos + 3]))
+        elif btype == 0x24 and cfg[pos + 2] == 0x06:      # CDC Union: master, slave
+            UNIONS.append((cfg[pos + 3], cfg[pos + 4]))
+        elif btype == 0x24 and cfg[pos + 2] == 0x01:      # CDC Call Management: data interface
+            CALLMGMT.append(cfg[pos + 4])
         pos += blen
     if pos != len(cfg):
         err(f"descriptor chain overruns: pos {pos} vs len {len(cfg)}")
@@ -154,59 +164,55 @@ def check_device(dev, ep0_byte, ep0_desc):
         ok("iManufacturer/iProduct/iSerialNumber = 1/2/3 (serial = chip UID)")
 
 
-def check_layout(interfaces, iads, debug_usb):
-    """Same interface map at both speeds: the host library looks the ports up by interface number."""
+def check_layout(interfaces, iads, debug_usb, mode):
+    """Interface map per mode, the same at both speeds: the host library finds the ports by interface number
+    (serial mode: link CDC on IF0/IF1, console CDC on IF2/IF3; drive mode: MSC on IF0 only)."""
     by_num = {i[0]: i for i in interfaces}
-    if by_num[0][2] != 0x08:
-        err(f"IF0 class 0x{by_num[0][2]:02X}, want 0x08 (MSC)")
-    else:
-        ok("IF0 = Mass Storage")
-    if by_num[1][2] != 0x02:
-        err(f"IF1 class 0x{by_num[1][2]:02X}, want 0x02 (CDC comm)")
-    else:
-        ok("IF1 = CDC Communications")
-    if by_num[2][2] != 0x0A:
-        err(f"IF2 class 0x{by_num[2][2]:02X}, want 0x0A (CDC data)")
-    else:
-        ok("IF2 = CDC Data")
-
-    want_iads = [(1, 2), (3, 2)] if debug_usb else [(1, 2)]
-    if debug_usb:
-        if by_num.get(3, (0, 0, 0))[2] != 0x02 or by_num.get(4, (0, 0, 0))[2] != 0x0A:
-            err("debug CDC interfaces IF3/IF4 missing or wrong class")
+    if mode == "drive":
+        if sorted(by_num) != [0] or by_num[0][2] != 0x08:
+            err(f"drive mode interfaces {sorted(by_num)}, want only IF0 = MSC")
         else:
-            ok("IF3/IF4 = debug CDC (comm + data)")
+            ok("drive mode: IF0 = Mass Storage only")
+        if iads:
+            err(f"drive mode has IADs {iads}")
+        return
+    pairs = [(0, 1)] + ([(2, 3)] if debug_usb else [])
+    for comm, data in pairs:
+        if by_num.get(comm, (0, 0, 0))[2] != 0x02 or by_num.get(data, (0, 0, 0))[2] != 0x0A:
+            err(f"IF{comm}/IF{data} are not CDC comm + data")
+        else:
+            ok(f"IF{comm}/IF{data} = CDC comm + data")
+    want_iads = [(c, 2) for c, _ in pairs]
     if iads != want_iads:
         err(f"IAD list {iads}, want {want_iads}")
     else:
         ok(f"IAD grouping correct: {iads}")
-
+    if UNIONS != pairs or CALLMGMT != [d for _, d in pairs]:
+        err(f"CDC Union {UNIONS} / Call Management data IF {CALLMGMT} do not match {pairs}")
+    else:
+        ok("CDC Union / Call Management interface numbers match")
 
 
 def main():
     usb30_c, usb20_c = sys.argv[1], sys.argv[2]
     here = usb30_c.rsplit("/", 1)[0] if "/" in usb30_c else "."
-    defines = read_defines(f"{here}/CH56x_usb30.h", f"{here}/bridge_config.h")
-    # CH56x_usb30.h defines SIZE_CONFIG_DESC / BRIDGE_NUM_INTERFACES twice under
-    # #if DEBUG_OVER_USB; pin them to the active branch so the parser is right.
+    defines = read_defines(f"{here}/CH56x_usb30.h", f"{here}/CH56x_usb20.h", f"{here}/bridge_config.h")
+    # Sizes defined twice under #if DEBUG_OVER_USB: pin them to the active branch.
     debug_usb = defines.get("DEBUG_OVER_USB", 0)
-    defines["SIZE_CONFIG_DESC"] = 212 if debug_usb else 128
-    defines["BRIDGE_NUM_INTERFACES"] = 5 if debug_usb else 3
-    defines["HS_SIZE_CONFIG_DESC"] = 164 if debug_usb else 98
+    defines.update(SS_SIZE_CONFIG_SERIAL=177 if debug_usb else 93, HS_SIZE_CONFIG_SERIAL=141 if debug_usb else 75,
+                   SERIAL_NUM_INTERFACES=4 if debug_usb else 2)
     t30 = open(usb30_c, encoding="utf-8", errors="replace").read()
     t20 = open(usb20_c, encoding="utf-8", errors="replace").read()
 
     print("== SuperSpeed device descriptor ==")
     check_device(extract_array(t30, "SS_DeviceDescriptor", defines), 9, "512 (2^9) at SuperSpeed")
 
-    print("== SuperSpeed configuration descriptor ==")
-    cfg = extract_array(t30, "SS_ConfigDescriptor", defines)
-    eps = [(0x82, 2), (0x03, 2), (0x81, 3), (0x84, 2), (0x04, 2)]
-    if debug_usb:
-        eps += [(0x85, 3), (0x86, 2), (0x06, 2)]   # 2nd CDC: notify + data in/out
-    interfaces, iads = walk_config(cfg, superspeed=True, expected_eps=eps)
-
-    check_layout(interfaces, iads, debug_usb)
+    eps_drive = [(0x82, 2), (0x03, 2)]
+    eps_serial = [(0x81, 3), (0x84, 2), (0x04, 2)] + ([(0x85, 3), (0x86, 2), (0x06, 2)] if debug_usb else [])
+    for mode, name, eps in (("drive", "SS_ConfigDrive", eps_drive), ("serial", "SS_ConfigSerial", eps_serial)):
+        print(f"== SuperSpeed configuration, {mode} mode ==")
+        interfaces, iads = walk_config(extract_array(t30, name, defines), superspeed=True, expected_eps=eps)
+        check_layout(interfaces, iads, debug_usb, mode)
 
     print("== BOS descriptor ==")
     bos = extract_array(t30, "BOSDescriptor", defines)
@@ -219,10 +225,10 @@ def main():
     print("== USB2 (high-speed fallback) device descriptor ==")
     check_device(extract_array(t20, "hs_device_descriptor", defines), 64, "64 at high speed")
 
-    print("== USB2 (high-speed fallback) configuration descriptor: same composite ==")
-    cfg20 = extract_array(t20, "hs_config_descriptor", defines)
-    interfaces, iads = walk_config(cfg20, superspeed=False, expected_eps=eps)
-    check_layout(interfaces, iads, debug_usb)
+    for mode, name, eps in (("drive", "hs_config_drive", eps_drive), ("serial", "hs_config_serial", eps_serial)):
+        print(f"== USB2 (high-speed fallback) configuration, {mode} mode ==")
+        interfaces, iads = walk_config(extract_array(t20, name, defines), superspeed=False, expected_eps=eps)
+        check_layout(interfaces, iads, debug_usb, mode)
 
     print()
     if FAIL:

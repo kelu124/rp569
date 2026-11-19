@@ -97,8 +97,16 @@ class RP2350(PromptCLI):
 
     @command('ch eject')
     def ch_eject(self) -> bool:
-        """Ask the CH569 to release the SD card cleanly (also done by ch off/cycle/boot). True if it acknowledged."""
+        """Release the SD card: the CH569 switches to serial mode (drive gone, serial ports appear); also done by
+        ch off/cycle/boot. True if it acknowledged."""
         m = self._match(r'CH569 (?:SD (released)|SD release: no answer|is off)', 'ch eject', timeout=4)
+        return m.group(1) is not None
+
+    @command('ch mount')
+    def ch_mount(self) -> bool:
+        """CH569 serial mode -> drive mode: card mounted, the drive appears, the CH569 serial ports go away.
+        True once the CH569 reports the card mounted."""
+        m = self._match(r'CH569 (?:SD (mounted)|SD mount failed|SD mount: no answer|is off)', 'ch mount', timeout=8)
         return m.group(1) is not None
 
     @command('ch reset')

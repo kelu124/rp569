@@ -36,16 +36,20 @@ typedef struct __attribute__((packed))
 
 //#define PID_SETUP	3
 
-/* High-speed composite config descriptor size (CH56x_usb20.c): config 9 + MSC 23 + one CDC function 66 each. */
+/* High-speed config descriptor sizes (CH56x_usb20.c): drive = config 9 + MSC 23; serial = config 9 + 66 per CDC. */
+#define HS_SIZE_CONFIG_DRIVE    32
 #if DEBUG_OVER_USB
-  #define HS_SIZE_CONFIG_DESC   164
+  #define HS_SIZE_CONFIG_SERIAL 141
+  #define SERIAL_NUM_INTERFACES 4
 #else
-  #define HS_SIZE_CONFIG_DESC   98
+  #define HS_SIZE_CONFIG_SERIAL 75
+  #define SERIAL_NUM_INTERFACES 2
 #endif
 
 extern DevInfo_Typedef g_devInfo;      /* dev_enum_status = 1 once the host set the configuration */
 extern const UINT8 hs_device_descriptor[];
-extern const UINT8 hs_config_descriptor[];
+extern const UINT8 hs_config_drive[];
+extern const UINT8 hs_config_serial[];
 extern const UINT8 hs_string_descriptor0[];
 extern const UINT8 hs_string_descriptor1[];
 extern const UINT8 hs_bos_descriptor[];

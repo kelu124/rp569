@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — Restore CRLF line endings in CH569 SD.c / SD.h
+## pending — 2026-11-19 — CH569 drive / serial modes (D-028)
+What: `firmware/ch569/src/mode.c/.h` (in-place switch, usb_start), per-mode descriptors in `CH56x_usb20.c` /
+`CH56x_usb30.c`, SCSI eject trigger, link `SDMNT`/`SDON`/`SDERR`, console `mount`, card CMD0 + clock off on release,
+descriptor checker per mode; RP2350 `ch mount`; python `ch_mount`, console `mount()`, `-m rp569 mount`, ports
+if0/if2 (1/3 still accepted); README, skill, spec R-20 + D-028, logs.
+Why: user's design: drive at full speed while mounted, serial ports when unmounted, a serial command switches back.
+
+## 560993b — 2026-11-19 — Restore CRLF line endings in CH569 SD.c / SD.h
 What: `firmware/ch569/src/SD.c`, `SD.h` back to CRLF (2ae30b8 converted them to LF while editing).
 Why: keep the vendor files' line endings so diffs show only real changes.
 

@@ -19,7 +19,8 @@ commands:
   ch off                   CH569 power off
   ch cycle                 CH569 power off, then normal boot
   ch boot                  power-cycle the CH569 into its USB bootloader (~10 s)
-  ch eject                 release the SD card cleanly (done before every power-off too)
+  ch eject                 release the SD card, CH569 to serial mode (also before power-off)
+  ch mount                 mount the SD card, CH569 to drive mode (serial ports go away)
   ch reset                 pulse RST# (only with RESET_EN set in the CH569)
   ch status                CH569 power, fault flag, rails
   ch pins                  probe the CH569 -> RP2350 UART line (driven / open)

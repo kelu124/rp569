@@ -41,6 +41,8 @@ extern volatile UINT8 link_lines_rx;        /* '\n' count from the RP2350    */
 void CDC_Uart_Init(UINT32 baudrate);        /* UART1 + GPIO + RX interrupt    */
 void Link_Echo_Deal(void);                  /* main-loop echo pump            */
 void Link_Ctrl_Deal(void);                  /* main-loop link control lines   */
+void Link_Ctrl_Send(const char *cmd);       /* queue "\x01<cmd>\n" for the RP2350 */
+UINT8 Link_Tx_Pending(void);                /* bytes still queued for the RP2350 */
 void TMR2_TimerInit1(void);                 /* 10us tick for RX flush timeout */
 void CDC_Uart_Deal(void);                   /* main-loop pump, both ways      */
 void CDC_Variable_Clear(void);

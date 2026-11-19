@@ -46,6 +46,15 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
 - UART1 PA7/PA8 = RP2350 link (CDC #1 bridge + echo, `Link_Echo_Deal` in the main loop). UART0 PB5/PB6 = debug,
   `-DDEBUG=0`. Never set `RB_PIN_UART0` (moves UART0 to PA5/PA6 = boot strap / HSPI).
 - The SDK `PRINT` macro was patched (CH56xSFR.h) to wait on the UART chosen by `DEBUG`.
+- **Modes** (D-028, `mode.c`): drive (MSC only) / serial (link CDC if0 + console CDC if2), switched in place
+  (USB off, card release/mount, 300 ms, `usb_start()`); never a software reset (dead chip: code is only loaded
+  into SRAM at power-on), never `USB30D_init(DISABLE)` on the USB2 fallback (hangs). Stop USB before releasing the
+  card: the host sends commands right after an eject. Triggers: SCSI eject, link `\x01SDREL`/`\x01SDMNT`, console
+  `mount`. Desktop eject over D-Bus: `gdbus call --system --dest org.freedesktop.UDisks2 --object-path
+  /org/freedesktop/UDisks2/drives/EMMC_... --method org.freedesktop.UDisks2.Drive.Eject "{}"` (`eject` needs root,
+  `udisksctl power-off` disables the host port). Test script pattern: scratchpad `modes.sh`.
+- Never hardcode `/dev/ttyACM0`: the numbering changes with the enumeration order; use `/dev/serial/by-id/`
+  (an RP2350 "hang" was the helper talking to the CH569 link port).
 - Both speeds expose the same interfaces: `CH56x_usb20.c` (rewritten 2026-11-19) mirrors `CH56x_usb30.c`; a
   descriptor change goes in both, `build.sh check` compares them. CDC pumps (`cdc_uart.c`, `debug_cdc.c`) switch on
   `Link_Sta == LINK_STA_1` (USB2) and wait for `g_devInfo.dev_enum_status` there.

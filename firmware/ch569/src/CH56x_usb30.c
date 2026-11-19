@@ -24,6 +24,7 @@
 #include "cdc_uart.h"
 #include "bridge_config.h"
 #include "ownership.h"
+#include "mode.h"
 #if DEBUG_OVER_USB
 #include "debug_cdc.h"
 #endif
@@ -61,115 +62,59 @@ const UINT8 SS_DeviceDescriptor[] =
     0x01                   // bNumConfigurations
 };
 
-/* SuperSpeed configuration: IF0 = MSC, IAD( IF1 = CDC comm, IF2 = CDC data ).
- * Every endpoint descriptor is followed by its SS endpoint companion; the
- * bMaxBurst bytes must match the runtime USB30_IN_Set/OUT_Set burst args. */
-const UINT8 SS_ConfigDescriptor[] =
+/* SuperSpeed configurations, one per mode (mode.h). Every endpoint descriptor is followed by its SS endpoint
+ * companion; the bMaxBurst bytes must match the runtime USB30_IN_Set/OUT_Set burst args.
+ * Drive mode: IF0 = MSC (SD card). */
+const UINT8 SS_ConfigDrive[] =
 {
-    /* Configuration Descriptor */
-    0x09,                  // bLength
-    0x02,                  // bDescriptorType (Configuration)
-    SIZE_CONFIG_DESC & 0xFF, (SIZE_CONFIG_DESC >> 8) & 0xFF,   // wTotalLength
-    BRIDGE_NUM_INTERFACES, // bNumInterfaces (3, or 5 with the debug CDC)
-    0x01,                  // bConfigurationValue
-    0x00,                  // iConfiguration
-    0x80,                  // bmAttributes: bus powered
-    0x64,                  // bMaxPower 800mA (8mA units at SS)
+    0x09, 0x02, SS_SIZE_CONFIG_DRIVE & 0xFF, (SS_SIZE_CONFIG_DRIVE >> 8) & 0xFF,
+    0x01,                  // bNumInterfaces
+    0x01, 0x00, 0x80, 0x64, // config 1, bus powered, 800 mA (8 mA units at SS)
 
     /* ---------------- Interface 0: Mass Storage (SD card) --------------- */
-    0x09,                  // bLength
-    0x04,                  // bDescriptorType (Interface)
-    0x00,                  // bInterfaceNumber 0
-    0x00,                  // bAlternateSetting
-    0x02,                  // bNumEndpoints 2
-    0x08,                  // bInterfaceClass: Mass Storage
-    0x06,                  // bInterfaceSubClass: SCSI transparent
-    0x50,                  // bInterfaceProtocol: Bulk-Only Transport
-    0x00,                  // iInterface
+    0x09, 0x04, 0x00, 0x00, 0x02, 0x08, 0x06, 0x50, 0x00,
+    0x07, 0x05, 0x82, 0x02, 0x00, 0x04, 0x00,   // EP2 IN bulk 1024B
+    0x06, 0x30, 0x00, 0x00, 0x00, 0x00,         // companion: burst 0 (=1 pkt)
+    0x07, 0x05, 0x03, 0x02, 0x00, 0x04, 0x00,   // EP3 OUT bulk 1024B
+    0x06, 0x30, 0x00, 0x00, 0x00, 0x00          // companion: burst 0, MUST match DEF_ENDP3_OUT_BURST_LEVEL
+};
 
-    /* EP2 IN (MSC data in) */
-    0x07, 0x05, 0x82, 0x02, 0x00, 0x04, 0x00,   // bulk, 1024B
-    0x06, 0x30, 0x00, 0x00, 0x00, 0x00,         // companion: burst 0(=1 pkt)
+/* Serial mode: IAD(IF0 + IF1) = CDC bridged to the RP2350 link UART, IAD(IF2 + IF3) = CDC debug console. */
+const UINT8 SS_ConfigSerial[] =
+{
+    0x09, 0x02, SS_SIZE_CONFIG_SERIAL & 0xFF, (SS_SIZE_CONFIG_SERIAL >> 8) & 0xFF,
+    SERIAL_NUM_INTERFACES, // bNumInterfaces (4, or 2 without the console)
+    0x01, 0x00, 0x80, 0x64,
 
-    /* EP3 OUT (MSC data out) */
-    0x07, 0x05, 0x03, 0x02, 0x00, 0x04, 0x00,   // bulk, 1024B
-    0x06, 0x30, 0x00, 0x00, 0x00, 0x00,         // companion: burst 0 (=1 pkt), MUST match DEF_ENDP3_OUT_BURST_LEVEL
-
-    /* ------------- Interface Association: CDC (IF1 + IF2) --------------- */
-    0x08,                  // bLength
-    0x0B,                  // bDescriptorType (IAD)
-    0x01,                  // bFirstInterface 1
-    0x02,                  // bInterfaceCount 2
-    0x02,                  // bFunctionClass: CDC
-    0x02,                  // bFunctionSubClass: ACM
-    0x01,                  // bFunctionProtocol: AT commands
-    0x00,                  // iFunction
-
-    /* ------------- Interface 1: CDC Communications (control) ------------ */
-    0x09,                  // bLength
-    0x04,                  // bDescriptorType (Interface)
-    0x01,                  // bInterfaceNumber 1
-    0x00,                  // bAlternateSetting
-    0x01,                  // bNumEndpoints 1 (notify)
-    0x02,                  // bInterfaceClass: CDC
-    0x02,                  // bInterfaceSubClass: ACM
-    0x01,                  // bInterfaceProtocol: AT commands
-    0x00,                  // iInterface
-
-    /* CDC functional descriptors */
+    /* ------------- Interface Association: CDC link (IF0 + IF1) ---------- */
+    0x08, 0x0B, 0x00, 0x02, 0x02, 0x02, 0x01, 0x00,
+    0x09, 0x04, 0x00, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
     0x05, 0x24, 0x00, 0x10, 0x01,               // Header, bcdCDC 1.10
-    0x05, 0x24, 0x01, 0x00, 0x02,               // Call Mgmt, data IF 2
+    0x05, 0x24, 0x01, 0x00, 0x01,               // Call Mgmt, data IF 1
     0x04, 0x24, 0x02, 0x02,                     // ACM, line coding + serial state
-    0x05, 0x24, 0x06, 0x01, 0x02,               // Union, master IF1, slave IF2
-
-    /* EP1 IN (CDC notification) */
-    0x07, 0x05, 0x81, 0x03, 0x00, 0x04, 0x08,   // interrupt, 1024B, interval 8
+    0x05, 0x24, 0x06, 0x00, 0x01,               // Union, master IF0, slave IF1
+    0x07, 0x05, 0x81, 0x03, 0x00, 0x04, 0x08,   // EP1 IN interrupt, 1024B, interval 8
     0x06, 0x30, 0x00, 0x00, 0x00, 0x04,         // companion: wBytesPerInterval 1024
-
-    /* ------------------ Interface 2: CDC Data --------------------------- */
-    0x09,                  // bLength
-    0x04,                  // bDescriptorType (Interface)
-    0x02,                  // bInterfaceNumber 2
-    0x00,                  // bAlternateSetting
-    0x02,                  // bNumEndpoints 2
-    0x0A,                  // bInterfaceClass: CDC Data
-    0x00, 0x00,            // bInterfaceSubClass/Protocol
-    0x00,                  // iInterface
-
-    /* EP4 IN (CDC data in) */
-    0x07, 0x05, 0x84, 0x02, 0x00, 0x04, 0x00,   // bulk, 1024B
-    0x06, 0x30, 0x00, 0x00, 0x00, 0x00,         // companion: burst 0
-
-    /* EP4 OUT (CDC data out) */
-    0x07, 0x05, 0x04, 0x02, 0x00, 0x04, 0x00,   // bulk, 1024B
-    0x06, 0x30, 0x00, 0x00, 0x00, 0x00,         // companion: burst 0
-
-#if DEBUG_OVER_USB
-    /* ===== Second CDC function: read-only debug log (EP5 notify, EP6 data) ==== */
-
-    /* Interface Association: CDC debug (IF3 + IF4) */
-    0x08, 0x0B, 0x03, 0x02, 0x02, 0x02, 0x01, 0x00,
-
-    /* Interface 3: CDC Communications (debug control) */
-    0x09, 0x04, 0x03, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
-    0x05, 0x24, 0x00, 0x10, 0x01,               // Header
-    0x05, 0x24, 0x01, 0x00, 0x04,               // Call Mgmt, data IF 4
-    0x04, 0x24, 0x02, 0x02,                     // ACM
-    0x05, 0x24, 0x06, 0x03, 0x04,               // Union, master IF3, slave IF4
-
-    /* EP5 IN (debug CDC notification) */
-    0x07, 0x05, 0x85, 0x03, 0x00, 0x04, 0x08,   // interrupt, 1024B, interval 8
-    0x06, 0x30, 0x00, 0x00, 0x00, 0x04,         // companion
-
-    /* Interface 4: CDC Data (debug) */
-    0x09, 0x04, 0x04, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
-
-    /* EP6 IN (debug data in — carries the log) */
-    0x07, 0x05, 0x86, 0x02, 0x00, 0x04, 0x00,   // bulk, 1024B
+    0x09, 0x04, 0x01, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
+    0x07, 0x05, 0x84, 0x02, 0x00, 0x04, 0x00,   // EP4 IN bulk 1024B
+    0x06, 0x30, 0x00, 0x00, 0x00, 0x00,
+    0x07, 0x05, 0x04, 0x02, 0x00, 0x04, 0x00,   // EP4 OUT bulk 1024B
     0x06, 0x30, 0x00, 0x00, 0x00, 0x00,
 
-    /* EP6 OUT (debug data out — present for host driver binding; ignored) */
-    0x07, 0x05, 0x06, 0x02, 0x00, 0x04, 0x00,   // bulk, 1024B
+#if DEBUG_OVER_USB
+    /* ------------- Interface Association: CDC console (IF2 + IF3) ------- */
+    0x08, 0x0B, 0x02, 0x02, 0x02, 0x02, 0x01, 0x00,
+    0x09, 0x04, 0x02, 0x00, 0x01, 0x02, 0x02, 0x01, 0x00,
+    0x05, 0x24, 0x00, 0x10, 0x01,               // Header
+    0x05, 0x24, 0x01, 0x00, 0x03,               // Call Mgmt, data IF 3
+    0x04, 0x24, 0x02, 0x02,                     // ACM
+    0x05, 0x24, 0x06, 0x02, 0x03,               // Union, master IF2, slave IF3
+    0x07, 0x05, 0x85, 0x03, 0x00, 0x04, 0x08,   // EP5 IN interrupt
+    0x06, 0x30, 0x00, 0x00, 0x00, 0x04,
+    0x09, 0x04, 0x03, 0x00, 0x02, 0x0A, 0x00, 0x00, 0x00,
+    0x07, 0x05, 0x86, 0x02, 0x00, 0x04, 0x00,   // EP6 IN bulk 1024B (log + console replies)
+    0x06, 0x30, 0x00, 0x00, 0x00, 0x00,
+    0x07, 0x05, 0x06, 0x02, 0x00, 0x04, 0x00,   // EP6 OUT bulk 1024B (console input)
     0x06, 0x30, 0x00, 0x00, 0x00, 0x00
 #endif
 };
@@ -307,6 +252,12 @@ void USB30D_init(FunctionalState sta)
  * @brief   Class + vendor requests, routed by request type and validated
  *          against the target interface (wIndex): MSC = IF0, CDC = IF1.
  ******************************************************************************/
+/* CDC interfaces that take line-coding requests (serial mode only). */
+static UINT8 ss_cdc_iface(UINT8 iface)
+{
+    return bridge_mode == MODE_SERIAL && (iface == SERIAL_LINK_IF || (DEBUG_OVER_USB && iface == SERIAL_CONSOLE_IF));
+}
+
 UINT16 USB30_NonStandardReq()
 {
     UINT8  req_typ;
@@ -349,14 +300,14 @@ UINT16 USB30_NonStandardReq()
     {
         /* ---- MSC (interface 0) ---- */
         case CMD_UDISK_GET_MAX_LUN:
-            if(UsbSetupBuf->wIndexL != 0)
+            if(UsbSetupBuf->wIndexL != 0 || bridge_mode != MODE_DRIVE)
                 goto stall;
             endp0RTbuff[0] = 0;                             /* single LUN */
             len = 1;
             break;
 
         case CMD_UDISK_RESET:
-            if(UsbSetupBuf->wIndexL != 0)
+            if(UsbSetupBuf->wIndexL != 0 || bridge_mode != MODE_DRIVE)
                 goto stall;
             Udisk_Sense_Key = 0x00;
             Udisk_Sense_ASC = 0x00;
@@ -369,22 +320,22 @@ UINT16 USB30_NonStandardReq()
         /* ---- CDC-ACM ---- IF1 = FPGA-UART bridge, IF3 = debug log (accepted
          * but ignored: the debug port is read-only, no real UART behind it). */
         case CDC_SET_LINE_CODING:                           /* data on EP0 OUT */
-            if(UsbSetupBuf->wIndexL != 1 && UsbSetupBuf->wIndexL != 3)
+            if(!ss_cdc_iface(UsbSetupBuf->wIndexL))
                 goto stall;
-            SetupReqIface = UsbSetupBuf->wIndexL;           /* 1=bridge, 3=debug */
+            SetupReqIface = UsbSetupBuf->wIndexL;           /* link or console (mode.h) */
             USB30_OUT_Set(ENDP_0, ACK, 1);
             len = 0;
             break;
 
         case CDC_GET_LINE_CODING:
-            if(UsbSetupBuf->wIndexL != 1 && UsbSetupBuf->wIndexL != 3)
+            if(!ss_cdc_iface(UsbSetupBuf->wIndexL))
                 goto stall;
             memcpy(endp0RTbuff, &cdc_line_coding, 7);
             len = 7;
             break;
 
         case CDC_SET_CONTROL_LINE_STATE:                    /* DTR/RTS: accept */
-            if(UsbSetupBuf->wIndexL != 1 && UsbSetupBuf->wIndexL != 3)
+            if(!ss_cdc_iface(UsbSetupBuf->wIndexL))
                 goto stall;
             len = 0;
             break;
@@ -428,9 +379,18 @@ UINT16 USB30_StandardReq()
                         pDescr = (PUINT8)SS_DeviceDescriptor;
                         break;
                     case USB_DESCR_TYP_CONFIG:
-                        if(SetupLen > SIZE_CONFIG_DESC)
-                            SetupLen = SIZE_CONFIG_DESC;
-                        pDescr = (PUINT8)SS_ConfigDescriptor;
+                        if(bridge_mode == MODE_SERIAL)
+                        {
+                            if(SetupLen > SS_SIZE_CONFIG_SERIAL)
+                                SetupLen = SS_SIZE_CONFIG_SERIAL;
+                            pDescr = (PUINT8)SS_ConfigSerial;
+                        }
+                        else
+                        {
+                            if(SetupLen > SS_SIZE_CONFIG_DRIVE)
+                                SetupLen = SS_SIZE_CONFIG_DRIVE;
+                            pDescr = (PUINT8)SS_ConfigDrive;
+                        }
                         break;
                     case USB_DESCR_TYP_BOS:
                         if(SetupLen > SIZE_BOS_DESC)
@@ -626,7 +586,7 @@ UINT16 EP0_IN_Callback(void)
  ******************************************************************************/
 UINT16 EP0_OUT_Callback(void)
 {
-    if(SetupReqCode == CDC_SET_LINE_CODING && SetupReqIface == 1)
+    if(SetupReqCode == CDC_SET_LINE_CODING && SetupReqIface == SERIAL_LINK_IF)
     {
         /* Link port only (the debug port IF3 drives no UART). Applied only with
          * LINK_FOLLOW_HOST_BAUD; otherwise UART1 keeps the RP2350's fixed rate. */

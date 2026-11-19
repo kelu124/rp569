@@ -30,10 +30,23 @@ All requested by the user, 2026-10-23.
 | R-17 | The RP2350 can put the CH569 in its bootloader the same way as the BOOT button | met | Checked on the netlist, sequence in D-004 |
 | R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | met (v1.0 files) | D-014, D-016, D-022; `hardware/jlcpcb/` (gerbers, BOM, CPL); 2 parts must be consigned |
 | R-19 | CH569 exposes the SD card (FAT32) as a USB drive **and** a serial port to the host; the RP2350 keeps its own USB identity so the host (and Claude) can tell the two apart | met at USB2 on board #1 (USB3 not reached yet) | D-026; RP2350 `2e8a:0009` "rp569 RP2350B", CH569 `1a86:fe2c` "rp569 CH569" (D-025) |
+| R-20 | The SD card at its maximum speed while mounted; when it is unmounted the CH569 serial ports appear, and a serial command switches back (ports gone, card mounted) | partial: modes met (board #1, USB2); max-speed drive loop in progress | D-028 |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
+
+## D-028 — CH569 drive mode / serial mode, switched in place (status: accepted, 2026-11-19)
+Requested by user: the drive at full speed while it is mounted; once it is unmounted the serial ports appear, and a
+serial command brings the drive back. Choice: two USB personalities on the same VID/PID/serial: drive = MSC only
+(IF0), serial = link CDC (IF0/1) + console CDC (IF2/3). Drive -> serial on a host eject (SCSI START STOP UNIT LoEj=1
+Start=0) or the RP2350's `ch eject` (`\x01SDREL`); serial -> drive on console `mount` or `ch mount` (`\x01SDMNT`,
+answered `\x01SDON`/`\x01SDERR`). "Power off" of the card = release (flush, CMD0, clock stopped): its supply is
+3V3_CH with no switch (board.py, microSD pin 4). The switch re-enumerates in place (USB off 300 ms, state cleared,
+USB restarted): a software reset does not reload the program into SRAM (CH569DS1 §3.2) and left the chip dead.
+Alternatives: composite drive + serial (D-026, both at once, the serial traffic competes with the card); RP2350
+power-cycling the CH569 per switch (slower, no logical gain without a card power switch); a card load switch on the
+next board revision (possible later). Sources: CH569DS1 §3.2 (reset), SCSI SBC START STOP UNIT, USB CDC 1.10 / IAD.
 
 ## D-027 — CH569 drive: multi-block SD transfers, SD high-speed mode (status: accepted, 2026-11-19)
 Context: the MSC path did one SD command per 512-byte sector (0.25 MB/s write, 1 MB/s read) and clocked the card at

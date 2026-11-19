@@ -32,10 +32,16 @@ class CH569Console(PromptCLI):
     @command('status')
     def status(self) -> dict:
         m = self._match(r'usb (\w+), sd (\w+) \((\d+) MB\), link UART1 (\d+) baud, lines from RP2350 (\d+), '
-                        r'echo (on|off)(?:, sd clock (\d+) MHz)?', 'status')
+                        r'echo (on|off)(?:, sd clock (\d+) MHz)?(?:, mode (drive|serial))?', 'status')
         return {'usb': m.group(1), 'sd_ready': m.group(2) == 'ready', 'sd_mb': int(m.group(3)),
                 'link_baud': int(m.group(4)), 'link_lines': int(m.group(5)), 'echo': m.group(6) == 'on',
-                'sd_clock_mhz': int(m.group(7)) if m.group(7) else None}
+                'sd_clock_mhz': int(m.group(7)) if m.group(7) else None, 'mode': m.group(8)}
+
+    @command('mount')
+    def mount(self) -> None:
+        """Switch to drive mode: the CH569 mounts the card and re-enumerates as the drive; this port disappears,
+        so the reply is not waited for (close the port afterwards; RP2350.ch_mount() reports the result)."""
+        self.cmd('mount', expect_prompt=False)
 
 
 class CH569Link:

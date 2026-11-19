@@ -5,8 +5,11 @@ Each port gets a role, so a class never opens the other chip's port:
 | Role | USB device | Interface | What it is |
 |---|---|---|---|
 | ``rp2350`` | 2e8a:0009, product "rp569 RP2350B" | CDC | RP2350B command line |
-| ``ch569-link`` | 1a86:fe2c, product "rp569 CH569" | 1 (first CDC) | RP2350 link UART bridge |
-| ``ch569-console`` | 1a86:fe2c, product "rp569 CH569" | 3 (second CDC) | CH569 debug log + console |
+| ``ch569-link`` | 1a86:fe2c, product "rp569 CH569" | 0 (first CDC) | RP2350 link UART bridge |
+| ``ch569-console`` | 1a86:fe2c, product "rp569 CH569" | 2 (second CDC) | CH569 debug log + console |
+
+The CH569 shows these two ports only in serial mode; in drive mode it is the SD card drive alone (no serial port).
+Firmware before the two modes (0.1.4 and older) put them on interfaces 1 and 3, after the drive: still accepted.
 
 The USB serial number of both chips is their unique ID (same value as the ``uid`` of the ``version`` command),
 so ``find(..., serial=uid)`` picks one board when several are plugged in.
@@ -20,7 +23,8 @@ RP2350_VID, RP2350_PID = 0x2E8A, 0x0009      # Raspberry Pi, Pico SDK stdio_usb 
 RP2350_PRODUCT = 'rp569 RP2350B'
 CH569_VID, CH569_PID = 0x1A86, 0xFE2C         # WCH, rp569 / CH569_Composite PID
 CH569_PRODUCT = 'rp569 CH569'
-CH569_LINK_IF, CH569_CONSOLE_IF = 1, 3       # CDC communication interfaces (0 = mass storage)
+CH569_LINK_IF, CH569_CONSOLE_IF = 0, 2       # CDC communication interfaces in serial mode
+CH569_LINK_IFS, CH569_CONSOLE_IFS = (0, 1), (2, 3)   # + 1 / 3 of the older composite firmware
 
 # Bootloaders (no serial port): shown by list_devices() for information
 RP2350_BOOT = (0x2E8A, 0x000F)               # RP2350 BOOTSEL (after 'dfu')
@@ -65,9 +69,9 @@ def role_of(info, strict: bool = True) -> str | None:
         if strict and CH569_PRODUCT not in product:
             return None
         n = interface_number(info)
-        if n == CH569_LINK_IF:
+        if n in CH569_LINK_IFS:
             return 'ch569-link'
-        if n == CH569_CONSOLE_IF:
+        if n in CH569_CONSOLE_IFS:
             return 'ch569-console'
         return 'ch569-?'        # interface number unknown on this OS: see ports_for()
     return None
@@ -98,7 +102,7 @@ def find(role: str, serial: str | None = None, strict: bool = True, infos=None) 
         ports = [p for p in ports if (p.serial_number or '').upper() == serial.upper()]
     if not ports:
         raise PortNotFound(f'no {role} port found' + (f' with serial {serial}' if serial else '') +
-                           ' (plugged in? CH569 ports need a USB3 link)')
+                           ' (plugged in? the CH569 shows its serial ports only in serial mode: eject the drive or run ch eject)')
     if len(ports) > 1:
         raise PortNotFound(f'{len(ports)} {role} ports found, pass serial=<uid>: ' +
                            ', '.join(f'{p.device} ({p.serial_number})' for p in ports))

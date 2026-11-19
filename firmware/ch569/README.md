@@ -1,6 +1,6 @@
 # CH569W firmware
 
-USB composite device (`1a86:fe2c`), the same at SuperSpeed and on the USB2 high-speed fallback, forked from
+USB device (`1a86:fe2c`, the same at SuperSpeed and on the USB2 high-speed fallback) with two modes, forked from
 [CH569_Composite](https://github.com/kelu124/CH569_Composite) (itself from the WCH CH569 EVT examples):
 
 | Function | Host side | Backed by |
@@ -8,6 +8,18 @@ USB composite device (`1a86:fe2c`), the same at SuperSpeed and on the USB2 high-
 | CDC-ACM #1 | serial port (`ttyACMx`, lower number) | **UART1** to the RP2350 (PA7 RX / PA8 TX, 115200 8N1, fixed: the host's line coding is ignored, `LINK_FOLLOW_HOST_BAUD`): what the RP2350 sends shows up here, what the host types goes to the RP2350 |
 | CDC-ACM #2 (console) | serial port | the firmware's debug log (also on UART0, PB6 TX, CH UART header J8) and a small console: `help`, `version`, `status` (prompt `ch569> `; also on UART0 RX) |
 | Mass storage | removable drive | the microSD card (raw sectors), mounted at power-up |
+
+**Two modes** (`src/mode.c`, specification D-028), one USB personality at a time:
+
+| Mode | Host sees | Entered by |
+|---|---|---|
+| **drive** (power-up) | the SD card as a USB drive, nothing else (full speed for the card) | power-up with a card; console `mount`; RP2350 `ch mount` (answer `\x01SDON`) |
+| **serial** | two serial ports: link CDC (if0) + console CDC (if2), no drive | host eject (desktop eject / `eject`: SCSI START STOP UNIT LoEj=1); RP2350 `ch eject` (answer `\x01SDOFF`); no card at power-up |
+
+A switch happens in place, no chip reset (a software reset leaves the CH569 dead, CH569DS1 §3.2): USB off, card
+released (flushed, CMD0, clock stopped; it stays powered, no switch on its supply) or mounted, 300 ms off the bus,
+USB restarted with the other mode's descriptors. `udisksctl power-off` also disables the host port, so the
+serial ports do not appear after it: use the desktop eject / `udisksctl unmount` + `python -m rp569 eject`.
 
 **Link control lines**: a line starting with byte `0x01` (`LINK_CTRL_CHAR`) is for the CH569 itself, neither echoed
 nor forwarded to the host. `\x01SDREL\n` from the RP2350 releases the SD card: the CH569 waits for any MSC transfer to
@@ -70,6 +82,7 @@ flash bootloader 2.70; a new chip first needs `-d=off` and `-b=off` (`docs/toolc
 
 ## Limits
 
+- Serial mode has no drive and drive mode no serial port: the RP2350 link UART and its echo work in both.
 - **Drive speed** (USB2, board #1, 32 MB file, verified): ~3.8 MB/s write, ~8.4 MB/s read (was 0.25 / 1.06 MB/s).
   One CMD18 / CMD25 per 64 sectors (`MSC_CHUNK_SECTORS`, 32 KB in `UDisk_In_Buf` / `UDisk_Out_Buf`), card in
   high-speed mode at 48 MHz (CMD6; 24 MHz if the card refuses). The limit now is one USB packet per main-loop pass

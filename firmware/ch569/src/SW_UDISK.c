@@ -18,6 +18,7 @@
 #include "CH56xusb30_LIB.h"
 #include "SD.h"
 #include "bridge_config.h"
+#include "mode.h"
 
 /* Sectors per SD command on the MSC read/write path (one CMD18 / CMD25 per chunk, 2026-11-19; was one CMD17 /
  * CMD25 per sector: ~1 MB/s read, ~0.25 MB/s write). The chunk sits in UDisk_In_Buf / UDisk_Out_Buf (UDISKSIZE =
@@ -515,8 +516,11 @@ void UDISK_SCSI_CMD_Deal( void )
                 break;
                 
             case  CMD_U_START_STOP:                                                  
-                /* CMD: 0x1B */
+                /* CMD: 0x1B. LoEj = 1, Start = 0: the host ejects the medium -> serial mode (mode.h), once
+                 * this command's CSW has gone out (mode_poll waits for the MSC engine). */
                 UDISK_CMD_Deal_Status( 0x00, 0x00, 0x00 );
+                if( ( mBOC.mCBW.mCBW_CB_Buf[ 4 ] & 0x03 ) == 0x02 )
+                    mode_request( MODE_SERIAL, 0 );
                 break;
 
             default:
