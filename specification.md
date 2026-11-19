@@ -52,6 +52,11 @@ training does not. Fix: board v1.1, SS pairs routed as coupled, length-matched p
 continuous reference plane (handoff item "USB pairs as coupled pairs", open before ordering). Cheap test meanwhile:
 short cable / other host port / USB3 hub (host RX equalisation differs). Firmware is ready: the variant-0
 composite and its descriptors were checked, `-DUSB3_LINK_CFG=...` stays as a PHY experiment hook.
+CH569DS1 on USB3 hardware (checked 2026-11-19): chapter 17 only states the two SS pairs and that A/B may be wired
++/- or -/+ (polarity free); V33USB (pin 3) and V12USB (pin 6) need 0.1 uF each (present); V12USB 1.15-1.3 V,
+V33USB 3.15-3.5 V (3V3_CH measured 3.17 V; 1V2_CH not measured on the board); the 30 MHz HSE feeds the USB PHY (no
+ppm figure). No impedance, skew, via or layout guidance and no reference circuit: the routing rules come from the
+USB 3.0 spec (90 ohm differential, intra-pair matching ~1 mm). Next: user tries another USB3 cable / port / hub.
 
 ## D-031 — Firmware variant 1 "stream": RP2350 -> 8-bit HSPI -> CH569 -> USB bulk at 16 MB/s (status: accepted, 2026-11-19)
 Requested by user (test plan step 2), major = variant (D-025): variant 1 = CH569 `firmware/ch569` `VARIANT=stream`

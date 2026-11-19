@@ -6,7 +6,12 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — USB3 link diagnostics, SuperSpeed failure analysed (D-032)
+## pending — 2026-11-19 — D-032: what CH569DS1 says about USB3 hardware
+What: `specification.md` D-032 (datasheet facts on the SS pairs, PHY supplies, clock; no layout guidance),
+`.claude/commits.md` hash for 7112452.
+Why: user asked what the datasheet says; next step is their cable test.
+
+## 7112452 — 2026-11-19 — USB3 link diagnostics, SuperSpeed failure analysed (D-032)
 What: CH569 `usb3_diag` counters in LINK_IRQHandler/TMR0, console `usb3` (+ python `usb3_diag()`, test),
 `USB3_LINK_CFG` experiment hook in `usb_start()`, Makefile `EXTRA_CFLAGS`; spec D-032, README, skill, todo/done.
 Why: user's test plan step 3 (USB3 on board): training fails after LFPS on every PHY setting; the SS pairs are
