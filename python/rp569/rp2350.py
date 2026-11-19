@@ -84,16 +84,22 @@ class RP2350(PromptCLI):
 
     @command('ch off')
     def ch_off(self) -> str:
-        return self.cmd_text('ch off', timeout=3)
+        return self.cmd_text('ch off', timeout=6)
 
     @command('ch cycle')
     def ch_cycle(self) -> str:
-        return self.cmd_text('ch cycle', timeout=4)
+        return self.cmd_text('ch cycle', timeout=7)
 
     @command('ch boot')
     def ch_boot(self) -> str:
         """Power-cycle the CH569 into its USB bootloader (4348:55e0) for ~10 s."""
-        return self.cmd_text('ch boot', timeout=4)
+        return self.cmd_text('ch boot', timeout=7)
+
+    @command('ch eject')
+    def ch_eject(self) -> bool:
+        """Ask the CH569 to release the SD card cleanly (also done by ch off/cycle/boot). True if it acknowledged."""
+        m = self._match(r'CH569 (?:SD (released)|SD release: no answer|is off)', 'ch eject', timeout=4)
+        return m.group(1) is not None
 
     @command('ch reset')
     def ch_reset(self) -> str:

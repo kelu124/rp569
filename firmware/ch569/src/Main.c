@@ -134,6 +134,7 @@ int main(void)
         UDISK_onePack_Deal();   /* MSC multi-sector transfers (EMMC <-> USB) */
         CDC_Uart_Deal();        /* CDC <-> UART1 (RP2350) pump               */
         Link_Echo_Deal();       /* echo RP2350 bytes back on UART1           */
+        Link_Ctrl_Deal();       /* RP2350 control lines (SD release)         */
         ownership_poll();       /* executes pending SD mount/unmount         */
         console_poll();         /* commands from the debug port / UART0      */
 #if DEBUG_OVER_USB

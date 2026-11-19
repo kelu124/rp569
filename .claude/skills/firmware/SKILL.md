@@ -52,6 +52,10 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
 - UART1 stays at 115200 whatever the host sets (`LINK_FOLLOW_HOST_BAUD 0`): cdc_acm/ModemManager set 9600 on open.
 - Flash script pattern: unmount the drive, `ch boot`, `wch-ch56x-isp -vr -f=...`; console replies on the console
   port (the boot log is dropped at USB reset, `debug_cdc_clear`).
+- SD release: RP2350 `ch_sd_release()` sends `\x01SDREL\n` before every CH569 power-off and on `ch eject`; the CH569
+  (`Link_Ctrl_Deal`, `cdc_uart.c`) releases the card once the MSC engine is idle (`ownership_poll` now never runs
+  mid-transfer) and answers `\x01SDOFF\n`. Clean FAT needs the host unmount first: `python -m rp569 eject`
+  (`python/rp569/drive.py`, udisksctl). The CLI helper must wait for the prompt: `ch off/cycle/boot` take up to 2 s more.
 - Known: `chip_uid.c` ROM read returns stale `0xF7F9BF11` (serial `11BFF9F711BFF9F7`, real UID 8A82…E1); the
   ROM-access sequence matches HydraUSB3, `R8_GLOB_ROM_CFG` reads 0 and ignores a safe-mode write. Open in todo.
 - Memory: the flasher sets ROM/RAMX from the image size (< 32 KB → RAMX 96 KB, < 64 → 64, < 96 → 32); `.DMADATA` uses

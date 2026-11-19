@@ -6,7 +6,14 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — First firmware on board #1: RP2350 + CH569 bring-up, CH569 USB2 composite
+## pending — 2026-11-19 — Clean SD release before every CH569 power-off
+What: RP2350 `ch_sd_release()` / `ch eject` (+ python `ch_eject`, longer `ch off/cycle/boot` timeouts), CH569 link
+control lines in `cdc_uart.c` (`Link_Ctrl_Deal`), `ownership_poll` waits for an idle MSC engine, `sd_storage_unmount`
+waits for DAT0; `python/rp569/drive.py` + `python -m rp569 eject`; README/skill/toolchain/logs.
+Why: user request — the RP2350 must make the CH569 release the card before cutting its power (unclean cuts left the
+FAT volume dirty).
+
+## 23a6083 — 2026-11-19 — First firmware on board #1: RP2350 + CH569 bring-up, CH569 USB2 composite
 What: RP2350 `ch pins` probe (+ python `ch_pins`, test), drop non-printable link bytes (0x00 at CH569 power-up);
 CH569 `CH56x_usb20.c` rewritten as MSC + 2× CDC (D-026), speed-aware pumps in `cdc_uart.c`/`debug_cdc.c`, MSC
 WRITE10 EP3 re-arm fix (`SW_UDISK.c`), unbuffered stdout, link UART rate fixed (`bridge_config.h`),

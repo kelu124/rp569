@@ -60,12 +60,26 @@ RP_REPLIES = {
     'btn': 'BTN1 up, BTN2 down', 'adc': 'VBUS3 5.02 V, 3V3_CH 3.31 V',
     'ch status': 'CH569 power on, FLG# ok, 3V3_CH 3.30 V, VBUS3 5.01 V, link UART1 115200 baud',
     'ch send hello': '',
+    'ch eject': 'CH569 SD released',
     'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
 CH_REPLIES = {
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
     'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on',
 }
+
+
+class TestDrive(unittest.TestCase):
+    def test_partitions(self):
+        from unittest import mock
+        from rp569 import drive
+        lsblk = '/dev/sda\n/dev/sda1 /\n/dev/sdb\n/dev/sdb1 /media/u/573B\\x209367\n'
+        props = {'/dev/sdb1': {'ID_VENDOR_ID': '1a86', 'ID_MODEL_ID': 'fe2c', 'DEVTYPE': 'partition',
+                               'ID_SERIAL_SHORT': 'ABCD'},
+                 '/dev/sdb': {'ID_VENDOR_ID': '1a86', 'ID_MODEL_ID': 'fe2c', 'DEVTYPE': 'disk'}}
+        with mock.patch('subprocess.run', return_value=mock.Mock(stdout=lsblk)):
+            self.assertEqual(drive.partitions(props=lambda d: props.get(d, {})), [('/dev/sdb1', '/media/u/573B 9367')])
+            self.assertEqual(drive.partitions('other', props=lambda d: props.get(d, {})), [])
 
 
 class TestPorts(unittest.TestCase):
@@ -111,6 +125,7 @@ class TestRP2350(unittest.TestCase):
         self.assertEqual(rp.adc(), {'VBUS3': 5.02, '3V3_CH': 3.31})
         self.assertTrue(rp.ch_status()['power'])
         self.assertEqual(rp.ch_pins()['state'], 'driven high (UART idle)')
+        self.assertTrue(rp.ch_eject())
 
     def test_ch_send_echo(self):
         rp = self.rp(async_after={'ch send hello': ['CH> hello']})

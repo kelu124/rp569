@@ -87,11 +87,19 @@ static void ownership_release(void)
     own_ch569_owns = 0;
 }
 
+UINT8 ownership_pending(void)
+{
+    return own_pending != OWN_REQ_NONE;
+}
+
 void ownership_poll(void)
 {
     UINT8 req = own_pending;
 
     if(req == OWN_REQ_NONE)
+        return;
+    /* Never between two packets of a READ10/WRITE10 (or before its CSW): wait for the MSC engine to go idle. */
+    if(Udisk_Transfer_Status || UDISK_OutPackflag || UDISK_InPackflag)
         return;
     own_pending = OWN_REQ_NONE;
 

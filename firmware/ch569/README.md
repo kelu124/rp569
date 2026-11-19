@@ -9,6 +9,13 @@ USB composite device (`1a86:fe2c`), the same at SuperSpeed and on the USB2 high-
 | CDC-ACM #2 (console) | serial port | the firmware's debug log (also on UART0, PB6 TX, CH UART header J8) and a small console: `help`, `version`, `status` (prompt `ch569> `; also on UART0 RX) |
 | Mass storage | removable drive | the microSD card (raw sectors), mounted at power-up |
 
+**Link control lines**: a line starting with byte `0x01` (`LINK_CTRL_CHAR`) is for the CH569 itself, neither echoed
+nor forwarded to the host. `\x01SDREL\n` from the RP2350 releases the SD card: the CH569 waits for any MSC transfer to
+finish, waits until the card is idle (DAT0 high, 500 ms max), reports "medium not present" to the host, then answers
+`\x01SDOFF\n`. The RP2350 does this before every CH569 power-off (`ch off/cycle/boot`, 2 s timeout) and on `ch eject`.
+The card stays released until the CH569 restarts. The host still has to unmount for a clean FAT volume:
+`python -m rp569 eject` unmounts first, then releases.
+
 **Link echo**: every byte received from the RP2350 is sent back to it (`LINK_ECHO` in `src/bridge_config.h`), from
 the main loop through a 256-byte ring, with or without a USB host. The RP2350 CLI shows the echo as `CH> ...`.
 

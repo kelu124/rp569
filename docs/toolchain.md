@@ -82,7 +82,7 @@ bootloader (`4348:55e0`) stays on USB for about 10 s. Run the flasher within tha
 wch-ch56x-isp -vr -f=firmware/ch569/build/rp569_ch569.bin
 ```
 
-Unmount the SD drive first (`udisksctl unmount -b /dev/sdX1`): `ch boot` cuts the CH569's power, and a mounted FAT
+Unmount the SD drive first (`PYTHONPATH=python python3 -m rp569 eject`, or `udisksctl unmount -b /dev/sdX1`): `ch boot` cuts the CH569's power, and a mounted FAT
 volume is then left dirty ("Volume was not properly unmounted").
 
 **A new CH569 needs two one-time config changes** (both done on board #1, UID 8A-82-48-26-3B-38-0D-E1, 2026-11-19).

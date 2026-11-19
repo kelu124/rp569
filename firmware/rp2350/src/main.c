@@ -25,9 +25,12 @@
 #define LINK_BAUD        115200
 #define CH_POWER_ON_BOOT 1        // power the CH569 (normal boot) when the RP2350 starts
 #define LINE_MAX         128
+#define LINK_CTRL        0x01     // link control lines, = LINK_CTRL_CHAR in firmware/ch569/src/bridge_config.h
+#define SD_RELEASE_MS    2000     // wait for the CH569 to finish an MSC transfer and release the card
 
 static uart_inst_t *const link_uart = UART_INSTANCE(RP569_LINK_UART);
 static bool ch_powered;
+static bool ch_sd_off;            // the CH569 acknowledged an SD release (link control line)
 static bool ch_fault_seen;
 static const uint led_pins[3] = {RP569_LED_R_PIN, RP569_LED_G_PIN, RP569_LED_B_PIN};
 static bool led_on[3];
@@ -76,7 +79,33 @@ static void ch_lines_release(void) {
     gpio_disable_pulls(RP569_HSPI_D0_PIN);
 }
 
+static void link_poll(void);
+
+// Ask the CH569 firmware to release the SD card ("\x01SDREL\n": it finishes any MSC transfer, waits until the card
+// is idle and reports "medium not present" to the host), wait for its "\x01SDOFF\n". False: no answer (bootloader,
+// no firmware, or a transfer longer than SD_RELEASE_MS).
+static bool ch_sd_release(void) {
+    ch_sd_off = false;
+    uart_putc_raw(link_uart, LINK_CTRL);
+    uart_puts(link_uart, "SDREL\n");
+    absolute_time_t until = make_timeout_time_ms(SD_RELEASE_MS);
+    while (!ch_sd_off && !time_reached(until)) {
+        link_poll();
+        sleep_ms(1);
+    }
+    return ch_sd_off;
+}
+
+static void ch_sd_release_report(void) {
+    if (ch_sd_release())
+        printf("CH569 SD released\n");
+    else
+        printf("CH569 SD release: no answer\n");
+}
+
 static void ch_power_off(void) {
+    if (ch_powered)
+        ch_sd_release_report();           // never cut the power under a card that is being written
     gpio_put(RP569_CH_PWR_EN_PIN, 0);
     ch_lines_release();
     ch_powered = false;
@@ -219,6 +248,12 @@ static void cmd_ch_off(int argc, char **argv, char *rest) { ch_power_off(); }
 static void cmd_ch_cycle(int argc, char **argv, char *rest) { ch_power_off(); ch_power_on(false); }
 static void cmd_ch_boot(int argc, char **argv, char *rest) { ch_power_on(true); }
 static void cmd_ch_reset(int argc, char **argv, char *rest) { ch_reset_pulse(); }
+static void cmd_ch_eject(int argc, char **argv, char *rest) {
+    if (!ch_powered)
+        printf("CH569 is off ('ch on' first)\n");
+    else
+        ch_sd_release_report();           // the card stays released until the CH569 restarts
+}
 static void cmd_ch_status(int argc, char **argv, char *rest) { ch_status(); }
 
 // Bring-up probe of the CH569 -> RP2350 UART line (GPIO25 <- PA8 TXD1): read it with the pull-up, then with the
@@ -269,6 +304,7 @@ static const command_t commands[] = {
     {"ch off",    "",                "CH569 power off",                                                 cmd_ch_off},
     {"ch cycle",  "",                "CH569 power off, then normal boot",                               cmd_ch_cycle},
     {"ch boot",   "",                "power-cycle the CH569 into its USB bootloader (~10 s)",           cmd_ch_boot},
+    {"ch eject",  "",                "release the SD card cleanly (done before every power-off too)",   cmd_ch_eject},
     {"ch reset",  "",                "pulse RST# (only with RESET_EN set in the CH569)",                cmd_ch_reset},
     {"ch status", "",                "CH569 power, fault flag, rails",                                  cmd_ch_status},
     {"ch pins",   "",                "probe the CH569 -> RP2350 UART line (driven / open)",             cmd_ch_pins},
@@ -341,14 +377,26 @@ static void cli_poll(void) {
 
 // Lines from the CH569: printed above the command being typed.
 static void link_poll(void) {
+    static bool ch_ctrl;                  // inside a control line
     while (ch_powered && uart_is_readable(link_uart)) {
         char c = uart_getc(link_uart);
+        if (c == LINK_CTRL && ch_len == 0) {  // a control line from the CH569 itself, not printed
+            ch_ctrl = true;
+            continue;
+        }
         // Skip '\r' and anything non-printable: the line glitches while the CH569 boots and the UART reads that as
         // a 0x00 byte, which would truncate the printf below and blank the first echoed line.
         if (c != '\n' && !isprint((unsigned char)c))
             continue;
         if (c != '\n' && ch_len < LINE_MAX - 1) {
             ch_line[ch_len++] = c;
+            continue;
+        }
+        if (ch_ctrl) {
+            ch_ctrl = false;
+            if (ch_len == 5 && memcmp(ch_line, "SDOFF", 5) == 0)
+                ch_sd_off = true;
+            ch_len = 0;
             continue;
         }
         printf("\r\x1b[2KCH> %.*s\n", (int)ch_len, ch_line);

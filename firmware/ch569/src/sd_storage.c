@@ -172,6 +172,11 @@ UINT8 sd_storage_mount(void)
 
 void sd_storage_unmount(void)
 {
+    UINT16 ms;
+    /* A write leaves the card busy (DAT0 low) while it programs: wait for it (500 ms max), so cutting the power
+     * right after a release cannot interrupt the card. */
+    for(ms = 0; ms < 500 && !EMMCDat0Sta; ms++)
+        mDelaymS(1);
     PFIC_DisableIRQ(EMMC_IRQn);
     R32_EMMC_TRAN_MODE = 0;
     R16_EMMC_INT_FG = 0xffff;

@@ -52,6 +52,12 @@
  * which would break the link to the RP2350 (fixed at 115200). 1 = follow the host's SET_LINE_CODING. */
 #define LINK_FOLLOW_HOST_BAUD       0
 
+/* Link control lines (RP2350 <-> CH569 UART1): a line starting with this byte is a command for the CH569 itself,
+ * neither echoed nor forwarded to the host. RP2350 -> CH569 "\x01SDREL\n": release the SD card (finish any MSC
+ * transfer, wait until the card is idle, tell the host the medium is gone); CH569 -> RP2350 "\x01SDOFF\n" once
+ * done. Must match firmware/rp2350 (LINK_CTRL). */
+#define LINK_CTRL_CHAR              0x01
+
 /* 1 = echo every byte received from the RP2350 back to it (link test). */
 #define LINK_ECHO                   1
 

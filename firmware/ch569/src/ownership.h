@@ -33,5 +33,6 @@ extern volatile UINT8 own_card_ready;
 void ownership_init(void);
 void ownership_request(UINT8 req);   /* IRQ-safe: just latches the request   */
 void ownership_poll(void);           /* main-loop: executes a pending request */
+UINT8 ownership_pending(void);       /* 1 while a request waits to run        */
 
 #endif /* OWNERSHIP_H_ */

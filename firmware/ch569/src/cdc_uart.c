@@ -10,6 +10,8 @@
 #include "cdc_uart.h"
 #include "bridge_config.h"
 #include "ownership.h"
+#include <string.h>
+#include "ownership.h"
 
 /* Global define */
 #define UART_REV_LEN  1024                  /* uart receive ring size         */
@@ -235,10 +237,85 @@ void CDC_Variable_Clear(void)
     Uart_Sendlenth = 0;
 }
 
+/* Link control lines (LINK_CTRL_CHAR at the start of a line), parsed in IRQ context. */
+static UINT8 link_line_start = 1;           /* next byte starts a line           */
+static UINT8 link_ctrl_on = 0;              /* inside a control line             */
+static UINT8 link_ctrl_buf[16];
+static UINT8 link_ctrl_len = 0;
+static volatile UINT8 link_req_sd_release = 0;  /* IRQ -> main loop              */
+static UINT8 link_sd_release_wait = 0;      /* main loop: release in progress    */
+
+static void link_ctrl_line(void)
+{
+    link_ctrl_buf[link_ctrl_len] = 0;
+    if(strcmp((const char *)link_ctrl_buf, "SDREL") == 0)
+        link_req_sd_release = 1;
+}
+
+/* Queue bytes for the RP2350 on the echo ring (shared with the UART1 IRQ producer). */
+static void link_tx_str(const char *s)
+{
+    PFIC_DisableIRQ(UART1_IRQn);
+    for(; *s; s++)
+    {
+        UINT16 next = (echo_head + 1) & (ECHO_LEN - 1);
+        if(next == echo_tail)
+            break;
+        echo_buf[echo_head] = (UINT8)*s;
+        echo_head = next;
+    }
+    PFIC_EnableIRQ(UART1_IRQn);
+}
+
+/*******************************************************************************
+ * @fn        Link_Ctrl_Deal
+ *
+ * @brief     Main-loop part of the link control lines: SD release request ->
+ *            ownership release (runs once no MSC transfer is in flight) ->
+ *            "\x01SDOFF\n" to the RP2350, which may then cut the power.
+ ******************************************************************************/
+void Link_Ctrl_Deal(void)
+{
+    static const char sdoff[] = { LINK_CTRL_CHAR, 'S', 'D', 'O', 'F', 'F', '\n', 0 };
+
+    if(link_req_sd_release)
+    {
+        link_req_sd_release = 0;
+        PRINT("LINK: SD release requested by the RP2350\n");
+        ownership_request(OWN_REQ_RELEASE);
+        link_sd_release_wait = 1;
+    }
+    if(link_sd_release_wait && !ownership_pending() && !own_ch569_owns)
+    {
+        link_sd_release_wait = 0;
+        link_tx_str(sdoff);
+    }
+}
+
 /* One byte from the RP2350 (IRQ context): to the CDC ring (dropped when full,
- * e.g. no USB host) and to the echo ring. */
+ * e.g. no USB host) and to the echo ring. Control lines go to link_ctrl_line. */
 static void link_rx_byte(UINT8 b)
 {
+    if(link_ctrl_on)
+    {
+        if(b == '\n')
+        {
+            link_ctrl_on = 0;
+            link_line_start = 1;
+            link_ctrl_line();
+        }
+        else if(b != '\r' && link_ctrl_len < sizeof(link_ctrl_buf) - 1)
+            link_ctrl_buf[link_ctrl_len++] = b;
+        return;
+    }
+    if(b == LINK_CTRL_CHAR && link_line_start)
+    {
+        link_ctrl_on = 1;
+        link_ctrl_len = 0;
+        return;
+    }
+    link_line_start = (b == '\n');
+
     if(UartByteCount < UART_REV_LEN)
     {
         Receive_Uart_Buf[Uart_Input_Point++] = b;

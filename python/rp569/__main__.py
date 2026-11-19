@@ -1,7 +1,8 @@
-"""python -m rp569 [ports|versions]: list the rp569 serial ports / print every chip's firmware version."""
+"""python -m rp569 [ports|versions|eject]: list the rp569 serial ports / print every chip's firmware version /
+unmount the CH569 SD drive on this host, then have the RP2350 release the card (safe to power-cycle the CH569)."""
 import sys
 
-from . import __version__, ports
+from . import __version__, drive, ports
 from .ch569 import CH569Console
 from .rp2350 import RP2350
 
@@ -22,6 +23,14 @@ def main(argv=None):
                 with cls(p.device) as dev:
                     v = dev.version()
                     print(f'{p.role:14s} {p.device:16s} {v.chip} {v.version} git {v.git} uid {v.uid}')
+    elif args[0] == 'eject':
+        rp = next((p for p in found if p.role == 'rp2350'), None)
+        if rp is None:
+            sys.exit('no RP2350 port found')
+        ch = next((p for p in found if p.role.startswith('ch569')), None)
+        with RP2350(rp.device) as dev:
+            done, ack = drive.eject(dev, ch.serial_number if ch else None)
+        print(f"unmounted: {', '.join(done) or 'nothing mounted'}; CH569 {'released the card' if ack else 'did not answer'}")
     else:
         sys.exit(__doc__)
 
