@@ -65,7 +65,7 @@ RP_REPLIES = {
 }
 CH_REPLIES = {
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
-    'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on',
+    'status': 'usb usb3, sd ready (30436 MB), link UART1 115200 baud, lines from RP2350 4, echo on, sd clock 48 MHz',
 }
 
 

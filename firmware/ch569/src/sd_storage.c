@@ -11,6 +11,8 @@
 /* Scratch for the SCR read at the end of card init (DMA target). */
 __attribute__((aligned(16))) static UINT8 sd_scratch[512] __attribute__((section(".DMADATA")));
 
+UINT8 sd_high_speed = 0;                 /* 1 once CMD6 selected high speed (48 MHz clock) */
+
 /*******************************************************************************
  * IO/timing init, one of 8 adaptive modes (clock phase / negedge sampling
  * combinations) exactly as the vendor SD example probes them.
@@ -116,11 +118,17 @@ static UINT8 sd_card_init(UINT8 mode)
     sta = SD_ReadSCR(&TF_EMMCParam, sd_scratch);
     if(sta != CMD_SUCCESS) return OP_FAILED;
 
-    /* Full data clock (48 MHz, divider 10) with the probed phase setting */
-    if(mode < 4)
-        R16_EMMC_CLK_DIV = RB_EMMC_CLKMode | RB_EMMC_PHASEINV | RB_EMMC_CLKOE | 10;
-    else
-        R16_EMMC_CLK_DIV = RB_EMMC_CLKMode | RB_EMMC_CLKOE | 10;
+    /* Data clock: 48 MHz (480/10) only once the card is in high-speed mode (CMD6), default speed is 25 MHz max:
+     * 24 MHz (480/20) otherwise. Probed phase setting kept. */
+    sd_high_speed = SD_SwitchHighSpeed(&TF_EMMCParam, sd_scratch);
+    {
+        UINT16 div = sd_high_speed ? 10 : 20;
+        if(mode < 4)
+            R16_EMMC_CLK_DIV = RB_EMMC_CLKMode | RB_EMMC_PHASEINV | RB_EMMC_CLKOE | div;
+        else
+            R16_EMMC_CLK_DIV = RB_EMMC_CLKMode | RB_EMMC_CLKOE | div;
+    }
+    PRINT("SD: %s, %d MHz\n", sd_high_speed ? "high speed" : "default speed", sd_high_speed ? 48 : 24);
 
     return OP_SUCCESS;
 }

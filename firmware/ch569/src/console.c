@@ -52,10 +52,11 @@ static void cmd_version(void)
 
 static void cmd_status(void)
 {
-    PRINT("usb %s, sd %s (%ld MB), link UART1 %ld baud, lines from RP2350 %d, echo %s\n",
+    PRINT("usb %s, sd %s (%ld MB), link UART1 %ld baud, lines from RP2350 %d, echo %s, sd clock %d MHz\n",
           Link_Sta == LINK_STA_3 ? "usb3" : (Link_Sta == LINK_STA_1 ? "usb2" : "down"),
           own_card_ready ? "ready" : "none", own_card_ready ? (long)(TF_EMMCParam.EMMCSecNum / 2048) : 0L,
-          (long)cdc_line_coding.dwDTERate, link_lines_rx, LINK_ECHO ? "on" : "off");
+          (long)cdc_line_coding.dwDTERate, link_lines_rx, LINK_ECHO ? "on" : "off",
+          own_card_ready ? (sd_high_speed ? 48 : 24) : 0);
 }
 
 typedef struct

@@ -19,12 +19,18 @@
 #include "SD.h"
 #include "bridge_config.h"
 
-/* Sectors moved per USB data packet on the MSC read/write path. One 512-byte
- * sector per packet is the universally-correct value (fits a USB2 HS bulk packet
- * and a single-burst SS packet) and matches the proven INQUIRY/READ-CAPACITY
- * send path. Raise later for throughput only with matching SS burst config. */
-#define MSC_CHUNK_SECTORS   1
-#define MSC_CHUNK_BYTES     (MSC_CHUNK_SECTORS * DEF_UDISK_SECTOR_SIZE)
+/* Sectors per SD command on the MSC read/write path (one CMD18 / CMD25 per chunk, 2026-11-19; was one CMD17 /
+ * CMD25 per sector: ~1 MB/s read, ~0.25 MB/s write). The chunk sits in UDisk_In_Buf / UDisk_Out_Buf (UDISKSIZE =
+ * 80 sectors); USB moves it one packet at a time: 512 B at high speed, 1024 B (2 sectors) at SuperSpeed, where a
+ * 512-byte packet would be short and end the transfer. */
+#define MSC_CHUNK_SECTORS   64
+#define MSC_PKT_SECTORS     ( ( Link_Sta == LINK_STA_1 ) ? 1 : 2 )
+
+/* READ10: sectors read into UDisk_In_Buf by the last CMD18, and how many of them USB has taken. */
+static uint16_t msc_rd_count = 0;
+static uint16_t msc_rd_next  = 0;
+/* WRITE10: sectors received in UDisk_Out_Buf and not yet written (start LBA = UDISK_Cur_Sec_Lba). */
+static uint16_t msc_wr_count = 0;
 
 /* Length (bytes) of the WRITE10 data packet the host just delivered on EP3,
  * stashed by UDISK_Out_EP_Deal for UDISK_Down_OnePack. */
@@ -200,6 +206,8 @@ void UDISK_CMD_Deal_Status( uint8_t key, uint8_t asc, uint8_t status )
 *******************************************************************************/
 void UDISK_CMD_Deal_Fail( void )
 {
+    uint8_t in_stalled = ( Udisk_Transfer_Status & DEF_UDISK_BLUCK_UP_FLAG ) != 0;
+
     if( Udisk_Transfer_Status & DEF_UDISK_BLUCK_UP_FLAG )
     {
         /* �˵�2�ϴ�����STALL */
@@ -212,6 +220,7 @@ void UDISK_CMD_Deal_Fail( void )
             USB30_IN_Set(ENDP_2, ENABLE, STALL, 0, 0);
         }
         Udisk_Transfer_Status &= ~DEF_UDISK_BLUCK_UP_FLAG;
+        Udisk_Transfer_Status |= DEF_UDISK_CSW_UP_FLAG;   /* sent when the host clears the IN halt (BOT 6.7.2) */
     }
     if( Udisk_Transfer_Status & DEF_UDISK_BLUCK_DOWN_FLAG )
     {
@@ -225,6 +234,10 @@ void UDISK_CMD_Deal_Fail( void )
             USB30_OUT_Set(ENDP_3, STALL, 0);
         }
         Udisk_Transfer_Status &= ~DEF_UDISK_BLUCK_DOWN_FLAG;
+        /* BOT 6.7.3: the host clears the OUT halt, then reads the CSW on bulk IN: queue it now (EP2 is not stalled),
+         * or the host waits 30 s and resets the device. */
+        if( !in_stalled )
+            UDISK_Up_CSW( );
     }
 }
 
@@ -250,6 +263,8 @@ void CMD_RD_WR_Deal_Pre( void )
 
     /* ����ر��� */
     UDISK_Sec_Pack_Count = 0x00;
+    msc_rd_count = msc_rd_next = 0;
+    msc_wr_count = 0;
     UDISK_CMD_Deal_Status( 0x00, 0x00, 0x00 );
 }
 
@@ -710,12 +725,16 @@ void UDISK_onePack_Deal( void )
          * in a 30 s host timeout + reset (2026-11-19). A failed write has stalled EP3: leave it stalled. */
         if( UDISK_Down_OnePack() == 0 )
         {
+            /* Next packet after the buffered sectors (offset 0 after a flush / for the next CBW) */
+            UINT8 *next = UDisk_Out_Buf + msc_wr_count * DEF_UDISK_SECTOR_SIZE;
             if( Link_Sta == LINK_STA_1 )
             {
+                R32_UEP3_RX_DMA = (UINT32)next;
                 R8_UEP3_RX_CTRL = (R8_UEP3_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_R_RES_ACK;
             }
             else
             {
+                USBSS->UEP3_RX_DMA = (UINT32)next;
                 USB30_OUT_Set(ENDP_3, ACK, DEF_ENDP3_OUT_BURST_LEVEL);
                 USB30_Send_ERDY(ENDP_3 | OUT, DEF_ENDP3_OUT_BURST_LEVEL);
             }
@@ -736,6 +755,7 @@ void UDISK_Up_OnePack( void )
 {
     UINT16 nsec, i;
     UINT32 chunk;
+    UINT8 *pbuf;
 
     /* READ10 data phase, one bounded chunk per call. NO USB-IRQ masking: the USB
      * ISR (EP0 control + CDC EP4/EP6) keeps running between chunks, so the host's
@@ -750,21 +770,30 @@ void UDISK_Up_OnePack( void )
         return;
     }
 
-    chunk = ( UDISK_Transfer_DataLen < MSC_CHUNK_BYTES ) ? UDISK_Transfer_DataLen : MSC_CHUNK_BYTES;
-    nsec  = chunk / DEF_UDISK_SECTOR_SIZE;
-
-    for( i = 0; i < nsec; i++ )
+    /* Buffer used up: refill it with one multi-block read. */
+    if( msc_rd_next >= msc_rd_count )
     {
-        if( SDCardReadOneSec( &TF_EMMCParam, UDisk_In_Buf + i * DEF_UDISK_SECTOR_SIZE,
-                              UDISK_Cur_Sec_Lba + i ) != OP_SUCCESS )
+        uint32_t left = UDISK_Transfer_DataLen / DEF_UDISK_SECTOR_SIZE;
+        nsec = ( left < MSC_CHUNK_SECTORS ) ? left : MSC_CHUNK_SECTORS;
+        if( SDCardReadMulSec( &TF_EMMCParam, UDisk_In_Buf, UDISK_Cur_Sec_Lba, nsec ) != OP_SUCCESS )
         {
             UDISK_CMD_Deal_Status( 0x04, 0x11, 0x01 );   /* MEDIUM ERROR, unrecovered read */
             UDISK_CMD_Deal_Fail( );                      /* STALL EP2, clears UP flag      */
             return;
         }
+        UDISK_Cur_Sec_Lba += nsec;
+        msc_rd_count = nsec;
+        msc_rd_next  = 0;
     }
 
-    UDISK_Cur_Sec_Lba      += nsec;
+    /* Next USB packet out of the buffer */
+    i = MSC_PKT_SECTORS;
+    if( i > msc_rd_count - msc_rd_next )
+        i = msc_rd_count - msc_rd_next;
+    pbuf  = UDisk_In_Buf + msc_rd_next * DEF_UDISK_SECTOR_SIZE;
+    chunk = (UINT32)i * DEF_UDISK_SECTOR_SIZE;
+    msc_rd_next += i;
+
     UDISK_Transfer_DataLen -= chunk;
     if( UDISK_Transfer_DataLen == 0 )
         Udisk_Transfer_Status &= ~DEF_UDISK_BLUCK_UP_FLAG;
@@ -772,13 +801,13 @@ void UDISK_Up_OnePack( void )
     if( Link_Sta == LINK_STA_1 )
     {
         R16_UEP2_T_LEN  = chunk;
-        R32_UEP2_TX_DMA = (UINT32)(UINT8 *)UDisk_In_Buf;
+        R32_UEP2_TX_DMA = (UINT32)pbuf;
         R8_UEP2_TX_CTRL = (R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
     }
     else
     {
         USB30_IN_ClearIT( ENDP_2 );
-        USBSS->UEP2_TX_DMA = (UINT32)(UINT8 *)UDisk_In_Buf;
+        USBSS->UEP2_TX_DMA = (UINT32)pbuf;
         USB30_IN_Set( ENDP_2, ENABLE, ACK, DEF_ENDP2_IN_BURST_LEVEL, chunk );
         USB30_Send_ERDY( ENDP_2 | IN, DEF_ENDP2_IN_BURST_LEVEL );
     }
@@ -801,19 +830,23 @@ uint8_t UDISK_Down_OnePack( void )   /* 0 = ok, 1 = write failed (EP3 stalled) *
     len  = UDISK_Out_Pack_Len;
     nsec = len / DEF_UDISK_SECTOR_SIZE;
 
-    for( i = 0; i < nsec; i++ )
+    /* The packet landed at UDisk_Out_Buf + msc_wr_count sectors (see the EP3 re-arm in UDISK_onePack_Deal). */
+    msc_wr_count += nsec;
+    UDISK_Transfer_DataLen = ( UDISK_Transfer_DataLen >= len ) ? ( UDISK_Transfer_DataLen - len ) : 0;
+
+    /* Buffer full or last packet: one multi-block write */
+    if( msc_wr_count && ( msc_wr_count >= MSC_CHUNK_SECTORS || UDISK_Transfer_DataLen == 0 ) )
     {
-        if( SDCardWriteONESec( &TF_EMMCParam, UDisk_Out_Buf + i * DEF_UDISK_SECTOR_SIZE,
-                               UDISK_Cur_Sec_Lba + i ) != OP_SUCCESS )
+        if( SDCardWriteMulSec( &TF_EMMCParam, UDisk_Out_Buf, UDISK_Cur_Sec_Lba, msc_wr_count ) != OP_SUCCESS )
         {
+            msc_wr_count = 0;
             UDISK_CMD_Deal_Status( 0x03, 0x0C, 0x00 );   /* WRITE ERROR */
             UDISK_CMD_Deal_Fail( );                      /* STALL EP3, clears DOWN flag */
             return 1;
         }
+        UDISK_Cur_Sec_Lba += msc_wr_count;
+        msc_wr_count = 0;
     }
-
-    UDISK_Cur_Sec_Lba += nsec;
-    UDISK_Transfer_DataLen = ( UDISK_Transfer_DataLen >= len ) ? ( UDISK_Transfer_DataLen - len ) : 0;
 
     if( UDISK_Transfer_DataLen == 0 )
     {

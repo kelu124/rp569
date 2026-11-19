@@ -52,6 +52,10 @@ with the `git describe` hash; `version` on the console prints
 - stdout unbuffered (`setvbuf`): the `ch569> ` prompt has no newline and stayed in the stdio buffer.
 - Link UART1 rate no longer follows the host's SET_LINE_CODING (cdc_acm/ModemManager set 9600 on open).
 - `tools/check_mem.py` in the build: RAMX use vs the RAMX the flasher leaves for the image size.
+- Drive speed: multi-block SD reads/writes (`SDCardReadMulSec` / `SDCardWriteMulSec` in `SD.c`, HydraUSB3 BSP
+  pattern; multi-block writes need TRAN_MODE = DMA_DIR only and `R32_EMMC_RESPONSE3 = 0` at each block gap), CMD6
+  high-speed switch (`SD_SwitchHighSpeed`, own zeroed DMA buffer), SuperSpeed MSC packets of 1024 B (512 B was a short
+  packet). A failed write now queues the CSW after stalling bulk OUT (BOT 6.7.3) instead of leaving the host to time out.
 
 ## Build and flash
 
@@ -66,8 +70,11 @@ flash bootloader 2.70; a new chip first needs `-d=off` and `-b=off` (`docs/toolc
 
 ## Limits
 
-- **Drive speed** (USB2, board #1): ~0.25 MB/s write, ~1 MB/s read: one 512-byte sector per USB packet and
-  single-sector SD commands (`MSC_CHUNK_SECTORS 1` in `SW_UDISK.c`).
+- **Drive speed** (USB2, board #1, 32 MB file, verified): ~3.8 MB/s write, ~8.4 MB/s read (was 0.25 / 1.06 MB/s).
+  One CMD18 / CMD25 per 64 sectors (`MSC_CHUNK_SECTORS`, 32 KB in `UDisk_In_Buf` / `UDisk_Out_Buf`), card in
+  high-speed mode at 48 MHz (CMD6; 24 MHz if the card refuses). The limit now is one USB packet per main-loop pass
+  with SD and USB never overlapping; phantomdrive's pipelined, USB-IRQ-masked loop would go further at the cost of
+  pausing the serial ports during copies.
 - USB2 fallback is high-speed only (descriptors declare 512-byte bulk packets; no full-speed variant).
 - The serial ports pause during large drive transfers (USB interrupt masked by the MSC engine); UART1 RX is
   interrupt-driven and buffered, so nothing from the RP2350 is lost.

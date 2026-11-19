@@ -17,6 +17,7 @@
 
 /* Full mount: adaptive IO init + SD identification. OP_SUCCESS / OP_FAILED. */
 UINT8 sd_storage_mount(void);
+extern UINT8 sd_high_speed;             /* 1 = card in high-speed mode, 48 MHz clock (else 24 MHz) */
 
 /* Quiesce the controller before the card is handed back to the FPGA. */
 void sd_storage_unmount(void);

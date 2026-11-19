@@ -7,7 +7,7 @@ description: Use when building, changing or flashing the rp569 firmware (firmwar
 
 Two independent builds; both work on this machine. RP2350 firmware runs on the first board (2026-11-19: CDC, `version`,
 `adc` 5.02 V / 3.16 V, LEDs, `ch boot` → CH569 bootloader `4348:55e0` appears). CH569 flashed (DEBUG_EN off, boot pin PA5); it only links at USB2 (no SuperSpeed yet), where it is now the same
-composite as on USB3: drive (FAT32 card OK, ~0.25 MB/s write, ~1 MB/s read) + link CDC (if1) + console CDC (if3).
+composite as on USB3: drive (FAT32 card OK, ~3.8 MB/s write, ~8.4 MB/s read, 48 MHz high speed) + link CDC (if1) + console CDC (if3).
 Link echo 20/20, CDC bridge both ways.
 `ch pins` probes the CH569 → RP2350 line. The first byte after a CH569 power-up is a 0x00 glitch: `link_poll` drops non-printables.
 Machine setup, udev rules and tool updates: `docs/toolchain.md`.
@@ -56,6 +56,11 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
   (`Link_Ctrl_Deal`, `cdc_uart.c`) releases the card once the MSC engine is idle (`ownership_poll` now never runs
   mid-transfer) and answers `\x01SDOFF\n`. Clean FAT needs the host unmount first: `python -m rp569 eject`
   (`python/rp569/drive.py`, udisksctl). The CLI helper must wait for the prompt: `ch off/cycle/boot` take up to 2 s more.
+- SD traps (2026-11-19): multi-block CMD25 stalls after block 1 with TRAN_MODE bit 6 (keep it for n = 1 only) and
+  needs `R32_EMMC_RESPONSE3 = 0` at each BKGAP; SD guards are per block; on a failed data phase send CMD12 or the card
+  stays in receive-data. CMD6 status must go to its own zeroed buffer (reusing the SCR buffer gave stale / shifted
+  data). `status` on the console ends with `sd clock N MHz` (48 = high speed). Speed test: unmount, write, sync,
+  remount, sha256 (scratch `sdspeed.sh` pattern).
 - Known: `chip_uid.c` ROM read returns stale `0xF7F9BF11` (serial `11BFF9F711BFF9F7`, real UID 8A82…E1); the
   ROM-access sequence matches HydraUSB3, `R8_GLOB_ROM_CFG` reads 0 and ignores a safe-mode write. Open in todo.
 - Memory: the flasher sets ROM/RAMX from the image size (< 32 KB → RAMX 96 KB, < 64 → 64, < 96 → 32); `.DMADATA` uses

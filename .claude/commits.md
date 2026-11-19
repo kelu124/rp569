@@ -6,7 +6,13 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-19 — Clean SD release before every CH569 power-off
+## pending — 2026-11-19 — CH569 drive speed: multi-block SD, high-speed mode
+What: `SD.c` (`SDCardReadMulSec`, `SDCardWriteMulSec`, `SD_SwitchHighSpeed`, ready wait, per-block guards, CMD12 on
+failure, diagnostics), `SW_UDISK.c` (64-sector chunks, buffered write, CSW after OUT stall, 1024 B SS packets),
+`sd_storage.c` (CMD6 then 48/24 MHz), console `status` + python `sd_clock_mhz`; README/skill/spec D-027/logs.
+Why: user asked to accelerate the card (phantomdrive as reference): 0.25 → 3.8 MB/s write, 1.06 → 8.4 MB/s read.
+
+## aadcfd6 — 2026-11-19 — Clean SD release before every CH569 power-off
 What: RP2350 `ch_sd_release()` / `ch eject` (+ python `ch_eject`, longer `ch off/cycle/boot` timeouts), CH569 link
 control lines in `cdc_uart.c` (`Link_Ctrl_Deal`), `ownership_poll` waits for an idle MSC engine, `sd_storage_unmount`
 waits for DAT0; `python/rp569/drive.py` + `python -m rp569 eject`; README/skill/toolchain/logs.

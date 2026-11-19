@@ -11,6 +11,7 @@
 *******************************************************************************/
 
 
+#include <string.h>
 #include "SD.h"
 #include "CH56x_common.h"
 #include "bridge_config.h"
@@ -30,12 +31,121 @@ static UINT8 SD_WaitCmd(PSD_PARAMETER p)
 
 /* Bounded wait for an EMMC data-transfer-done flag. Returns OP_FAILED on guard
  * expiry or a latched EMMC error. */
-static UINT8 SD_WaitTranDone(PSD_PARAMETER p)
+static UINT8 SD_WaitTranDoneN(PSD_PARAMETER p, UINT16 n)
 {
-    UINT32 g = MSC_EMMC_GUARD;
+    UINT32 g = MSC_EMMC_GUARD * (n ? n : 1);   /* the guard is per block */
     while(!(R16_EMMC_INT_FG & RB_EMMC_IF_TRANDONE))
         if(p->EMMCOpErr || --g == 0) return OP_FAILED;
     return OP_SUCCESS;
+}
+#define SD_WaitTranDone(p) SD_WaitTranDoneN((p), 1)
+
+/* Wait (500 ms max) until the card no longer holds DAT0 low: it stays busy while it programs a write. */
+static UINT8 SD_WaitReady(void)
+{
+    UINT32 us;
+    for(us = 0; us < 500000; us += 10)
+    {
+        if(R32_EMMC_STATUS & (1<<17))
+            return OP_SUCCESS;
+        mDelayuS(10);
+    }
+    return OP_FAILED;
+}
+
+/* CMD12 STOP_TRANSMISSION after CMD18/CMD25 (R1b), flags cleared. */
+static UINT8 SD_Stop(PSD_PARAMETER p)
+{
+    UINT8 sta;
+    EMMCSendCmd(0, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_R1b | EMMC_CMD12);
+    sta = SD_WaitCmd(p);
+    R16_EMMC_INT_FG = 0xffff;
+    return sta;
+}
+
+/***************************************************************
+ * @fn        SDCardReadMulSec
+ *
+ * @brief     read n consecutive sectors (CMD18 + CMD12; CMD17 for n == 1,
+ *            a single-block CMD18 never raises TRANDONE on this controller).
+ *            The multi-block pattern is the HydraUSB3 BSP's EMMCCardReadMulSec
+ *            (wch-ch56x-bsp drv/CH56x_emmc.c) with bounded waits.
+ *
+ * @return    OP_SUCCESS / OP_FAILED / OP_INVALID_ADD
+ */
+UINT8 SDCardReadMulSec( PSD_PARAMETER pEMMCPara, PUINT8 pRdatbuf, UINT32 Lbaaddr, UINT16 n )
+{
+    if(n == 1)
+        return SDCardReadOneSec(pEMMCPara, pRdatbuf, Lbaaddr);
+    if(n == 0 || Lbaaddr + n > pEMMCPara->EMMCSecNum)
+        return OP_INVALID_ADD;
+    if(SD_WaitReady() != OP_SUCCESS)
+        return OP_FAILED;
+
+    pEMMCPara->EMMCOpErr = 0;
+    R16_EMMC_INT_FG = 0xffff;
+    R32_EMMC_DMA_BEG1 = (UINT32)pRdatbuf;
+    R32_EMMC_TRAN_MODE = 0;
+    R32_EMMC_BLOCK_CFG = (pEMMCPara->EMMCSecSize)<<16 | n;
+    EMMCSendCmd(Lbaaddr, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_48 | EMMC_CMD18);
+
+    if(SD_WaitTranDoneN(pEMMCPara, n) != OP_SUCCESS)
+    {
+        PRINT("SD: read %lu+%u failed, err %04x flags %04x\n", (unsigned long)Lbaaddr, n,
+              pEMMCPara->EMMCOpErr, R16_EMMC_INT_FG);
+        SD_Stop(pEMMCPara);
+        return OP_FAILED;
+    }
+    R16_EMMC_INT_FG = RB_EMMC_IF_CMDDONE | RB_EMMC_IF_TRANDONE;
+    return SD_Stop(pEMMCPara) == CMD_SUCCESS ? OP_SUCCESS : OP_FAILED;
+}
+
+/***************************************************************
+ * @fn        SD_SwitchHighSpeed
+ *
+ * @brief     CMD6: check, then select the high-speed access mode (function
+ *            group 1 = 1, up to 50 MHz). SD Physical Layer spec 4.3.10; same
+ *            sequence as phantomdrive src/sd.c SD_EnableHighSpeed (MIT).
+ *            Card must be selected (CMD7) and on the 4-bit bus.
+ *
+ * @param     status - 64-byte DMA buffer (16-byte aligned, RAMX)
+ * @return    1 = high speed selected, 0 = card stays at default speed
+ */
+static UINT8 SD_Switch(PSD_PARAMETER p, UINT32 arg, PUINT8 status)
+{
+    UINT8 sta;
+    p->EMMCOpErr = 0;
+    R16_EMMC_INT_FG = 0xffff;
+    R32_EMMC_DMA_BEG1 = (UINT32)status;
+    R32_EMMC_TRAN_MODE = 0;
+    R32_EMMC_BLOCK_CFG = 64<<16 | 1;
+    EMMCSendCmd(arg, RB_EMMC_CKIDX | RB_EMMC_CKCRC | RESP_TYPE_48 | EMMC_CMD6);
+    sta = SD_WaitCmd(p);
+    if(sta == CMD_SUCCESS && SD_WaitTranDone(p) != OP_SUCCESS)
+        sta = CMD_FAILED;
+    R16_EMMC_INT_FG = 0xffff;
+    p->EMMCOpErr = 0;
+    return sta;
+}
+
+/* CMD6 status lands in its own zeroed buffer: reusing the scratch buffer the SCR read had just used returned stale
+ * or shifted data on board #1, and the card was never switched (2026-11-19). 128 bytes for the 64-byte status. */
+__attribute__((aligned(16))) static UINT8 sd_switch_status[128] __attribute__((section(".DMADATA")));
+
+UINT8 SD_SwitchHighSpeed(PSD_PARAMETER pEMMCPara, PUINT8 unused)
+{
+    PUINT8 status = sd_switch_status;
+    (void)unused;
+    memset(sd_switch_status, 0, sizeof(sd_switch_status));
+    if(SD_Switch(pEMMCPara, 0x00FFFFF1, status) != CMD_SUCCESS)   /* mode 0: check */
+        return 0;
+    if(!(status[13] & 0x02))                                       /* group 1 supports function 1? */
+        return 0;
+    memset(sd_switch_status, 0, sizeof(sd_switch_status));
+    if(SD_Switch(pEMMCPara, 0x80FFFFF1, status) != CMD_SUCCESS)   /* mode 1: switch */
+        return 0;
+    mDelayuS(10);                                                  /* switch takes effect within 8 clocks */
+    return (status[16] & 0x0F) == 1;
 }
 
 /***************************************************************
@@ -347,16 +457,21 @@ UINT8 SDCardReadOneSec( PSD_PARAMETER pEMMCPara, PUINT8 pRdatbuf, UINT32 Lbaaddr
  */
 UINT8 SDCardWriteONESec( PSD_PARAMETER pEMMCPara,  PUINT8 pWdatbuf, UINT32 Lbaaddr )
 {
+    return SDCardWriteMulSec(pEMMCPara, pWdatbuf, Lbaaddr, 1);
+}
+
+/* n consecutive sectors: CMD25, n blocks of DMA, CMD12 (HydraUSB3 BSP EMMCCardWriteMulSec, bounded waits). */
+UINT8 SDCardWriteMulSec( PSD_PARAMETER pEMMCPara,  PUINT8 pWdatbuf, UINT32 Lbaaddr, UINT16 n )
+{
 	UINT32 cmd_arg_val;
 	UINT16 cmd_set_val;
 	UINT8  sta;
 
-	if(Lbaaddr > (pEMMCPara->EMMCSecNum))
+	if(n == 0 || Lbaaddr + n > (pEMMCPara->EMMCSecNum))
 	    return  OP_INVALID_ADD;
 
-    { UINT32 g = MSC_EMMC_GUARD;
-      while(!(R32_EMMC_STATUS & (1<<17)))
-          if(--g == 0) return OP_FAILED; }
+    if(SD_WaitReady() != OP_SUCCESS)               /* previous write still programming */
+        return OP_FAILED;
 
     pEMMCPara->EMMCOpErr = 0;
 
@@ -371,19 +486,22 @@ UINT8 SDCardWriteONESec( PSD_PARAMETER pEMMCPara,  PUINT8 pWdatbuf, UINT32 Lbaad
 
 	if( sta == CMD_FAILED )
 	{	//The operation failed
+	    PRINT("SD: CMD25 %lu failed, err %04x\n", (unsigned long)Lbaaddr, pEMMCPara->EMMCOpErr);
 	    return OP_FAILED;
 	}
 
-	//DAT
-	R32_EMMC_TRAN_MODE = RB_EMMC_DMA_DIR|(1<<6);
+	//DAT. Single block: the vendor example's mode (bit 6 set). Multi-block: the HydraUSB3 BSP's (DMA_DIR only, and
+	//R32_EMMC_RESPONSE3 written at each block gap): with bit 6 the DMA stopped after the first block (2026-11-19).
+	R32_EMMC_TRAN_MODE = (n == 1) ? (RB_EMMC_DMA_DIR|(1<<6)) : RB_EMMC_DMA_DIR;
 	R32_EMMC_DMA_BEG1 = (UINT32)pWdatbuf;
-	R32_EMMC_BLOCK_CFG = (pEMMCPara->EMMCSecSize)<<16 | 1;
+	R32_EMMC_BLOCK_CFG = (pEMMCPara->EMMCSecSize)<<16 | n;
 
-	{ UINT32 g = MSC_EMMC_GUARD;
+	{ UINT32 g = MSC_EMMC_GUARD * n;               /* per block: the card is busy between blocks */
 	while(1)
 	{
 		if(R16_EMMC_INT_FG & RB_EMMC_IF_BKGAP)
 		{
+			R32_EMMC_RESPONSE3 = 0;
 			R16_EMMC_INT_FG = RB_EMMC_IF_BKGAP;
 		}
 		else if(R16_EMMC_INT_FG & RB_EMMC_IF_TRANDONE)
@@ -399,7 +517,12 @@ UINT8 SDCardWriteONESec( PSD_PARAMETER pEMMCPara,  PUINT8 pWdatbuf, UINT32 Lbaad
 			break;
 		}
 		if( pEMMCPara->EMMCOpErr || --g == 0 )
+		{
+		    PRINT("SD: write %lu+%u failed, err %04x flags %04x\n", (unsigned long)Lbaaddr, n,
+		          pEMMCPara->EMMCOpErr, R16_EMMC_INT_FG);
+		    SD_Stop(pEMMCPara);                      /* leave the card in transfer state, not receive-data */
 		    return OP_FAILED;
+		}
 	} }
 	sta = SD_WaitCmd( pEMMCPara );
 	R16_EMMC_INT_FG = RB_EMMC_IF_CMDDONE;

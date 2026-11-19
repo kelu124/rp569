@@ -35,6 +35,16 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-027 — CH569 drive: multi-block SD transfers, SD high-speed mode (status: accepted, 2026-11-19)
+Context: the MSC path did one SD command per 512-byte sector (0.25 MB/s write, 1 MB/s read) and clocked the card at
+48 MHz without switching it to high speed (default speed is 25 MHz max). Choice: READ10/WRITE10 move 64 sectors per
+CMD18 / CMD25 through the existing 40 KB MSC buffers, USB keeps one packet per main-loop pass with the USB IRQ live
+(serial ports keep working during copies); CMD6 selects high speed before the 48 MHz clock, else 24 MHz.
+Result on board #1: 3.8 MB/s write, 8.4 MB/s read. Alternative: phantomdrive's pipelined loop (USB IRQ masked, SD and
+USB overlapped) for more speed, at the cost of pausing the serial ports during transfers: left open (todo).
+Sources: SD Physical Layer spec v6.00 §4.3.10 (CMD6) and §4.6.2 (busy), CH569DS1 EMMC registers (R32_EMMC_TRAN_MODE,
+R16_EMMC_INT_FG), HydraUSB3 BSP `EMMCCardReadMulSec`/`WriteMulSec`, phantomdrive `sd.c` / `msc_read.c` / `msc_write.c`.
+
 ## D-026 — CH569 USB2 fallback = the same composite as USB3; link UART rate fixed (status: accepted, 2026-11-19)
 Context: board #1 only reaches high-speed, where the vendor USB2 stack was drive-only ("WCH USB2.0 DEVICE", no
 serial number), so no serial port and no python discovery (R-19). Choice: `CH56x_usb20.c` rewritten with the

@@ -32,9 +32,10 @@ class CH569Console(PromptCLI):
     @command('status')
     def status(self) -> dict:
         m = self._match(r'usb (\w+), sd (\w+) \((\d+) MB\), link UART1 (\d+) baud, lines from RP2350 (\d+), '
-                        r'echo (on|off)', 'status')
+                        r'echo (on|off)(?:, sd clock (\d+) MHz)?', 'status')
         return {'usb': m.group(1), 'sd_ready': m.group(2) == 'ready', 'sd_mb': int(m.group(3)),
-                'link_baud': int(m.group(4)), 'link_lines': int(m.group(5)), 'echo': m.group(6) == 'on'}
+                'link_baud': int(m.group(4)), 'link_lines': int(m.group(5)), 'echo': m.group(6) == 'on',
+                'sd_clock_mhz': int(m.group(7)) if m.group(7) else None}
 
 
 class CH569Link:
