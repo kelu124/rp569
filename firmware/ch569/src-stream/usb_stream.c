@@ -53,7 +53,12 @@ static UINT8 str_serial[34] = { 34, 0x03 };      /* chip UID, 16 hex digits */
 
 static const UINT8 *ep0_ptr;
 static UINT16 ep0_left;
-static UINT8 setup_req, dev_addr, configured, in_busy;
+static UINT8 setup_req, dev_addr, configured;
+/* Bulk IN 0x82: double-buffered (CH569DS1 table 12-4, TX_EN + BUF_MOD: DATA0 sent from UEP2_TX_DMA, DATA1 from
+ * UEP2_RX_DMA), see usb_stream_fill(). */
+static UINT8  inflight;                /* packets armed and not yet sent (0..2) */
+static UINT8  sw_tog;                  /* toggle of the oldest armed packet (= buffer the controller sends next) */
+static UINT16 inflight_len[2];         /* their lengths, oldest first */
 
 /* ------------------------------------------------------------------ init */
 void usb_stream_init(void)
@@ -74,30 +79,122 @@ void usb_stream_init(void)
     R8_USB_INT_EN = 0;                          /* polled */
     R8_USB_DEV_AD = 0;
 
-    R8_UEP2_3_MOD = RB_UEP2_TX_EN;
+    R8_UEP2_3_MOD = RB_UEP2_TX_EN | RB_UEP2_BUF_MOD;
     R16_UEP0_MAX_LEN = EP0_SIZE;
     R16_UEP2_MAX_LEN = BULK_SIZE;
     R32_UEP0_RT_DMA = (UINT32)ep0_buf;
     R16_UEP0_T_LEN = 0;
     R8_UEP0_TX_CTRL = UEP_T_RES_NAK;
-    R8_UEP0_RX_CTRL = 0;
+    R8_UEP0_RX_CTRL = UEP_R_RES_NAK;
     R16_UEP2_T_LEN = 0;
     R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_AUTOTOG;
     configured = 0;
-    in_busy = 0;
+    inflight = 0;
+    sw_tog = 0;
 }
 
 UINT8 usb_stream_configured(void) { return configured; }
-UINT8 usb_stream_in_busy(void) { return in_busy; }
 
-/* Queue one bulk IN packet (len <= 512). */
-void usb_stream_in_send(UINT8 *buf, UINT16 len)
+/* Bulk IN endpoint back to DATA0 with nothing armed (configuration, clear halt, bus reset). */
+static void ep2_restart(void)
 {
-    in_busy = 1;
-    R32_UEP2_TX_DMA = (UINT32)buf;
-    R16_UEP2_T_LEN = len;
-    __asm__ volatile("fence" ::: "memory");
-    R8_UEP2_TX_CTRL = (R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+    R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0 | RB_UEP_T_AUTOTOG;
+    R8_USB_CTRL |= RB_USB_INT_BUSY;
+    inflight = 0;
+    sw_tog = 0;
+    stream_chunk_rewind();
+}
+
+static inline UINT8 hw_tog(void) { return (R8_UEP2_TX_CTRL & RB_UEP_T_TOG_MASK) ? 1 : 0; }
+
+static inline void ep2_res(UINT8 res)     /* only while no IN can complete (endpoint NAKing or frozen) */
+{
+    R8_UEP2_TX_CTRL = (R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK) | res;
+}
+
+/* Arm the free buffer(s) from the chunk cursor. Writing the DMA address of the buffer the controller is not using is
+ * safe at any time. All chunks are 512 bytes, so the shared T_LEN fits both. Returns the number armed. */
+static UINT8 ep2_arm(void)
+{
+    UINT8 *p, k = 0;
+    UINT16 n;
+    while(inflight < 2 && (p = stream_chunk_take(&n)) != 0)
+    {
+        if(sw_tog ^ inflight)
+            R32_UEP2_RX_DMA = (UINT32)p;
+        else
+            R32_UEP2_TX_DMA = (UINT32)p;
+        R16_UEP2_T_LEN = n;
+        inflight_len[inflight++] = n;
+        k++;
+    }
+    return k;
+}
+
+/* Bulk IN service, every main-loop pass (board #1 findings, docs/ch569-hardware-notes.md):
+ * - RB_USB_INT_BUSY (auto-NAK while the transfer flag is set) halves the rate (22.8 MB/s: the host gets a NAK on the
+ *   IN right after each packet and backs off), so it is off while both buffers are armed: 44.8 MB/s.
+ * - Without it the controller goes straight on to the other buffer after a packet, so with a single packet armed it
+ *   would then send a stale buffer: INT_BUSY is on whenever fewer than two are armed, which freezes the endpoint
+ *   after that packet until the firmware has set NAK or re-armed.
+ * - Completions are counted from the data toggle, not the shared transfer flag (two may merge into one flag): the
+ *   loop runs far faster than one 512-byte packet (~9 us), so the toggle moves at most once per pass.
+ * - R8_UEP2_TX_CTRL is only written while no IN can complete (endpoint NAKing or frozen): a read-modify-write racing
+ *   a completion undoes its auto-toggle, and the host drops the next packet as a retransmission. */
+void usb_stream_fill(void)
+{
+    if(!configured)
+        return;
+    if(inflight && hw_tog() != sw_tog)
+    {
+        UINT16 n = inflight_len[0];
+        inflight_len[0] = inflight_len[1];
+        inflight--;
+        sw_tog ^= 1;
+        stream_chunk_done(n);
+        if(!inflight)
+        {
+            /* the lone packet went out: INT_BUSY was on, the endpoint is frozen until the flag is cleared */
+            if(!ep2_arm())
+                ep2_res(UEP_T_RES_NAK);
+            else if(inflight == 2)
+                R8_USB_CTRL &= ~RB_USB_INT_BUSY;
+            R8_USB_INT_FG = RB_USB_IF_TRANSFER;
+            return;
+        }
+        /* one still armed, maybe on the wire: refill the buffer just sent, or freeze after the last one */
+        if(!ep2_arm())
+        {
+            R8_USB_CTRL |= RB_USB_INT_BUSY;
+            R8_USB_INT_FG = RB_USB_IF_TRANSFER;       /* the flag of the packet just counted: let the last one go */
+            if(hw_tog() != sw_tog)
+            {
+                /* it went out before INT_BUSY was on (its flag merged with the previous one): nothing armed, and
+                 * the controller now points at a sent buffer: NAK at once (narrow race, see above) */
+                ep2_res(UEP_T_RES_NAK);
+                n = inflight_len[0];
+                inflight = 0;
+                sw_tog ^= 1;
+                stream_chunk_done(n);
+            }
+        }
+        else if((R8_USB_INT_ST & 0x0F) == 2)
+            R8_USB_INT_FG = RB_USB_IF_TRANSFER;
+        return;
+    }
+    if(!inflight)
+    {
+        if(ep2_arm())
+        {
+            if(inflight == 2)
+                R8_USB_CTRL &= ~RB_USB_INT_BUSY;
+            else
+                R8_USB_CTRL |= RB_USB_INT_BUSY;
+            ep2_res(UEP_T_RES_ACK);                    /* endpoint was NAKing: safe */
+        }
+    }
+    else if(inflight == 1 && ep2_arm())
+        R8_USB_CTRL &= ~RB_USB_INT_BUSY;               /* both armed again: no more auto-NAK */
 }
 
 /* ------------------------------------------------------------------ EP0 */
@@ -176,8 +273,7 @@ static void handle_setup(void)
             return;
         case USB_SET_CONFIGURATION:
             configured = SETUP->wValueL;
-            R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0 | RB_UEP_T_AUTOTOG;
-            in_busy = 0;
+            ep2_restart();
             ep0_status_in();
             return;
         case USB_GET_CONFIGURATION:
@@ -190,10 +286,7 @@ static void handle_setup(void)
             return;
         case USB_CLEAR_FEATURE:                   /* endpoint halt on 0x82: back to DATA0 */
             if((SETUP->bRequestType & 0x1F) == USB_REQ_RECIP_ENDP && SETUP->wIndexL == 0x82)
-            {
-                R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0 | RB_UEP_T_AUTOTOG;
-                in_busy = 0;
-            }
+                ep2_restart();
             ep0_status_in();
             return;
         case USB_SET_INTERFACE:
@@ -226,7 +319,7 @@ void usb_stream_poll(void)
             {
                 R8_USB_DEV_AD = dev_addr;
                 setup_req = 0xFF;
-                R8_UEP0_TX_CTRL = 0;
+                R8_UEP0_TX_CTRL = UEP_T_RES_NAK;
             }
             else if(ep0_left)
             {
@@ -236,33 +329,32 @@ void usb_stream_poll(void)
             }
             else
             {
+                /* data stage (or no-data status) done: NAK further INs, accept the status OUT. EP0 must never be
+                 * left in ACK when idle: with the controller's auto-NAK off (two bulk IN packets armed) the host's IN right
+                 * after the next SETUP would get a stale buffer. */
                 R16_UEP0_T_LEN = 0;
-                R8_UEP0_TX_CTRL = 0;
+                R8_UEP0_TX_CTRL = UEP_T_RES_NAK;
                 R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
             }
         }
-        else if(ep == 0)                            /* OUT: status stage of an IN request */
+        else if(ep == 0)                            /* OUT: status stage of an IN request: EP0 idle */
         {
             R16_UEP0_T_LEN = 0;
-            R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
-            R8_UEP0_RX_CTRL = 0;
+            R8_UEP0_TX_CTRL = UEP_T_RES_NAK;
+            R8_UEP0_RX_CTRL = UEP_R_RES_NAK;
         }
-        else if(ep == 2 && token == 2)
-        {
-            R8_UEP2_TX_CTRL = (R8_UEP2_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;   /* NAK before clearing */
-            in_busy = 0;
-        }
+        else if(ep == 2)
+            return;                                 /* bulk IN: usb_stream_fill() (data toggle) owns this flag */
         R8_USB_INT_FG = RB_USB_IF_TRANSFER;
     }
     else if(fg & RB_USB_IF_BUSRST)
     {
         R8_USB_DEV_AD = 0;
         configured = 0;
-        in_busy = 0;
         R16_UEP0_T_LEN = 0;
         R8_UEP0_TX_CTRL = UEP_T_RES_NAK;
-        R8_UEP0_RX_CTRL = 0;
-        R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0 | RB_UEP_T_AUTOTOG;
+        R8_UEP0_RX_CTRL = UEP_R_RES_NAK;
+        ep2_restart();
         R8_USB_INT_FG = RB_USB_IF_BUSRST;
     }
     else if(fg & RB_USB_IF_SUSPEND)

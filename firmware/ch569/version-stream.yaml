@@ -3,4 +3,4 @@
 # commit that changes firmware/ch569/. Read at build time (make VARIANT=stream) and printed at boot on the link.
 major: 1
 minor: 0
-patch: 1
+patch: 2

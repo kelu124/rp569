@@ -8,7 +8,7 @@
  * Ring: STREAM_RING_SLOTS x 4 KB in RAMX; the host must keep IN requests flowing (python/rp569/stream.py).
  * Vendor requests (bmRequestType 0xC0 / 0x40, interface-independent):
  *   STREAM_REQ_STATS  0x60 IN  : struct stream_stats (little endian)
- *   STREAM_REQ_RESET  0x61 OUT : clear the statistics and the ring
+ *   STREAM_REQ_RESET  0x61 OUT : clear the statistics (the ring is drained by reading)
  *   STREAM_REQ_EDGE   0x62 OUT : wValue 0 = sample HD on the rising HRCLK edge, 1 = falling
  *******************************************************************************/
 #ifndef STREAM_H_
@@ -33,6 +33,7 @@ typedef struct __attribute__((packed))
     UINT32 fifo_ov;        /* RB_HSPI_IF_FIFO_OV events                     */
     UINT32 bytes_out;      /* bytes sent to the host                        */
     UINT32 usb_packets;    /* bulk IN packets sent                          */
+    UINT32 loop_max_us;    /* longest main-loop pass, microseconds          */
 } stream_stats_t;
 
 extern volatile stream_stats_t stream_stats;
@@ -40,10 +41,15 @@ extern UINT8 stream_rx_edge;      /* 0 rising, 1 falling */
 
 void   usb_stream_init(void);     /* USB2 high-speed device, vendor bulk IN       */
 UINT8  usb_stream_configured(void);
-UINT8  usb_stream_in_busy(void);
-void   usb_stream_in_send(UINT8 *buf, UINT16 len);
+void   usb_stream_fill(void);     /* bulk IN service: count sent packets, arm the free buffer(s) */
 void   usb_stream_poll(void);     /* EP0 + bulk IN completion (polled, no IRQ)    */
-void   stream_reset(void);        /* statistics + ring                            */
+
+/* main.c: chunk cursor over the filled ring slots (512-byte chunks) */
+UINT8 *stream_chunk_take(UINT16 *len);   /* next chunk to arm, 0 if none */
+void   stream_chunk_done(UINT16 n);      /* the host received one chunk */
+void   stream_chunk_rewind(void);        /* nothing armed any more */
+
+void   stream_reset(void);        /* statistics only                              */
 void   hspi_rx_init(void);
 void   hspi_rx_set_edge(UINT8 falling);
 

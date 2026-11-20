@@ -31,11 +31,32 @@ All requested by the user, 2026-10-23.
 | R-18 | Made and assembled by JLCPCB; BOM with LCSC part numbers | met (v1.0 files) | D-014, D-016, D-022; `hardware/jlcpcb/` (gerbers, BOM, CPL); 2 parts must be consigned |
 | R-19 | CH569 exposes the SD card (FAT32) as a USB drive **and** a serial port to the host; the RP2350 keeps its own USB identity so the host (and Claude) can tell the two apart | met at USB2 on board #1 (USB3 not reached yet) | D-026; RP2350 `2e8a:0009` "rp569 RP2350B", CH569 `1a86:fe2c` "rp569 CH569" (D-025) |
 | R-20 | The SD card at its maximum speed while mounted; when it is unmounted the CH569 serial ports appear, and a serial command switches back (ports gone, card mounted) | met at USB2 on board #1: 5.0 MB/s write, 17.6 MB/s read in drive mode; modes + flags | D-028, D-029 |
-| R-21 | Firmware variant: the CH569 reads the RP2350-CH569 8-bit bus and streams 16 MB/s to the host | met at USB2 on board #1 (16.05 MB/s, every word checked) | D-031 |
+| R-21 | Firmware variant: the CH569 reads the RP2350-CH569 8-bit bus and streams 16 MB/s to the host | met at USB2 on board #1 (16.05 MB/s, every word checked); practical maximum 44.7 MB/s (USB2 bulk ceiling) | D-031, D-033 |
 
 ## 2. Design decisions
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
+
+## D-033 — Variant 1 maximum streaming speed: 44.7 MB/s, set by USB2 bulk (status: accepted, 2026-11-19)
+Requested by user ("find out what is the max streaming speed for the device in practice"). Measured on board #1,
+counter pattern, every word checked on the host, 6-10 s runs (`maxbench.py`-style sweep: RP2350 rate x bus clock):
+
+| Stage | Limit found | What lifts it |
+|---|---|---|
+| RP2350 core 1 (CRC-16/USB table, 1024 words/packet) | 20.8 MB/s | crc mode 9: CRC of the counter packets from precomputed per-bit contributions (CRC is affine: <= 64 XORs/packet) |
+| PIO HSPI sender (2 instr/byte, 150 MHz sys) | = bus clock: 74.7 MB/s at 75 MHz | - (0 CRC errors up to 75 MHz) |
+| CH569 bulk IN, single buffer + `RB_USB_INT_BUSY` | 22.7 MB/s | double-buffered EP2 with auto-NAK off while 2 packets are armed: **44.7 MB/s** |
+| USB2 high-speed bulk on this host | 44.7-44.9 MB/s | USB3 (board v1.1, D-032) |
+| Host reader (pyusb, sync reads) | lossless to ~35-40 MB/s with 512 kB reads; 1-3 packets/s lost at 35-40, more above | async multi-URB reader (libusb1) |
+
+Choice: the CH569 runs variant 1 at 120 MHz (`STREAM_FREQ`), EP2 double-buffered (CH569DS1 table 12-4: TX_EN +
+BUF_MOD, DATA0 from UEP2_TX_DMA, DATA1 from UEP2_RX_DMA); packets sent are counted from the data toggle, auto-NAK
+(INT_BUSY) only while fewer than two are armed, TX_CTRL written only while no IN can complete (see
+`docs/ch569-hardware-notes.md` USB2 and HSPI). RP2350: 12 us idle gap between packets (`GAP_US`, in ISR) so the
+CH569 reads the RX toggle before the next packet starts. Practical figures: **44.7 MB/s sustained** with the RP2350
+unthrottled on a 75 MHz bus (61 MB/s offered, ring overflows counted and dropped whole packets); **~40 MB/s with
+occasional single-packet host gaps**; 16 MB/s clean. Alternatives: interrupt-driven HSPI R_DONE (shorter latency,
+smaller gap; not needed below the USB ceiling); larger ring (11.9 KB RAMX spare = 2 slots).
 
 ## D-032 — USB3 SuperSpeed on board #1: link training fails, cause = SS pair routing (status: open, 2026-11-19)
 Test plan step 3. Facts: USB 3.0 Micro-B cable on a 5 Gb/s laptop port (usb1-port1, SS peer usb2-port1), other USB3

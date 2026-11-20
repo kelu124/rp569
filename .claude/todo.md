@@ -72,5 +72,8 @@
 - [ ] Card 573B-9367: FAT dirty flag from the early unclean power cuts, and FAT writes lost at 20:07:15 (2026-11-19, reflash under a stuck write): `sudo fsck.vfat -a /dev/sdb1` once (user, needs root).
 - [ ] Add the ModemManager-ignore lines to `/etc/udev/rules.d/60-rp569.rules` (`docs/toolchain.md`, needs sudo).
 - [ ] Install wch-ch56x-isp permanently (built in the scratchpad 2026-11-19: `git clone --recursive https://github.com/hydrausb3/wch-ch56x-isp`, `make`, copy to `~/.local/bin`).
-- [ ] Variant 1 next: logic analyser on GPIO0-7 over the stream path; USB3 bulk (stage 3); async (multi-URB) host reader for the start-up gap; RX_LEN0/1 and RB_HSPI_NUM_MIS meaning (D-031 open points).
+- [ ] Variant 1 next: logic analyser on GPIO0-7 over the stream path; USB3 bulk (stage 3); RX_LEN0/1 and RB_HSPI_NUM_MIS meaning (D-031 open points).
+- [ ] Variant 1 host reader: async multi-URB (python `libusb1`, needs install: user) so 44 MB/s is lossless; sync
+  pyusb reads lose 1-3 packets/s at 35-40 MB/s (D-033). Optional: HSPI R_DONE by interrupt (shorter RP2350 gap),
+  2 more ring slots (11.9 KB RAMX spare).
 - [ ] RP2350: I2C link and breakout I2C commands; PWM dimming for the LEDs (GPIO34/35/38 are PWM9A/9B/11A).

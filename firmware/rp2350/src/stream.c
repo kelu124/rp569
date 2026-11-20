@@ -25,6 +25,11 @@
 #define PKT_PAYLOAD   4096                          // bytes, the CH569 receive slot size
 #define PKT_WORDS     (1 + 1 + PKT_PAYLOAD / 4 + 1)  // count, header, payload, CRC word
 #define PKT_BYTES     (4 + PKT_PAYLOAD + 2)          // header + payload + CRC16
+// Idle time between packets. The CH569 finds the register a packet completed on from its RX toggle, read when it
+// handles R_DONE (polled, main loop up to ~7 us at 120 MHz); once the next packet has started the toggle has moved
+// on. Back-to-back packets (2 idle clocks) put it one register out of phase and it streamed slots still being written
+// (board #1, 2026-11-19). 12 us = 18 % of a packet at 75 MHz (bus still ~61 MB/s, above USB 2's 44.8 MB/s).
+#define GAP_US        12.0f
 #define NBUF          3
 #define PIN_D0        8                              // GPIO8-15 HD0-7
 #define PIN_CLK       16                             // HRCLK
@@ -105,6 +110,42 @@ static uint32_t crc_word(const uint32_t *hdr) {
     return (f & 16) ? (uint32_t)((c >> 8) | ((c & 0xFF) << 8)) : c;
 }
 
+// crc_mode 9: CRC-16/USB of the counter packets without touching the payload. The CRC is affine in the message and a
+// packet is header XOR base-in-every-word XOR (word index 0..1023), base = first counter value (a multiple of 1024,
+// so base + j = base | j). At start: C0 = CRC(header 0, payload = index pattern), and for every header bit / base bit
+// the change it causes; per packet the CRC is C0 XOR the changes of the set bits (<= 64 XORs). Counter pattern only.
+static uint16_t lin_c0, lin_hdr[32], lin_base[32];
+
+static void crc_linear_tables(void) {
+    static uint32_t m[1 + PKT_PAYLOAD / 4];
+    crc_usb_tables();
+    memset(m, 0, sizeof(m));
+    uint16_t zero = crc_usb_words(m, 1 + PKT_PAYLOAD / 4);
+    for (int j = 0; j < PKT_PAYLOAD / 4; j++)
+        m[1 + j] = j;
+    lin_c0 = crc_usb_words(m, 1 + PKT_PAYLOAD / 4);
+    memset(m, 0, sizeof(m));
+    for (int k = 0; k < 32; k++) {
+        m[0] = 1u << k;
+        lin_hdr[k] = crc_usb_words(m, 1 + PKT_PAYLOAD / 4) ^ zero;
+    }
+    m[0] = 0;
+    for (int k = 0; k < 32; k++) {
+        for (int j = 0; j < PKT_PAYLOAD / 4; j++)
+            m[1 + j] = 1u << k;
+        lin_base[k] = crc_usb_words(m, 1 + PKT_PAYLOAD / 4) ^ zero;
+    }
+}
+
+static inline uint16_t crc_linear(uint32_t hdr, uint32_t base) {
+    uint16_t c = lin_c0;
+    for (; hdr; hdr &= hdr - 1)
+        c ^= lin_hdr[__builtin_ctz(hdr)];
+    for (; base; base &= base - 1)
+        c ^= lin_base[__builtin_ctz(base)];
+    return c;
+}
+
 static void core1_loop(void) {
     uint64_t period_ns = target_mbs > 0 ? (uint64_t)(PKT_PAYLOAD * 1000.0 / target_mbs) : 0;
     uint64_t next_ns = time_us_64() * 1000;
@@ -116,10 +157,13 @@ static void core1_loop(void) {
         // the opposite reading, TSQN in [29:26], gave a sequence error on every packet on board #1)
         b[1] = ((tsqn & 0x03FFFFFF) << 6) | ((tsqn & 0xF) << 2);   // USDF = full sequence count (debug)
         tsqn++;
+        uint32_t base = counter;
         for (int j = 0; j < PKT_PAYLOAD / 4; j++)
-            b[2 + j] = counter++;
+            b[2 + j] = base + j;
+        counter = base + PKT_PAYLOAD / 4;
         // CRC16 field (2 bytes on the bus): mode 8 = CRC-16/USB, the one the CH569 checks (board #1 sweep)
-        b[PKT_WORDS - 1] = crc_mode == 8 ? crc_usb_words(&b[1], 1 + PKT_PAYLOAD / 4) : crc_mode ? crc_word(&b[1]) : 0;
+        b[PKT_WORDS - 1] = crc_mode == 9 ? crc_linear(b[1], base)
+                         : crc_mode == 8 ? crc_usb_words(&b[1], 1 + PKT_PAYLOAD / 4) : crc_mode ? crc_word(&b[1]) : 0;
         if (period_ns) {
             while (time_us_64() * 1000 < next_ns)
                 tight_loop_contents();
@@ -157,7 +201,9 @@ bool stream_start(float mbs, float clk_mhz, int crc) {
     if (running)
         return false;
     crc_mode = (crc >= 0 && crc <= 32) ? crc : 0;
-    if (crc_mode == 8)
+    if (crc_mode == 9)
+        crc_linear_tables();
+    else if (crc_mode == 8)
         crc_usb_tables();
     else if (crc_mode)
         crc_table((crc_mode - 1) & 1);
@@ -186,6 +232,12 @@ bool stream_start(float mbs, float clk_mhz, int crc) {
     pio_sm_init(pio, sm, offset, &c);
     pins_to_pio();
     pio_sm_clear_fifos(pio, sm);
+    // inter-packet gap (see GAP_US) into ISR, which the program only reads
+    uint32_t gap = (uint32_t)(GAP_US * bus_mhz + 0.5f);
+    pio_sm_put(pio, sm, gap > 1 ? gap - 1 : 0);
+    pio_sm_exec(pio, sm, pio_encode_pull(false, true));
+    pio_sm_exec(pio, sm, pio_encode_mov(pio_isr, pio_osr));
+    pio_sm_exec(pio, sm, pio_encode_out(pio_null, 32));
     pio_sm_set_enabled(pio, sm, true);
 
     dma_channel_config d = dma_channel_get_default_config(dma_ch);
@@ -226,8 +278,8 @@ void stream_stop(void) {
 void stream_print_status(void) {
     uint64_t end = running ? time_us_64() : stop_us;
     double secs = (end > start_us) ? (end - start_us) / 1e6 : 0;
-    double bytes = (double)packets * PKT_PAYLOAD;
-    printf("stream %s, packets %lu, payload %.0f bytes, %.2f s, %.2f MB/s, target %.1f MB/s, bus %.1f MHz, crc %d\n",
+    unsigned long long bytes = (unsigned long long)packets * PKT_PAYLOAD;    // integer: %.0f printed 5e+09 past 4 GB
+    printf("stream %s, packets %lu, payload %llu bytes, %.2f s, %.2f MB/s, target %.1f MB/s, bus %.1f MHz, crc %d\n",
            running ? "on" : "off", (unsigned long)packets, bytes, secs, secs > 0 ? bytes / secs / 1e6 : 0.0,
            target_mbs, bus_mhz, crc_mode);
 }

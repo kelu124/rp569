@@ -68,6 +68,15 @@ firmware does about it, where. Decisions: `specification.md` D-026..D-032.
 - **`RB_USB_INT_BUSY` auto-NAKs only while the transfer flag is set**: on an OUT endpoint, set the endpoint to NAK
   *before* clearing `RB_USB_IF_TRANSFER`, or the host's next packet lands on the same buffer (`msc_fast.c`: 28 of
   512 sectors were overwritten). Check `RB_USB_ST_TOGOK` to drop a resent packet.
+- **Never read-modify-write `R8_UEPn_TX_CTRL` while an IN can complete**: a completion between the read and the
+  write has its auto-toggle (`RB_UEP_T_AUTOTOG`) undone, and the host drops the next packet as a retransmission
+  (variant 1: one 512-byte chunk lost every few hundred while the bulk loop rewrote TX_CTRL on every pass). Write it
+  only while the endpoint NAKs or is frozen by the flag.
+- **`RB_USB_INT_BUSY` halves bulk IN throughput**: the host's IN right after each packet gets a NAK and backs off
+  (22.7-22.8 MB/s, single or double buffer). Off, with EP2 double-buffered (table 12-4, BUF_MOD: DATA0 from
+  `UEP2_TX_DMA`, DATA1 from `UEP2_RX_DMA`): 44.7 MB/s. Without it the controller moves straight on to the other
+  buffer after a packet, so with only one armed it would send a stale buffer: variant 1 turns INT_BUSY on whenever
+  fewer than two are armed. Two completions can merge into one transfer flag: count them from the data toggle.
 - Vendor MSC example bugs (fixed in `SW_UDISK.c` / `CH56x_usb20.c`): EP3 not re-armed after the last WRITE10 data
   packet (every write ended in a 30 s host timeout); no CSW after a bulk-OUT stall; CLEAR_FEATURE wrote the TX
   register for EP 0x02 and ignored 0x03.
@@ -109,10 +118,17 @@ firmware does about it, where. Decisions: `specification.md` D-026..D-032.
   first (found by a 32-variant sweep). Packets with a bad CRC are still written to the RX buffer (RB_HSPI_CRC_ERR set).
 - `R16_HSPI_RX_LEN0/1` read 0 or 1, not the payload length (fixed-length packets are used instead).
 - The expected RX sequence number (`R8_HSPI_RX_SC`) is not advanced the way the datasheet suggests and
-  `RB_HSPI_NUM_MIS` stays set on most packets whatever RX_SC is set to (unused, counted only). The last received
-  headers are in `R32_HSPI_UDF0` (even TSQN) / `R32_HSPI_UDF1` (odd).
-- HRCLK kept running between packets (like a CH569 transmitter's HTCLK) works; 25 MHz byte clock tested (25 MB/s raw),
-  16 MB/s sustained to the host. The first packet after a CH569 power-up fails its CRC (dropped).
+  `RB_HSPI_NUM_MIS` stays set on most packets whatever RX_SC is set to (unused, counted only). `R32_HSPI_UDF1`
+  holds the raw 32-bit header of the latest packet received (TLL2B/TSQN bits included), `R32_HSPI_UDF0` reads 0:
+  there is no per-register packet number to tell which RX register a packet completed on.
+- **The RX toggle (`RB_HSPI_RX_TOG`) moves when the next packet starts**: read after R_DONE it names the register the
+  next packet completes on only while the bus is still idle. With back-to-back packets (2 idle clocks) the firmware
+  went one register out of phase and handed the slot still being written to USB (old and new words interleaved,
+  ~3 jumps per packet). The RP2350 leaves 12 us between packets, more than the CH569 main-loop pass (5-7 us at 120 MHz).
+- HRCLK kept running between packets (like a CH569 transmitter's HTCLK) works; byte clock 25-75 MHz with 0 CRC errors
+  (74.7 MB/s raw at 75 MHz). Stream to the host: 44.7 MB/s (USB2 ceiling, D-033). The first packet after a CH569
+  power-up fails its CRC (dropped).
+- SysTick (`SysTick->CNT`, FREQ_SYS/8) counts **down** once started with `CTLR = 1`.
 
 ### Board level
 

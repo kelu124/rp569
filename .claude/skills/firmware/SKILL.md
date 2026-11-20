@@ -73,7 +73,11 @@ The shell env sets `PICO_SDK_PATH=/home/kelu/projets/pico-sdk/` (SDK 2.1.0); `bu
   HSPI traps: HRVLD rises with HRCLK low (else 1-byte shift), header TSQN in bits [5:2], CRC-16/USB, keep HRCLK
   running; RX_LEN reads 0/1, NUM_MIS unusable. Ring slot freed only after its last USB packet completed. No blocking
   UART prints in the stream loop (ring = 5 ms). Host reader in its own process (GIL), start the source after the
-  first reads. STAT/DATA debug lines: `-DSTREAM_DEBUG_STAT=1`.
+  first reads. STAT/DATA debug lines: `-DSTREAM_DEBUG_STAT=1`. Max speed (D-033): 44.7 MB/s = USB2 ceiling with EP2
+  double-buffered and INT_BUSY off while 2 armed; never RMW `R8_UEP2_TX_CTRL` while an IN can complete (lost
+  chunks); RX toggle moves at the next packet start (RP2350 `GAP_US` 12 us between packets); crc mode 9 = fast CRC
+  of counter packets (mode 8 caps the RP2350 at 20.8 MB/s); host reads 512 kB. The CH569 Makefile tracks header
+  deps now (`-MMD`); before, a struct change in a header left stale objects.
 - USB3 (D-032): board #1 never trains SuperSpeed (rx_detect/txeq ok, LINK_RDY never) whatever LINK_CFG: SS pair skew
   6.5 / 5.3 mm + single-leg vias = board v1.1 fix. Console `usb3` = link counters; test script pattern: scratchpad
   `usb3try.sh <LINK_CFG>` (build with EXTRA_CFLAGS, flash, cycle, read counters).

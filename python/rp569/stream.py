@@ -18,7 +18,7 @@ VID, PID = 0x1A86, 0xFE2C
 EP_IN = 0x82
 REQ_STATS, REQ_RESET, REQ_EDGE = 0x60, 0x61, 0x62
 STATS_FIELDS = ('packets', 'bytes_in', 'crc_errors', 'seq_errors', 'overflows', 'fifo_ov', 'bytes_out',
-                'usb_packets')
+                'usb_packets', 'loop_max_us')     # loop_max_us: longest CH569 main-loop pass (stream fw >= 1.0.x)
 
 
 class StreamError(RuntimeError):
@@ -59,9 +59,11 @@ def _reader_process(serial, chunk, timeout_ms, q, stop):
 
 
 class StreamReader:
-    def __init__(self, serial: str | None = None, chunk: int = 1 << 20):
+    def __init__(self, serial: str | None = None, chunk: int = 512 << 10):
         self.serial = serial
-        self.chunk = chunk                    # bytes per bulk read (multiple of 512)
+        # bytes per bulk read (multiple of 512). Board #1 at 40 MB/s (sync reads, CH569 overflows in 8 s): 64 kB 9846,
+        # 128 kB 2327, 256 kB 32, 512 kB 8, 1 MB 8662, 4 MB 2390: 512 kB.
+        self.chunk = chunk
         self._open()
 
     def _open(self):

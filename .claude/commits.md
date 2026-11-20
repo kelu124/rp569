@@ -6,6 +6,15 @@ What: ...
 Why: ...
 -->
 
+## pending — 2026-11-20 — Variant 1 stream: 44.7 MB/s practical maximum (D-033)
+What: CH569 stream firmware at 120 MHz with a double-buffered EP2 bulk IN (toggle-tracked completions, INT_BUSY only
+when fewer than 2 packets are armed, TX_CTRL written on state changes only), chunk cursor over the ring, loop_max_us
+stat, baud overflow fix, Makefile header dependencies; RP2350 CRC mode 9 (linear CRC-16 tables) and a 12 us PIO
+inter-packet gap; python reader 512 kB reads; D-033, hardware notes (TX_CTRL race, double buffering, RX toggle, UDF),
+firmware skill/README, todo (async reader), done.
+Why: user asked for the practical max streaming speed over USB2 building on the 16 MB/s stream: 44.7 MB/s at the host
+(USB2 bulk ceiling), 16 MB/s still lossless.
+
 ## fde8ae8 — 2026-11-19 — Hardware todo: board v1.1 USB3 SuperSpeed pair re-route
 What: `.claude/todo.md` hardware tasks: the USB3 SS item with the measured skew/vias, targets and the check on the
 new board; USB2 pairs in the same pass.

@@ -35,4 +35,8 @@ bytes:
     out pins, 8             side 0      ; next byte, clock low
     jmp x-- bytes           side 1      ; clock high: sampled
     set pins, 0             side 0      ; HRVLD = HRACT = 0 while the clock is low: packet done
-    jmp idle                side 1
+    mov y, isr              side 1      ; then an idle gap of ISR + 1 clocks (ISR set once by stream_start, no IN
+gap:                                    ; used): the CH569 must see R_DONE before the next packet starts, see
+    nop                     side 0      ; stream.c GAP_US
+    jmp y-- gap             side 1
+    jmp idle                side 0      ; (one long low phase: the bus is idle)

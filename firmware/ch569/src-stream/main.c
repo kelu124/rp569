@@ -38,9 +38,10 @@ static UINT8  fifo_head, fifo_count;
 static UINT8  free_stack[STREAM_RING_SLOTS];
 static UINT8  free_count;
 static UINT8  reg_slot[2];            /* slot behind RX_ADDR0 / RX_ADDR1 (or TRASH) */
-static UINT8  rx_tog;                 /* register the next packet goes to */
-static UINT16 usb_off;                /* bytes of the oldest slot already sent */
-static UINT8  release_slot = TRASH;   /* slot whose last USB packet is in flight */
+static UINT8  rx_tog;                 /* register the next packet completes on (RX toggle, see hspi_rx_poll) */
+static UINT16 usb_off;                /* bytes of the oldest slot already received by the host */
+static UINT8  arm_idx;                /* slots ahead of fifo_head for the next chunk to arm */
+static UINT16 arm_off;                /* byte offset in that slot */
 static UINT16 len_min = 0xFFFF, len_max, len_r0, len_r1;   /* receive length diagnostics (STAT line) */
 static UINT8  last_done, last_tog_after;
 static UINT8  last_slot = TRASH;
@@ -48,7 +49,7 @@ static UINT8  last_slot = TRASH;
 /* ------------------------------------------------------------------ link UART1 (RP2350) */
 static void link_init(void)
 {
-    UINT32 x = (10 * FREQ_SYS * 2 / 16 / LINK_BAUD + 5) / 10;
+    UINT32 x = ((FREQ_SYS / 8) * 10 / LINK_BAUD + 5) / 10;   /* = FREQ_SYS * 2 / 16 / baud, rounded; no 32-bit overflow at 120 MHz */
     R8_UART1_DIV = 1;
     R16_UART1_DL = x;
     R8_UART1_FCR = RB_FCR_FIFO_TRIG | RB_FCR_TX_FIFO_CLR | RB_FCR_RX_FIFO_CLR | RB_FCR_FIFO_EN;
@@ -86,13 +87,21 @@ static UINT8 *slot_addr(UINT8 s)
     return s == TRASH ? trash : ring[s];
 }
 
+/* Vendor request STREAM_REQ_RESET: statistics only. The ring and the chunk cursors keep their state (a USB packet
+ * may be armed on a slot: clearing them under it desynchronised the cursors and freed slots still being sent). */
 void stream_reset(void)
 {
-    UINT8 i;
     memset((void *)&stream_stats, 0, sizeof(stream_stats));
+}
+
+/* Boot: free list, empty FIFO, both RX registers on real slots. */
+static void ring_init(void)
+{
+    UINT8 i;
     fifo_head = fifo_count = 0;
     usb_off = 0;
-    release_slot = TRASH;
+    arm_idx = 0;
+    arm_off = 0;
     free_count = 0;
     for(i = 0; i < STREAM_RING_SLOTS; i++)
         free_stack[free_count++] = STREAM_RING_SLOTS - 1 - i;
@@ -147,7 +156,8 @@ void hspi_rx_init(void)
     R16_HSPI_BURST_CFG = 0;
 
     reg_slot[0] = reg_slot[1] = TRASH;        /* stream_reset() builds the free list first */
-    stream_reset();                           /* free list + both RX registers on real slots */
+    stream_reset();
+    ring_init();                              /* free list + both RX registers on real slots */
     R16_HSPI_RX_LEN0 = 0;                     /* 0 = up to 4096 bytes */
     R16_HSPI_RX_LEN1 = 0;
     R8_HSPI_RX_SC = 0;                        /* sequence 0, register 0 */
@@ -170,7 +180,13 @@ static void hspi_rx_poll(void)
         return;
 
     {
-        UINT8  done = rx_tog;                 /* the packet went to the register selected before it */
+        /* The packet completed on the register given by the RX toggle read after the previous packet. That read is
+         * only right while the bus is idle: once the next packet has started the toggle has moved on, and with
+         * back-to-back packets the firmware stayed one register out of phase and streamed slots still being written
+         * (board #1: old words interleaved with new ones). The RP2350 leaves 12 us between packets (stream.c GAP_US),
+         * more than one main-loop pass (loop_max_us). No per-register packet number exists to check it against:
+         * R32_HSPI_UDF0 reads 0 and UDF1 holds the raw header of the latest packet. */
+        UINT8  done = rx_tog;
         UINT8  st = R8_HSPI_RTX_STATUS;
         UINT16 len = done ? R16_HSPI_RX_LEN1 : R16_HSPI_RX_LEN0;
         UINT8  s = reg_slot[done];
@@ -219,37 +235,54 @@ static void hspi_rx_poll(void)
 }
 
 /* ------------------------------------------------------------------ USB pump */
-static void usb_pump(void)
+/* Chunk cursor for the USB side (512-byte chunks of the filled slots, oldest first). `take` gives the next chunk to
+ * arm (up to two may be armed ahead with double buffering), `done` records one chunk received by the host: a slot is
+ * freed only once all its chunks are done, so the HSPI DMA never overwrites data the USB DMA may still read. */
+
+UINT8 *stream_chunk_take(UINT16 *len)
 {
-    if(!usb_stream_configured() || usb_stream_in_busy())
-        return;
-    /* The previous packet has gone out: only now may its slot be filled again (freeing it when the last packet was
-     * merely queued let the HSPI DMA overwrite it while the USB DMA was still reading it). */
-    if(release_slot != TRASH)
+    UINT8 i, s;
+    UINT16 n;
+    if(arm_idx >= fifo_count)
+        return 0;
+    i = (fifo_head + arm_idx) % STREAM_RING_SLOTS;
+    s = fifo[i];
+    n = fifo_len[i] - arm_off;
+    if(n > 512)
+        n = 512;
+    *len = n;
     {
-        free_stack[free_count++] = release_slot;
-        release_slot = TRASH;
-    }
-    if(!fifo_count)
-        return;
-    {
-        UINT8  s = fifo[fifo_head];
-        UINT16 len = fifo_len[fifo_head];
-        UINT16 n = len - usb_off;
-        if(n > 512)
-            n = 512;
-        usb_stream_in_send(ring[s] + usb_off, n);
-        stream_stats.bytes_out += n;
-        stream_stats.usb_packets++;
-        usb_off += n;
-        if(usb_off >= len)
+        UINT8 *p = ring[s] + arm_off;
+        arm_off += n;
+        if(arm_off >= fifo_len[i])
         {
-            usb_off = 0;
-            fifo_head = (fifo_head + 1) % STREAM_RING_SLOTS;
-            fifo_count--;
-            release_slot = s;
+            arm_off = 0;
+            arm_idx++;
         }
+        return p;
     }
+}
+
+void stream_chunk_done(UINT16 n)
+{
+    stream_stats.bytes_out += n;
+    stream_stats.usb_packets++;
+    usb_off += n;
+    if(usb_off >= fifo_len[fifo_head])
+    {
+        usb_off = 0;
+        free_stack[free_count++] = fifo[fifo_head];
+        fifo_head = (fifo_head + 1) % STREAM_RING_SLOTS;
+        fifo_count--;
+        if(arm_idx)
+            arm_idx--;
+    }
+}
+
+void stream_chunk_rewind(void)        /* nothing armed any more (reset / clear halt): re-arm from the done cursor */
+{
+    arm_idx = 0;
+    arm_off = usb_off;
 }
 
 /* ------------------------------------------------------------------ main */
@@ -269,8 +302,19 @@ int main(void)
     hspi_rx_init();
     usb_stream_init();
 
+    SysTick->CTLR = 0;
+    SysTick->CNT = 0;
+    SysTick->CTLR = 1;                        /* free-running, FREQ_SYS / 8: main-loop timing (loop_max_us) */
     while(1)
     {
+        {
+            static UINT32 t_prev;
+            UINT32 t = (UINT32)SysTick->CNT;
+            UINT32 us = (t_prev - t) / (FREQ_SYS / 8000000);   /* SysTick counts down here */
+            t_prev = t;
+            if(us > stream_stats.loop_max_us && stream_stats.packets > 4)
+                stream_stats.loop_max_us = us;
+        }
         static UINT32 loops, last_packets = 0xFFFFFFFF;
         /* Debug only: the lines go out on the 115200-baud link with blocking writes (~17 ms each) while the ring holds
          * ~4 ms of stream at 16 MB/s, so they cost packets. The statistics are on USB (STREAM_REQ_STATS). */
@@ -294,7 +338,7 @@ int main(void)
         }
         hspi_rx_poll();
         usb_stream_poll();
-        usb_pump();
+        usb_stream_fill();
         link_poll();
         if(usb_stream_configured())
             GPIOB_ResetBits(LED_G);

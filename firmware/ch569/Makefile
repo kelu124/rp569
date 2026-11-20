@@ -6,6 +6,8 @@
 
 # VARIANT (D-025 major = firmware variant): default = variant 0 (drive/serial modes, src/, version.yaml);
 # VARIANT=stream = variant 1 (HSPI receiver -> USB bulk stream, src-stream/, version-stream.yaml, D-031).
+# variant 1 runs at 120 MHz (80 MHz in variant 0): shorter main-loop pass for the HSPI / bulk IN polling
+STREAM_FREQ ?= 120000000
 VARIANT ?=
 ifeq ($(VARIANT),stream)
 TARGET  := rp569_ch569_stream
@@ -42,7 +44,7 @@ CFLAGS  := $(ARCH) -Os -g -std=gnu99 \
            -ffunction-sections -fdata-sections -fmessage-length=0 \
            -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-parentheses \
            -Wno-comment -Wno-misleading-indentation \
-           -DDEBUG=0 -DFREQ_SYS=80000000 \
+           -DDEBUG=0 -DFREQ_SYS=$(if $(filter stream,$(VARIANT)),$(STREAM_FREQ),80000000) \
            $(INCLUDES) $(EXTRA_CFLAGS)
 
 ASFLAGS := $(ARCH) -x assembler-with-cpp $(INCLUDES)
@@ -114,9 +116,12 @@ all: check-includes $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).bin $(BUILD)/$(TAR
 check-includes:
 	python3 tools/check_includes.py
 
+# -MMD -MP: header dependencies (a changed struct in a header used to leave stale objects behind)
 $(BUILD)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+
+-include $(OBJECTS:.o=.d)
 
 $(BUILD)/%.o: %.S
 	@mkdir -p $(dir $@)
