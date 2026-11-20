@@ -6,7 +6,7 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-20 — CH569 crystal check, watchdog/software reset, user-mode trap (D-034); v1.1 todos
+## 35e2997 — 2026-11-20 — CH569 crystal check, watchdog/software reset, user-mode trap (D-034); v1.1 todos
 What: CH569 console `xtal` (TMR0 capture on PA9), `lastreset`, `wdtest`; RP2350 `clkout` (XOSC / n on GPIO21);
 python `xtal()`, `last_reset()`, `wdtest()`, `clkout()` + tests; D-034, D-028/D-030 corrected; hardware notes
 (user mode / gintenr, resets work, watchdog details, TMR0 capture, UID lead, capability notes: SerDes peer, parallel
