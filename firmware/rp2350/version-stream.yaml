@@ -3,4 +3,4 @@
 # commit that changes firmware/rp2350/. Read at build time (CMake target rp569_rp2350_stream).
 major: 1
 minor: 0
-patch: 1
+patch: 2

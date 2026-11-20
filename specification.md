@@ -37,6 +37,23 @@ All requested by the user, 2026-10-23.
 
 Newest first. Each entry: context, choice, alternatives, rationale, source (datasheet section).
 
+## D-034 — CH569 crystal check, watchdog / software reset, user-mode trap (status: accepted, 2026-11-20)
+Tests 4 and 9 of the CH569 feature list, variant 0, board #1.
+Crystal: the RP2350 drives 12 MHz XOSC / 12000 = 1 kHz on GPIO21 (GPOUT0, RP2350 datasheet GPIO function table;
+net HSPI_TREQ = CH569 PA9 = TMR0 capture, CH569DS1 pin table and 8.3.3), command `clkout`; the CH569 sums 1000
+rising-to-rising TMR0 periods (exact to +-1 tick at 80 MHz = 0.0125 ppm), command `xtal`. Result: the CH569 clock
+runs **+5.1..+5.3 ppm** relative to the RP2350 crystal (+-0.01 ppm run to run). Two crystals' errors combined, both
+far inside the USB3 +-300 ppm budget: the clock is ruled out for the USB3 failure (D-032).
+Watchdog: arming with the SDK `WWDG_ResetCfg(ENABLE)` after `R8_WDOG_COUNT = 0` resets the chip 1.68 s later
+(8-bit counter at Fsys/524288, CH569DS1 3.2.4) and the firmware restarts (back on USB 2.3 s after arming);
+`R8_RST_BOOT_STAT` then says watchdog (10). `SYS_ResetExecute()` restarts it too (flag 00). Command `lastreset`,
+`wdtest`. Correction of D-028 / D-030: the "software reset leaves the chip dead" finding came from the
+`__disable_irq()` before it. The firmware runs in **user mode** (startup `mret` with MPP = 00), where `csrc/csrs
+mstatus` trap; bisected on the board (mask/unmask alone hangs the chip, `gintenr` CSR 0x800 works, QingKe V3 manual).
+Not done: low-power sleep / wake (no current measurement on the board), a fed watchdog in the main loop (possible
+now: a hang would restart the CH569 by itself). Alternatives for the crystal check: frequency counter on the host
+(needs an instrument), USB SOF timing (host clock +-500 ppm, too coarse).
+
 ## D-033 — Variant 1 maximum streaming speed: 44.7 MB/s, set by USB2 bulk (status: accepted, 2026-11-19)
 Requested by user ("find out what is the max streaming speed for the device in practice"). Measured on board #1,
 counter pattern, every word checked on the host, 6-10 s runs (`maxbench.py`-style sweep: RP2350 rate x bus clock):
@@ -102,7 +119,7 @@ Alternatives: third mode in firmware 0.x (rejected by the user: a variant); CDC 
 ## D-030 — CH569 RST# and card detect behaviour (status: accepted, 2026-11-19)
 Tested on board #1. RST# (pin 30 PB15, CH569DS1 config bit 4 RESET_EN): with the factory RESET_EN = 0 the RP2350's
 pulse on GPIO28 does nothing (PB15 is a GPIO); with RESET_EN = 1 it resets the CH569, which reloads and runs the
-firmware (unlike a software reset, which left the chip dead). RESET_EN set on board #1 with a patched wch-ch56x-isp
+firmware (so does a software reset: the "dead chip" was a trap, D-034). RESET_EN set on board #1 with a patched wch-ch56x-isp
 (`firmware/tools/wch-ch56x-isp-resetpin.patch`); `ch reset` releases the card first. Card detect (pin 35 PA20,
 SD_DET, 100k pull-up to 3V3_CH, Hirose DM3AT detect switch): low = card in. The CH569 debounces it (50 ms) and in
 drive mode releases / re-identifies the card on removal / insertion, so a swapped card is never served with the old
@@ -128,7 +145,7 @@ serial command brings the drive back. Choice: two USB personalities on the same 
 Start=0) or the RP2350's `ch eject` (`\x01SDREL`); serial -> drive on console `mount` or `ch mount` (`\x01SDMNT`,
 answered `\x01SDON`/`\x01SDERR`). "Power off" of the card = release (flush, CMD0, clock stopped): its supply is
 3V3_CH with no switch (board.py, microSD pin 4). The switch re-enumerates in place (USB off 300 ms, state cleared,
-USB restarted): a software reset does not reload the program into SRAM (CH569DS1 §3.2) and left the chip dead.
+USB restarted): a software reset seemed to leave the chip dead (corrected in D-034: a user-mode trap, the reset itself works).
 Alternatives: composite drive + serial (D-026, both at once, the serial traffic competes with the card); RP2350
 power-cycling the CH569 per switch (slower, no logical gain without a card power switch); a card load switch on the
 next board revision (possible later). Sources: CH569DS1 §3.2 (reset), SCSI SBC START STOP UNIT, USB CDC 1.10 / IAD.

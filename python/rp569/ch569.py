@@ -62,6 +62,31 @@ class CH569Console(PromptCLI):
         f = m.group(1).split()
         return {k: int(v, 16) if k in ('flags', 'status') else int(v) for k, v in zip(f[::2], f[1::2])}
 
+    @command('xtal')
+    def xtal(self) -> dict:
+        """Crystal check (needs RP2350.clkout(1000) first): the CH569 TMR0 sums 1000 periods of the RP2350's
+        crystal-derived 1 kHz on PA9. {'periods', 'ticks', 'expected', 'ppm'}; ppm > 0 = the CH569 clock runs fast
+        relative to the RP2350 crystal (both crystals' errors combined). None: no signal on PA9."""
+        text = self.cmd_text('xtal', timeout=5)
+        if 'no signal' in text:
+            return None
+        m = re.search(r'xtal periods (\d+) ticks (\d+) expected (\d+) ppm ([+-][\d.]+)', text)
+        if not m:
+            raise CommandError(f'unexpected reply to xtal: {text!r}')
+        return {'periods': int(m.group(1)), 'ticks': int(m.group(2)), 'expected': int(m.group(3)),
+                'ppm': float(m.group(4))}
+
+    @command('lastreset')
+    def last_reset(self) -> str:
+        """Source of the last CH569 reset: 'software', 'power-on', 'watchdog' or 'manual' (RST#)."""
+        return self._match(r'lastreset (\w[\w-]*)', 'lastreset').group(1)
+
+    @command('wdtest')
+    def wdtest(self) -> None:
+        """Arm the watchdog reset and hang: the CH569 resets after ~1.7 s (or stays dead, see the hardware notes).
+        The console port disappears: the reply is not waited for (close the port afterwards)."""
+        self.cmd('wdtest', expect_prompt=False)
+
     @command('mount')
     def mount(self) -> None:
         """Switch to drive mode: the CH569 mounts the card and re-enumerates as the drive; this port disappears,

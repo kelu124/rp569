@@ -47,6 +47,33 @@
   pair, ESD (TPD2EUSB30) and SSTX AC caps placed in line so the pair stays coupled, short stubs. Check with
   `board_metrics.py` (skew, vias, plane coverage) before ordering; on the new board, console `usb3` must show
   `ready` > 0 and `lsusb -t` 5000M.
+- [ ] **Board v1.1: SerDes test path (CH569 GXM/GXP, pins 65/66, not connected on board #1)**:
+  - Background: CH569DS1 chapter 16 gives one differential pair, used in both directions, up to 1.2 Gb/s. V33GX
+    (pin 64) is already on 3V3_CH.
+  - Why a second CH56x: the framing is WCH's own (8b/10b, SATA-style ALIGN/CONT, CRC, sequence numbers; HydraUSB3
+    `wch-ch56x-bsp` `drv/CH56x_serdes.*`), so no generic SerDes chip can be the peer.
+  - Rates in that driver: 300 Mb/s to 1.2 Gb/s, plus experimental 180 / 240 Mb/s and up to 1.38 Gb/s.
+  - Routing: GXM/GXP as a coupled 100 Ω pair (the impedance of Cat5e/6) to a 2-pin 0.1" header.
+  - Parts on the pair: two 0402 series pads (0 Ω or AC caps, to be chosen) and two test pads.
+  - Peer: a second assembled rp569 board (order at least 2 assembled). The CH565W/CH565M also have SerDes, but a
+    second chip on the board is only worth it if it is needed anyway.
+  - Optional: an RJ45 footprint left unfitted.
+  - Power: SerDes takes ~60 mA with RX and TX on (CH569DS1 current table); add it to the AP2171W 1 A budget
+    item below.
+  - First check (no peer): `RB_SERD_DN_TST` (`R16_SERD_ANA_CFG1` bit 9) puts an internal voltage on GXM; measure it
+    on the test pad.
+  - Then two boards: short twisted pair, then Cat6, at 300 → 600 → 1200 Mb/s. Count CRC and sequence errors.
+  - Not pursued: an FPGA receiver over LVDS (the WCH framing would have to be decoded) and RP2350 HSTX as a sender
+    (send-only, its GPIO12-19 are the HSPI bus).
+- [ ] **Board v1.1: RP2350 measures the CH569 1.2 V rail (1V2_CH)**:
+  - Why: 1V2_CH was never measured on board #1. CH569DS1 requires V12USB at 1.15-1.3 V, and that rail is the one
+    still unchecked in the USB3 diagnosis (D-032).
+  - The ADC pins are all in use: GPIO46/47 = VBUS3 and 3V3_CH sense, GPIO40-45 = the EXT header.
+  - Proposal: route 1V2_CH to one ADC, e.g. GPIO45/ADC5 taken from the EXT header, or through a solder jumper so the
+    header pin stays usable. Add a ~1 kΩ series resistor and no divider: 1.2 V is below the 3.3 V ADC reference.
+  - Keep the power.md back-power rules: the CH569-off case must not feed the rail through the ADC pin.
+  - Firmware: report the rail in the RP2350 CLI next to 3V3_CH, with the matching python `@command`.
+  - Board #1 meanwhile: measure 1V2_CH with a multimeter.
 - [ ] USB2 pairs in the same pass (they work, but are out of spec): USB3_D skew 5.8 mm (0/5 vias), USBC_D 5.2 mm,
   RP_USB_D 8.9 mm (0/4 vias): coupled, matched, symmetric vias.
 - [ ] HSPI lengths: 19.9–32.6 mm vs RCLK 20.6 mm; tune outliers only if the bus runs near its limit (target ~±10 mm).
@@ -62,7 +89,9 @@
 
 - [ ] Hardware check of the python library (`python3 -m rp569 ports` / `versions`, `link_test.py`): port roles, CH569 UID read at 0x77FE4.
 - [ ] CH569 USB3 (D-032): link training fails on board #1 (SS pair skew 6.5 / 5.3 mm, single-leg vias on SSRX_N). Board v1.1: re-route USB3_SSRX/USB3_SSTX as coupled, length-matched pairs. Meanwhile try a short cable / other port / USB3 hub. Then confirm the composite (and the MSC write fix) on USB3; decide whether the USB2 fallback needs a serial port (wch-ch56x-lib).
-- [ ] CH569 UID: `chip_uid.c` reads `0xF7F9BF11` at every address of 0x77FE0–0x77FFC (stale ROM data register), so the USB serial is `11BFF9F711BFF9F7` on board #1 instead of the bootloader's UID 8A-82-48-26-3B-38-0D-E1. Same sequence/registers as HydraUSB3 `FLASH_ROMA_READ`; `R8_GLOB_ROM_CFG` reads 0x00 and a safe-mode write does not stick. Try: read before `SystemInit`/clock change, interrupts off, compare with WCH's EVT `GetUniqueID`/ISP library.
+- [ ] CH569 UID: `chip_uid.c` reads `0xF7F9BF11` at every address of 0x77FE0–0x77FFC (stale ROM data register), so the USB serial is `11BFF9F711BFF9F7` on board #1 instead of the bootloader's UID 8A-82-48-26-3B-38-0D-E1. Same sequence/registers as HydraUSB3 `FLASH_ROMA_READ`; `R8_GLOB_ROM_CFG` reads 0x00 and a safe-mode write does not stick. Try: read before `SystemInit`/clock change, compare with WCH's EVT `GetUniqueID`/ISP library. Lead (2026-11-20):
+  `0xf7f9bf11` is a `.word` in our vector table (`startup_CH56x.S`), so the read returns our image; and never mask
+  interrupts with `__disable_irq()` (user mode: it traps, D-034), use `gintenr`.
 - [ ] Streamed WRITE10 (one CMD25 through the ring with AUTOGAPSTOP, `MSC_WRITE_STREAM`): broken, disabled. On
   2026-11-19 it corrupted the FAT32 boot sector of card MSSD0 (single-sector writes: the n = 1 mode needs TRAN_MODE
   bit 6; multi-block failed with write I/O errors). Next attempt only with raw writes to a test region far from the
@@ -76,4 +105,7 @@
 - [ ] Variant 1 host reader: async multi-URB (python `libusb1`, needs install: user) so 44 MB/s is lossless; sync
   pyusb reads lose 1-3 packets/s at 35-40 MB/s (D-033). Optional: HSPI R_DONE by interrupt (shorter RP2350 gap),
   2 more ring slots (11.9 KB RAMX spare).
+- [ ] CH569 test 1: HSPI CH569 -> RP2350 (CH569 HSPI TX, RP2350 PIO receiver on HD0-7 + HTCLK/HTREQ/HTVLD, HTRDY).
+- [ ] CH569 low-power sleep / wake on the link UART (no current measurement on board #1: function only); optional
+  fed watchdog in the variant 0 main loop (a hang would restart the CH569 by itself, D-034).
 - [ ] RP2350: I2C link and breakout I2C commands; PWM dimming for the LEDs (GPIO34/35/38 are PWM9A/9B/11A).

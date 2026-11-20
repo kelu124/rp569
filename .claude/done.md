@@ -2,6 +2,7 @@
 
 <!-- Newest first. Format: - YYYY-MM-DD — what was done (commit hash if any) -->
 
+- 2026-11-20 — CH569 tests 4 and 9 (D-034): crystal +5.2 ppm vs the RP2350 (RP2350 `clkout` -> CH569 TMR0 capture `xtal`); watchdog reset and software reset both restart the firmware (`wdtest`, `lastreset`); found that the CH569 firmware runs in user mode, where `__disable_irq()` traps: that, not the reset, was the old "software reset leaves the chip dead"; hardware notes, skill, spec D-028/D-030 corrected.
 - 2026-11-19 — Variant 1 maximum streaming speed found (D-033): 44.7 MB/s at the host (USB2 bulk ceiling), up from 16. RP2350 fast CRC mode 9 (20.8 -> 74.7 MB/s sender), CH569 at 120 MHz with double-buffered bulk IN (22.7 -> 44.7 MB/s); fixed a TX_CTRL read-modify-write race (lost 512-byte chunks) and the RX-toggle phase slip on back-to-back packets (12 us gap); host reads 512 kB; CH569 Makefile header deps.
 - 2026-11-19 — Learnings documented: `docs/ch569-hardware-notes.md` § Undocumented behaviour found on board #1 (bootloader/ISP, config, resets, USBHS, USB3, eMMC, HSPI, board); boot section corrected (delivered chips: PA13, DEBUG_EN 1); D-032 second-cable result (identical counters).
 - 2026-11-19 — USB3 investigated (D-032): USB3 cable + 5 Gb/s port confirmed; CH569 link counters (console `usb3`) show termination detect + LFPS + TXEQ on every attempt, LINK_RDY never; 4 PHY settings tried, same; pins, AC caps, crystal load checked; routed SS pairs measured: SSRX skew 6.5 mm with 3 vias on N only, SSTX 5.3 mm -> board v1.1 routing fix.

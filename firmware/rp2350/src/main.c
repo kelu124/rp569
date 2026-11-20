@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "hardware/adc.h"
+#include "hardware/clocks.h"
 #include "hardware/gpio.h"
 #include "hardware/uart.h"
 #include "hardware/watchdog.h"
@@ -84,6 +85,7 @@ static float ch3v3_volts(void) { return adc_volts(RP569_CH3V3_SENSE_PIN, 2.0f); 
 
 // While the CH569 is off every line to it is an input without pull-up, so nothing back-powers it.
 static void ch_lines_release(void) {
+    gpio_init(RP569_CLKOUT_PIN);          // `clkout` off
     gpio_init(RP569_LINK_TX_PIN);
     gpio_init(RP569_LINK_RX_PIN);
     gpio_init(RP569_HSPI_D0_PIN);
@@ -339,6 +341,28 @@ static void cmd_ch_send(int argc, char **argv, char *rest) {
         printf("usage: ch send <text>\n");
 }
 
+// Crystal check (CH569 console `xtal`): a square wave from the 12 MHz crystal (XOSC, not the PLL) on GPIO21 =
+// GPOUT0 (RP2350 datasheet GPIO function table, GPIO21 row: CLOCK GPOUT0), net HSPI_TREQ = CH569 PA9 = TMR0
+// capture input. Integer divider only, so the frequency is exactly 12 MHz / div. Off with the CH569 (back-power).
+static void cmd_clkout(int argc, char **argv, char *rest) {
+    if (argc == 1 && !strcmp(argv[0], "off")) {
+        gpio_init(RP569_CLKOUT_PIN);
+        printf("clkout off\n");
+        return;
+    }
+    long hz = argc > 0 ? strtol(argv[0], NULL, 10) : 1000;
+    if (hz < 184 || hz > 6000000 || 12000000 % hz) {
+        printf("usage: clkout [Hz, divisor of 12 MHz, 184..6000000; default 1000] | clkout off\n");
+        return;
+    }
+    if (!ch_powered) {
+        printf("CH569 is off ('ch on' first)\n");
+        return;
+    }
+    clock_gpio_init_int_frac16(RP569_CLKOUT_PIN, CLOCKS_CLK_GPOUT0_CTRL_AUXSRC_VALUE_XOSC_CLKSRC, 12000000 / hz, 0);
+    printf("clkout GPIO%d %ld Hz (XOSC / %ld)\n", RP569_CLKOUT_PIN, hz, 12000000 / hz);
+}
+
 typedef struct {
     const char *name;             // one or two words
     const char *args;
@@ -403,6 +427,7 @@ static const command_t commands[] = {
     {"stream start", "[MB/s] [MHz] [crc]", "counter stream on the 8-bit bus (variant 1; 16, 25, crc 8)", cmd_stream_start},
     {"stream stop",  "",             "stop the stream, give the bus pins back",                     cmd_stream_stop},
     {"stream status", "",            "stream packets, bytes, rate",                                 cmd_stream_status},
+    {"clkout",    "[Hz|off]",        "12 MHz crystal / n on GPIO21 -> CH569 PA9 (CH569 `xtal`; 1000 Hz)", cmd_clkout},
     {"ch send",   "<text>",          "send a line to the CH569 over the link UART (it echoes it back)", cmd_ch_send},
 };
 // COMMANDS-END

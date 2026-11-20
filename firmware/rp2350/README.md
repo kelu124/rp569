@@ -24,6 +24,7 @@ commands:
   ch reset                 pulse RST# (needs RESET_EN; releases the card first)
   ch status                CH569 power, fault flag, rails
   ch pins                  probe the CH569 -> RP2350 UART line (driven / open)
+  clkout [Hz|off]          12 MHz crystal / n on GPIO21 -> CH569 PA9 (CH569 `xtal`; 1000 Hz)
   ch send <text>           send a line to the CH569 over the link UART (it echoes it back)
 ```
 

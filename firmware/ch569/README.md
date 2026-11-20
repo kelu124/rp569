@@ -16,7 +16,7 @@ USB device (`1a86:fe2c`, the same at SuperSpeed and on the USB2 high-speed fallb
 | **drive** (power-up) | the SD card as a USB drive, nothing else (full speed for the card) | power-up with a card; console `mount`; RP2350 `ch mount` (answer `\x01SDON`) |
 | **serial** | two serial ports: link CDC (if0) + console CDC (if2), no drive | host eject (desktop eject / `eject`: SCSI START STOP UNIT LoEj=1); RP2350 `ch eject` (answer `\x01SDOFF`); no card at power-up |
 
-A switch happens in place, no chip reset (a software reset leaves the CH569 dead, CH569DS1 §3.2): USB off, card
+A switch happens in place, no chip reset (a software reset does work, see `docs/ch569-hardware-notes.md`): USB off, card
 released (flushed, CMD0, clock stopped; it stays powered, no switch on its supply) or mounted, 300 ms off the bus,
 USB restarted with the other mode's descriptors. `udisksctl power-off` also disables the host port, so the
 serial ports do not appear after it: use the desktop eject / `udisksctl unmount` + `python -m rp569 eject`.
@@ -40,6 +40,11 @@ sends `\x01MDRV` / `\x01MSER` on the link at boot and after every switch: the RP
 **USB3 diagnostics**: console `usb3` (python `usb3_diag()`) prints the SuperSpeed link interrupt counts since boot:
 `rx_detect` / `present` / `txeq` (termination and LFPS stages), `ready` (link up), `disabled`, `timeouts` (USB2
 fallbacks). Board #1: rx_detect, present and txeq on every attempt, ready never (D-032, SS pair routing).
+
+**Crystal and resets** (D-034): RP2350 `clkout 1000`, then console `xtal` (python `xtal()`): CH569 clock error vs
+the RP2350 crystal from 1000 TMR0 periods on PA9 (board #1: +5.2 ppm). `lastreset`: source of the last reset
+(power-on / software / watchdog / manual). `wdtest`: arms the watchdog reset without feeding it; the CH569 restarts
+~1.7 s later (drive mode, `lastreset` = watchdog).
 `./build.sh EXTRA_CFLAGS=-DUSB3_LINK_CFG=0x1C2` overrides the PHY config during training (experiments).
 
 **Link control lines**: a line starting with byte `0x01` (`LINK_CTRL_CHAR`) is for the CH569 itself, neither echoed

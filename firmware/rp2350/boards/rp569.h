@@ -52,6 +52,7 @@ pico_board_cmake_set_default(PICO_RP2350_A2_SUPPORTED, 1)
 
 // --- rp569 pins (not SDK defaults) ---
 #define RP569_LA0_PIN           0   // GPIO0-7: logic analyser inputs (LA IN header, 100R series)
+#define RP569_CLKOUT_PIN        21  // HSPI_TREQ net = CH569 PA9 / TMR0 capture; GPOUT0 for the crystal check
 #define RP569_HSPI_D0_PIN       8   // GPIO8-15 HSPI_D0-7, 16-23 HSPI control; HSPI_D0 = CH569 PA5 boot strap
 #define RP569_LINK_UART         1   // UART1 to the CH569 UART1 (PA7 RX / PA8 TX)
 #define RP569_LINK_TX_PIN       24

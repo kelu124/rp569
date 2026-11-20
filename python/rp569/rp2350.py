@@ -82,6 +82,15 @@ class RP2350(PromptCLI):
         m = self._match(r'VBUS3 ([\d.]+) V, 3V3_CH ([\d.]+) V', 'adc')
         return {'VBUS3': float(m.group(1)), '3V3_CH': float(m.group(2))}
 
+    @command('clkout')
+    def clkout(self, hz: int | None = 1000) -> int:
+        """12 MHz crystal / n on GPIO21 -> CH569 PA9, for CH569Console.xtal(). hz must divide 12 MHz
+        (184..6000000); None = off. Returns the frequency (0 = off)."""
+        if hz is None:
+            self._match(r'clkout off', 'clkout off')
+            return 0
+        return int(self._match(r'clkout GPIO\d+ (\d+) Hz', f'clkout {int(hz)}').group(1))
+
     @command('dfu')
     def dfu(self) -> None:
         """Reboot into the RP2350 USB bootloader. The serial port disappears: the object is closed."""

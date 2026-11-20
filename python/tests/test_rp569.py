@@ -63,9 +63,13 @@ RP_REPLIES = {
     'ch eject': 'CH569 SD released',
     'stream status': 'stream off, packets 10, payload 40960 bytes, 0.01 s, 16.00 MB/s, target 16.0 MB/s, bus 25.0 MHz',
     'ch mount': 'CH569 SD mounted (drive mode)',
+    'clkout 1000': 'clkout GPIO21 1000 Hz (XOSC / 12000)',
+    'clkout off': 'clkout off',
     'ch pins': 'UART_CH2RP GPIO25 pull-up 1 pull-down 1: driven high (UART idle)',
 }
 CH_REPLIES = {
+    'xtal': 'xtal periods 1000 ticks 80000960 expected 80000000 ppm +12.00',
+    'lastreset': 'lastreset power-on flag 1',
     'usb3': 'usb3 irqs 3 rx_detect 0 term 2 present 0 txeq 0 ready 0 inactive 0 ux_exit 0 disabled 0 timeouts 1 flags 00000000 status 00000010',
     'sd': 'sd cid 035344534333324780ab12cd34016a00 size 30436 MB clock 48 MHz mounted det in',
     'version': f'rp569 CH569W firmware 0.1.2 git 0727cb0 built Oct 24 2026 uid {UID_CH}',
@@ -163,6 +167,7 @@ class TestRP2350(unittest.TestCase):
         self.assertTrue(rp.ch_eject())
         self.assertEqual(rp.stream_status()['packets'], 10)
         self.assertTrue(rp.ch_mount())
+        self.assertEqual((rp.clkout(1000), rp.clkout(None)), (1000, 0))
 
     def test_ch_send_echo(self):
         rp = self.rp(async_after={'ch send hello': ['CH> hello']})
@@ -193,6 +198,7 @@ class TestCH569(unittest.TestCase):
         self.assertEqual((con.usb3_diag()['term'], con.usb3_diag()['status']), (2, 0x10))
         self.assertEqual((st['usb'], st['sd_ready'], st['link_lines']), ('usb3', True, 4))
         self.assertEqual((st['sd_clock_mhz'], st['mode']), (48, 'serial'))
+        self.assertEqual((con.xtal()['ppm'], con.last_reset()), (12.0, 'power-on'))
 
     def test_version_parse(self):
         v = FirmwareVersion.parse('x rp569 CH569W firmware 1.2.30 git abc-dirty built Oct  4 2026 uid ab12')

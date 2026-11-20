@@ -98,6 +98,93 @@ static void cmd_status(void)
           own_card_ready ? (sd_high_speed ? 48 : 24) : 0, bridge_mode == MODE_DRIVE ? "drive" : "serial");
 }
 
+/* Crystal check (test 4): the RP2350 drives a 1 kHz square wave derived from its 12 MHz crystal on GPIO21
+ * (`clkout`, HSPI_TREQ net) = PA9 = TMR0 capture input (CH569DS1 8.3.3, pin table PA9/TMR0). TMR0 captures
+ * rising-to-rising periods in Fsys ticks; consecutive periods tile the time, so the sum of N periods is exact to
+ * +-1 tick (0.0125 ppm over 1 s at 80 MHz). Fsys = 30 MHz HSE x PLL, so the result is the CH569 crystal error
+ * relative to the RP2350 crystal (both sides' errors combined). TMR0 is otherwise the USB3 retry timer
+ * (CH56x_usb30.c): refused while it is armed, left cleared and with its interrupt off afterwards. */
+#define XTAL_REF_HZ   1000
+#define XTAL_PERIODS  1000        /* 1 s */
+
+static void cmd_xtal(void)
+{
+    UINT32 sum = 0, n = 0, timeouts = 0, v;
+    UINT32 expect = FREQ_SYS / XTAL_REF_HZ;
+    UINT8  first = 1;
+    if(R8_TMR0_CTRL_MOD & RB_TMR_COUNT_EN)
+    {
+        PRINT("xtal busy (TMR0 = USB3 retry timer armed), try again\n");
+        return;
+    }
+    PFIC_DisableIRQ(TMR0_IRQn);
+    R8_TMR0_INTER_EN = 0;
+    R32_PA_DIR &= ~(1UL << 9);               /* PA9 input, no pull */
+    R32_PA_PU  &= ~(1UL << 9);
+    R32_PA_PD  &= ~(1UL << 9);
+    R32_TMR0_CNT_END = expect * 4;           /* capture timeout: 4 periods without an edge */
+    R8_TMR0_CTRL_MOD = RB_TMR_ALL_CLEAR;
+    R8_TMR0_CTRL_MOD = RB_TMR_MODE_IN | (3 << 6) | RB_TMR_COUNT_EN;   /* capture, rising to rising */
+    while(n < XTAL_PERIODS && timeouts < 4)
+    {
+        if(!R8_TMR0_FIFO_COUNT)
+            continue;
+        v = R32_TMR0_FIFO;
+        if(v & (1UL << 25))
+        {
+            timeouts++;                      /* no edge within CNT_END */
+            continue;
+        }
+        if(first)
+        {
+            first = 0;                       /* from the enable to the first edge: partial */
+            continue;
+        }
+        sum += v & 0x01FFFFFF;
+        n++;
+    }
+    R8_TMR0_CTRL_MOD = RB_TMR_ALL_CLEAR;
+    if(n < XTAL_PERIODS)
+    {
+        PRINT("xtal no signal on PA9 (RP2350 `clkout` first)\n");
+        return;
+    }
+    /* ppm x100 = (sum - n*expect) / (n*expect) * 1e8; positive = the CH569 clock runs fast vs the RP2350 one */
+    {
+        INT32 diff = (INT32)(sum - n * expect);
+        INT32 ppm100 = (INT32)((long long)diff * 100000000LL / (long long)(n * expect));
+        INT32 a = ppm100 < 0 ? -ppm100 : ppm100;
+        PRINT("xtal periods %lu ticks %lu expected %lu ppm %s%ld.%02ld\n", (unsigned long)n, (unsigned long)sum,
+              (unsigned long)(n * expect), ppm100 < 0 ? "-" : "+", (long)(a / 100), (long)(a % 100));
+    }
+}
+
+/* Reset source of the last reset (R8_RST_BOOT_STAT RB_RESET_FLAG, CH569DS1 3.2 / reset status register). */
+static void cmd_lastreset(void)
+{
+    static const char *const names[4] = {"software", "power-on", "watchdog", "manual"};
+    UINT8 f = R8_RST_BOOT_STAT & RB_RESET_FLAG;
+    PRINT("lastreset %s flag %d boot_stat %02x wdog ctrl %02x count %d\n", names[f], f, R8_RST_BOOT_STAT,
+          R8_RST_WDOG_CTRL, R8_WDOG_COUNT);
+}
+
+/* Watchdog test (test 9): arm the watchdog reset and never feed it; the main loop keeps running. The counter
+ * (8 bits, Fsys/524288 = 6.55 ms per tick at 80 MHz, CH569DS1 3.2.4) runs from boot whether armed or not, so it
+ * is cleared first: the reset comes ~1.68 s later, the firmware restarts (power-up path: drive mode) and
+ * `lastreset` then says "watchdog" (found on board #1, 2026-11-20). The protected write uses the SDK helper:
+ * NO __disable_irq() around it, the firmware runs in user mode where mstatus traps (hardware notes). */
+static void cmd_wdtest(void)
+{
+    UINT8 c0, c1;
+    R8_WDOG_COUNT = 0;
+    WWDG_ResetCfg(ENABLE);
+    c0 = R8_WDOG_COUNT;
+    mDelaymS(20);
+    c1 = R8_WDOG_COUNT;
+    PRINT("wdtest armed ctrl %02x count %d -> %d in 20 ms, reset in ~%lu ms\n", R8_RST_WDOG_CTRL, c0, c1,
+          (unsigned long)(256ULL * 524288 * 1000 / FREQ_SYS));
+}
+
 typedef struct
 {
     const char *name;
@@ -114,6 +201,9 @@ static const command_t commands[] =
     {"mount",   "mount the SD card and switch to drive mode",    cmd_mount},
     {"sd",      "SD card CID (128 bits), size, bus clock",       cmd_sd},
     {"usb3",    "SuperSpeed link diagnostics (link interrupts)",  cmd_usb3},
+    {"xtal",    "crystal error vs the RP2350 (needs RP2350 clkout)", cmd_xtal},
+    {"lastreset", "source of the last reset",                    cmd_lastreset},
+    {"wdtest",  "arm the watchdog reset, never fed (~1.7 s)",      cmd_wdtest},
 };
 /* COMMANDS-END */
 #define N_COMMANDS (sizeof(commands) / sizeof(commands[0]))

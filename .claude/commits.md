@@ -6,6 +6,15 @@ What: ...
 Why: ...
 -->
 
+## pending — 2026-11-20 — CH569 crystal check, watchdog/software reset, user-mode trap (D-034); v1.1 todos
+What: CH569 console `xtal` (TMR0 capture on PA9), `lastreset`, `wdtest`; RP2350 `clkout` (XOSC / n on GPIO21);
+python `xtal()`, `last_reset()`, `wdtest()`, `clkout()` + tests; D-034, D-028/D-030 corrected; hardware notes
+(user mode / gintenr, resets work, watchdog details, TMR0 capture, UID lead, capability notes: SerDes peer, parallel
+ADC options); firmware skill, READMEs; todo: v1.1 1V2_CH on an RP2350 ADC, v1.1 SerDes test path, HSPI CH569 ->
+RP2350, low-power; done.
+Why: user asked for CH569 tests 4 and 9 (results: +5.2 ppm crystal, watchdog and software resets restart the
+firmware; the old "dead after software reset" was a __disable_irq() trap in user mode) and the hardware todos.
+
 ## ee79d80 — 2026-11-20 — Variant 1 stream: 44.7 MB/s practical maximum (D-033)
 What: CH569 stream firmware at 120 MHz with a double-buffered EP2 bulk IN (toggle-tracked completions, INT_BUSY only
 when fewer than 2 packets are armed, TX_CTRL written on state changes only), chunk cursor over the ring, loop_max_us

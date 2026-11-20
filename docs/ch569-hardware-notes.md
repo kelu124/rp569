@@ -53,13 +53,25 @@ firmware does about it, where. Decisions: `specification.md` D-026..D-032.
 - **wch-ch56x-isp rewrites USER_MEM from the image size at every flash**: < 32 KB -> ROM 32 KB + RAMX 96 KB, < 64 KB ->
   64 + 64, < 96 KB -> 96 + 32. A bigger image silently shrinks RAMX under the linker's 96 KB: `tools/check_mem.py` fails
   the build first. Its `devices.h` defines `SZ_96K` as 64 KB, so it refuses images >= 64 KB.
-- **Safe-access writes (`R8_SAFE_ACCESS_SIG` 0x57/0xA8) are silently ignored if an interrupt lands in between**
-  (TMR2 ticks every 10 us here): mask interrupts (`__disable_irq()`) around the signature and the protected write.
-  `R8_GLOB_ROM_CFG` read 0x00 and did not take a safe-mode write even so (open).
-- **A software reset (`RB_SOFTWARE_RESET`) leaves the chip dead**: the program is copied into SRAM only at power-on
-  (CH569DS1 §3.2 hints at it). A pin reset (RST# with RESET_EN) does reload and run the firmware. The drive/serial
-  mode switch therefore re-initialises USB in place (`mode.c`), it never resets.
+- **The firmware runs in user mode** (corrected 2026-11-20): `startup_CH56x.S` writes `mstatus = 0x88` and `mret`s
+  into `main` with MPP = 00. `__disable_irq()` / `__enable_irq()` (`csrc/csrs mstatus`, `core_riscv.h`) are then
+  illegal instructions: the core traps and the chip hangs with USB still enumerated (EP0 stops answering). Mask
+  global interrupts with `gintenr` (CSR 0x800, the user-mode view of MIE/MPIE, QingKe V3 manual), e.g.
+  `csrc 0x800, 0x88` / `csrs 0x800, 0x88`, or not at all.
+- **Software and watchdog resets work** (corrected 2026-11-20): the earlier "software reset leaves the chip dead"
+  came from the `__disable_irq()` placed before the reset (trap above), not from the reset. With the SDK helpers
+  (`SYS_ResetExecute()`, `WWDG_ResetCfg(ENABLE)`, safe-access writes without masking) the firmware restarts through
+  the power-up path, and `R8_RST_BOOT_STAT` bits 1:0 report software (00) / watchdog (10). CH569DS1 3.2 "only a
+  power-on reset reloads the code into SRAM": the code is still in SRAM, so the restart works. The earlier claim
+  that a safe-access write is ignored when an interrupt lands in between is not confirmed (the SDK helpers worked
+  every time unmasked). Console `lastreset`, `wdtest`.
+- **Watchdog details**: the 8-bit counter runs from boot whether armed or not (Fsys/524288 = 6.55 ms per tick at
+  80 MHz) and `RB_WDOG_INT_FLAG` is already set at boot: clear the count (`R8_WDOG_COUNT = 0`, which also clears
+  the flag) before setting `RB_WDOG_RST_EN`. Reset ~1.68 s later (measured 2.3 s from arming to the re-enumeration
+  at 80 MHz); the reset clears `RB_WDOG_RST_EN`.
 - **Chip UID**: reading flash ROM 0x77FE4 with the HydraUSB3 sequence returns a stale `0xF7F9BF11` for every address
+  (lead, 2026-11-20: `0xf7f9bf11` is a `.word` in our own vector table, `startup_CH56x.S`, so the read probably
+  returns our image, not the info area)
   (the config word the bootloader read last); the real UID (bootloader: 8A-82-48-26-3B-38-0D-E1) is not obtained yet
   (open; the USB serial number is therefore not unique per board).
 
@@ -129,6 +141,34 @@ firmware does about it, where. Decisions: `specification.md` D-026..D-032.
   (74.7 MB/s raw at 75 MHz). Stream to the host: 44.7 MB/s (USB2 ceiling, D-033). The first packet after a CH569
   power-up fails its CRC (dropped).
 - SysTick (`SysTick->CNT`, FREQ_SYS/8) counts **down** once started with `CTLR = 1`.
+
+### Timers (TMR0 capture)
+
+- TMR0 capture (PA9, rising-to-rising, `RB_TMR_MODE_IN | 3 << 6`) returns periods in Fsys ticks in
+  `R32_TMR0_FIFO` (bit 25 = timeout); the sum of consecutive periods is exact to +-1 tick. Console `xtal` with the
+  RP2350 `clkout 1000` (12 MHz XOSC / 12000 on GPIO21 = HSPI_TREQ net): **board #1 CH569 crystal +5.1..+5.3 ppm vs
+  the RP2350 crystal** (2026-11-20, +-0.01 ppm run to run): far inside the USB3 +-300 ppm budget (D-032).
+  TMR0 is also the USB3 retry timer of the variant 0 USB stack (`CH56x_usb30.c`): `xtal` refuses while it is armed.
+
+### Capability notes (desk analysis, 2026-11-20, not tested)
+
+- **SerDes peer**: the framing is WCH's own (8b/10b, SATA-style ALIGN/CONT primitives, CRC, sequence numbers;
+  HydraUSB3 `wch-ch56x-bsp` `drv/CH56x_serdes.*`; rates 300 Mb/s-1.2 Gb/s, 180/240 Mb/s and up to 1.38 Gb/s
+  experimental). The pair is half-duplex (one GXM/GXP pair, CH569DS1 ch. 16), so there is no loopback on one chip,
+  and no generic SerDes chip (TI DS90UB / TLK, LVDS serialisers) can be the peer. Peers: a second CH569 board
+  (cheapest), a CH565W/M (SerDes too, CH569DS1 feature table), or an FPGA LVDS receiver once the framing is decoded.
+  No-peer check: `RB_SERD_DN_TST` (`R16_SERD_ANA_CFG1` bit 9) puts an internal voltage on GXM. v1.1 plan: todo.
+- **Sampling a parallel ADC (e.g. ADC08100, 8 bit, 20-100 MS/s) with the CH569 itself**:
+  - HSPI RX does not take raw data: a header word and the CRC-16 are mandatory (no CRC-disable bit in
+    `R8_HSPI_CFG`), and a CRC error drops the packet.
+  - DVP (8-bit camera port) exists only on the CH565W/M, not the CH569W.
+  - BUS8 is a CPU-driven master bus: >= 7 Tsys per read (setup 2 + width 3 + hold 2, CH569DS1 ch. 11), so
+    <= ~17 M reads/s at 120 MHz.
+  - A GPIO polling loop gives ~10-20 MS/s bursts.
+  - So all of them are at or below the ADC's minimum rate.
+  - Practical path on rp569: ADC on the RP2350 LA inputs GPIO0-7, the PIO clocks it (side-set) and frames HSPI
+    packets (variant 1 path, CRC mode 9), CH569 to USB. ~40 MS/s continuous at 8 bits (USB2 limit, D-033); more
+    only in bursts or over USB3.
 
 ### Board level
 
