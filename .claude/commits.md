@@ -6,7 +6,7 @@ What: ...
 Why: ...
 -->
 
-## pending — 2026-11-20 — Variant 1 stream: 44.7 MB/s practical maximum (D-033)
+## ee79d80 — 2026-11-20 — Variant 1 stream: 44.7 MB/s practical maximum (D-033)
 What: CH569 stream firmware at 120 MHz with a double-buffered EP2 bulk IN (toggle-tracked completions, INT_BUSY only
 when fewer than 2 packets are armed, TX_CTRL written on state changes only), chunk cursor over the ring, loop_max_us
 stat, baud overflow fix, Makefile header dependencies; RP2350 CRC mode 9 (linear CRC-16 tables) and a 12 us PIO
